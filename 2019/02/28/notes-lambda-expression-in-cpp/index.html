@@ -13,7 +13,7 @@
         <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
     
     
-    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的.\n最近比较喜欢光污染背景。\n\n\nBackground2.28这天一天只做了两道题, 状态不佳, 因为都很不想写.\n代码还炒鸡乱.\n所以第二题要排序, 就用了Lambda表达式(这什么逻辑?).\nBasic Infomation框架大概长这样:\n1[capture list] (params list) mutable exception -&gt; return type &#123;function body&#125;\n来自https://www.cnblogs.com/DswCnblog/p/5629165.html\n其中捕获列表和函数体是不可省的.\nFormatsCapture List捕获列表是用来捕获所在域内的局部变量的, 对于静态变量和域以外的变量可以自由使用.\n至于这和形参的区别也没什么人说我也没搞懂. 有一个特性是值捕获的变量复制发生在这个函数对象创建时, 而不是调用时.\n引用捕获要求调用时变量仍然存在, 所以要谨慎使用.\n捕获列表大概有这几种:\n\n\n\n\nType\nMeaning\n\n\n\n\n[]\n不捕获\n\n\n[a]\n以值捕获捕获变量a\n\n\n[&amp;a]\n以引用捕获捕获a\n\n\n[=]\n通过函数体推断捕获变量, 值捕获\n\n\n[&amp;]\n同上, 引用捕获\n\n\n[=,&amp;x]\n其余变量值捕获, x引用捕获\n\n\n[&amp;,=x]\n同上, 相反\n\n\n\n\nParameters List和函数一样的形参. 不支持默认参数, 可变参数和不指定名称的参数.\nException这里主要说一下mutable.\n值捕获的变量是不能在函数体内被修改的. 但加上mutable就可以了.\nReturn Type可以指定, 也可以自动推断, (大概是不需要decltype?\nFunction Body函数体.\nSamplesSort123vector&lt;int&gt; vec;for (int i = 1; i &lt;= 10; ++i) vec.push_back(rand());sort(vec.begin(), vec.end(), [](int a, int b) -&gt; bool &#123;return a &lt; b&#125;);\nModify12345auto modify(vector&lt;int&gt;&amp;vec, int limit) -&gt; decltype(vec) &#123;    auto func = [limit](int i) -&gt; int &#123;return i &gt;= limit ? -1 : i;&#125;;    transform(vec.begin(), vec.end(), vec.begin(), func);    return vec;&#125;\n一个Lambda表达式的类型大概是\n1function&lt;return typename(typename, typename, ...)&gt;\n","dateCreated":"2019-02-28T21:25:26+08:00","dateModified":"2019-02-28T22:24:47+08:00","datePublished":"2019-02-28T21:25:26+08:00","description":"这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的.\n最近比较喜欢光污染背景。","headline":"Tiny notes of Lambda Expression in C++","image":[null,"https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/","keywords":"Develop","thumbnailUrl":"https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg"}</script>
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的.\n最近比较喜欢光污染背景。\n\n\nBackground2.28这天一天只做了两道题, 状态不佳, 因为都很不想写.\n代码还炒鸡乱.\n所以第二题要排序, 就用了Lambda表达式(这什么逻辑?).\nBasic Infomation框架大概长这样:\n1[capture list] (params list) mutable exception -&gt; return type &#123;function body&#125;\n来自https://www.cnblogs.com/DswCnblog/p/5629165.html\n其中捕获列表和函数体是不可省的.\nFormatsCapture List捕获列表是用来捕获所在域内的局部变量的, 对于静态变量和域以外的变量可以自由使用.\n至于这和形参的区别也没什么人说我也没搞懂. 有一个特性是值捕获的变量复制发生在这个函数对象创建时, 而不是调用时.\n引用捕获要求调用时变量仍然存在, 所以要谨慎使用.\n捕获列表大概有这几种:\n\n\n\n\nType\nMeaning\n\n\n\n\n[]\n不捕获\n\n\n[a]\n以值捕获捕获变量a\n\n\n[&amp;a]\n以引用捕获捕获a\n\n\n[=]\n通过函数体推断捕获变量, 值捕获\n\n\n[&amp;]\n同上, 引用捕获\n\n\n[=,&amp;x]\n其余变量值捕获, x引用捕获\n\n\n[&amp;,=x]\n同上, 相反\n\n\n\n\nParameters List和函数一样的形参. 不支持默认参数, 可变参数和不指定名称的参数.\nException这里主要说一下mutable.\n值捕获的变量是不能在函数体内被修改的. 但加上mutable就可以了.\nReturn Type可以指定, 也可以自动推断, (大概是不需要decltype?\nFunction Body函数体.\nSamplesSort123vector&lt;int&gt; vec;for (int i = 1; i &lt;= 10; ++i) vec.push_back(rand());sort(vec.begin(), vec.end(), [](int a, int b) -&gt; bool &#123;return a &lt; b&#125;);\nModify12345auto modify(vector&lt;int&gt;&amp;vec, int limit) -&gt; decltype(vec) &#123;    auto func = [limit](int i) -&gt; int &#123;return i &gt;= limit ? -1 : i;&#125;;    transform(vec.begin(), vec.end(), vec.begin(), func);    return vec;&#125;\n一个Lambda表达式的类型大概是\n1function&lt;return typename(typename, typename, ...)&gt;\n","dateCreated":"2019-02-28T21:25:26+08:00","dateModified":"2019-05-11T20:31:56+08:00","datePublished":"2019-02-28T21:25:26+08:00","description":"这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的.\n最近比较喜欢光污染背景。","headline":"Tiny notes of Lambda Expression in C++","image":[null,"https://bouvardia0703.github.io/Past201902/WallpaperStudio10-80798.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/","keywords":"Develop","thumbnailUrl":"https://bouvardia0703.github.io/Past201902/WallpaperStudio10-80798.jpg"}</script>
     <meta name="description" content="这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的. 最近比较喜欢光污染背景。">
 <meta name="keywords" content="Develop">
 <meta property="og:type" content="blog">
@@ -22,7 +22,7 @@
 <meta property="og:site_name" content="Bouvardia&#39;s Blog">
 <meta property="og:description" content="这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的. 最近比较喜欢光污染背景。">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-02-28T14:24:47.204Z">
+<meta property="og:updated_time" content="2019-05-11T12:31:56.995Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Tiny notes of Lambda Expression in C++">
 <meta name="twitter:description" content="这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的. 最近比较喜欢光污染背景。">
@@ -35,8 +35,8 @@
     
     
     
-        <meta property="og:image" content="https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg"/>
-        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg" />
+        <meta property="og:image" content="https://bouvardia0703.github.io/Past201902/WallpaperStudio10-80798.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia0703.github.io/Past201902/WallpaperStudio10-80798.jpg" />
     
     
     <!--STYLES-->
@@ -192,7 +192,7 @@
         <div class="post-header-cover
                     text-left
                     post-header-cover--full"
-             style="background-image:url('https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg');"
+             style="background-image:url('https://bouvardia0703.github.io/Past201902/WallpaperStudio10-80798.jpg');"
              data-behavior="5">
             
                 <div class="post-header main-content-wrap text-left">

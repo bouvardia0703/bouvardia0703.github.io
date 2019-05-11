@@ -13,7 +13,7 @@
         <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
     
     
-    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"单调队列.\n\n\nDescription给定一个长度为$n$的序列，你有一次机会选中一段连续的长度不超过$d$的区间，将里面所有数字全部修改为$0$。\n请找到最长的一段连续区间，使得该区间内所有数字之和不超过$p$。\nSolution首先, 我们要改就一定改掉完全一段长为$d$的区间.\n然后我们对这个区间和跑单调队列, 这时我们得到了这个位置以及之前的区间和最大值. 不难发现随着$i$右移, 可行的左端点一定会随之右移, 这个过程可以跟随单调队列跑, 注意每次删去不合法的队头(也就是队头删去$d$个位置后小于左端点). 我们不断右移左端点, 直到区间和小于等于$p$, 同时队头也跟随着移动. 最后更新答案.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cctype&gt;using namespace std;const int maxn = 2e+6 + 5;typedef long long ll;int n, d;ll a[maxn], p, hd, tl, sum[maxn], inv[maxn];int que[maxn];inline int rd()&#123;\tregister int x = 0; char c = getchar();\twhile(!isdigit(c)) c = getchar();\twhile(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();\treturn x;&#125;inline ll rdll()&#123;\tregister ll x = 0; char c = getchar();\twhile(!isdigit(c)) c = getchar();\twhile(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();\treturn x;&#125;int main()&#123;\tn = rd(); p = rdll(); d = rd();\tfor(int i = 1; i &lt;= n; ++i) a[i] = rdll(), sum[i] = sum[i - 1] + a[i];\tfor(int i = d; i &lt;= n; ++i) inv[i] = sum[i] - sum[i - d];\tint len = d, lft = 1; hd = 0; tl = 1;\tque[0] = d;\tfor(int i = d + 1; i &lt;= n; ++i)\t&#123;\t\twhile(hd &lt; tl &amp;&amp; inv[i] &gt; inv[que[tl - 1]]) --tl;\t\tque[tl++] = i;\t\twhile(hd &lt; tl &amp;&amp; que[hd] - d + 1 &lt; lft) hd++;\t\twhile(hd &lt; tl &amp;&amp; sum[i] - sum[lft - 1] - inv[que[hd]] &gt; p)\t\t&#123;\t\t\t++lft; //puts(\"+\");\t\t\twhile(hd &lt; tl &amp;&amp; que[hd] - d + 1 &lt; lft) hd++;\t\t&#125;\t\t\t\tlen = max(len, i - lft + 1);\t\t//printf(\"%d %d\\n\", i, len);\t&#125;\tprintf(\"%d\\n\", len);\treturn 0;&#125;\n","dateCreated":"2018-10-31T11:03:10+08:00","dateModified":"2018-10-31T15:03:22+08:00","datePublished":"2018-10-31T11:03:10+08:00","description":"单调队列.","headline":"POI2015 Wilcze doly","image":[null,"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/10/31/POI2015-WIL/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/10/31/POI2015-WIL/","keywords":"OI","thumbnailUrl":"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg"}</script>
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"单调队列.\n\n\nDescription给定一个长度为$n$的序列，你有一次机会选中一段连续的长度不超过$d$的区间，将里面所有数字全部修改为$0$。\n请找到最长的一段连续区间，使得该区间内所有数字之和不超过$p$。\nSolution首先, 我们要改就一定改掉完全一段长为$d$的区间.\n然后我们对这个区间和跑单调队列, 这时我们得到了这个位置以及之前的区间和最大值. 不难发现随着$i$右移, 可行的左端点一定会随之右移, 这个过程可以跟随单调队列跑, 注意每次删去不合法的队头(也就是队头删去$d$个位置后小于左端点). 我们不断右移左端点, 直到区间和小于等于$p$, 同时队头也跟随着移动. 最后更新答案.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cctype&gt;using namespace std;const int maxn = 2e+6 + 5;typedef long long ll;int n, d;ll a[maxn], p, hd, tl, sum[maxn], inv[maxn];int que[maxn];inline int rd()&#123;\tregister int x = 0; char c = getchar();\twhile(!isdigit(c)) c = getchar();\twhile(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();\treturn x;&#125;inline ll rdll()&#123;\tregister ll x = 0; char c = getchar();\twhile(!isdigit(c)) c = getchar();\twhile(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();\treturn x;&#125;int main()&#123;\tn = rd(); p = rdll(); d = rd();\tfor(int i = 1; i &lt;= n; ++i) a[i] = rdll(), sum[i] = sum[i - 1] + a[i];\tfor(int i = d; i &lt;= n; ++i) inv[i] = sum[i] - sum[i - d];\tint len = d, lft = 1; hd = 0; tl = 1;\tque[0] = d;\tfor(int i = d + 1; i &lt;= n; ++i)\t&#123;\t\twhile(hd &lt; tl &amp;&amp; inv[i] &gt; inv[que[tl - 1]]) --tl;\t\tque[tl++] = i;\t\twhile(hd &lt; tl &amp;&amp; que[hd] - d + 1 &lt; lft) hd++;\t\twhile(hd &lt; tl &amp;&amp; sum[i] - sum[lft - 1] - inv[que[hd]] &gt; p)\t\t&#123;\t\t\t++lft; //puts(\"+\");\t\t\twhile(hd &lt; tl &amp;&amp; que[hd] - d + 1 &lt; lft) hd++;\t\t&#125;\t\t\t\tlen = max(len, i - lft + 1);\t\t//printf(\"%d %d\\n\", i, len);\t&#125;\tprintf(\"%d\\n\", len);\treturn 0;&#125;\n","dateCreated":"2018-10-31T11:03:10+08:00","dateModified":"2019-05-11T20:34:57+08:00","datePublished":"2018-10-31T11:03:10+08:00","description":"单调队列.","headline":"POI2015 Wilcze doly","image":[null,"https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/10/31/POI2015-WIL/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/10/31/POI2015-WIL/","keywords":"OI","thumbnailUrl":"https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg"}</script>
     <meta name="description" content="单调队列.">
 <meta name="keywords" content="OI">
 <meta property="og:type" content="blog">
@@ -22,7 +22,7 @@
 <meta property="og:site_name" content="Bouvardia&#39;s Blog">
 <meta property="og:description" content="单调队列.">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2018-10-31T07:03:22.126Z">
+<meta property="og:updated_time" content="2019-05-11T12:34:57.072Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="POI2015 Wilcze doly">
 <meta name="twitter:description" content="单调队列.">
@@ -35,8 +35,8 @@
     
     
     
-        <meta property="og:image" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg"/>
-        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg" />
+        <meta property="og:image" content="https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg" />
     
     
     <!--STYLES-->
@@ -192,7 +192,7 @@
         <div class="post-header-cover
                     text-left
                     post-header-cover--full"
-             style="background-image:url('https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg');"
+             style="background-image:url('https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181023183712.jpg');"
              data-behavior="5">
             
                 <div class="post-header main-content-wrap text-left">

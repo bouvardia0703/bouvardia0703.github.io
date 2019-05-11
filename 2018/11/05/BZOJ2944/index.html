@@ -13,7 +13,7 @@
         <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
     
     
-    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Catalan.\n\n\nDescription一棵二叉树要么为空，要么由一个结点和两棵与其相连的树组成。这两棵树分别称为左子树和右子树。每个结点处有一个英文字母。不包括在任何子树内的结点称为根结点。我们定义二叉搜索树(BST)为：若按字母表中的先后顺序排列，则二叉树的任一个结点均满足，其左子树上的所有字母均在该结点字母之前，而其右子树上所有字母均在该结点字母之后。\n于是，一棵BST的代码为：\n如果是一棵空树，则代码中不包括任何字母，即为空串；\n如果不是空树，则代码为：根结点上的字母，紧跟着左子树的代码和右子树的代码。\n一棵含$k$个结点的BST，其代码会有$k$个小写英文字母，按照字母顺序排列它所有可能的代码，并用$(n,k)$表示其中的第$n$条代码。\n例如，一棵有4个结点的BST共有14个不同的代码，按字母顺序列出：abcd 、abdc、 acbd、 adbc、 adcb、 bacd、 badc、 cabd、 cbad、 dabc、 dacb、 dbac、 dcab、 dcba。\nSolution$n$个节点的二叉树个数有卡塔兰数个, 那么当根确定时, 我们就可以递归地做左右子树. 当树的规模确定时, 我们可以枚举左右子树的规模来计算排名.\n递归边界是某棵树为空.\n当我们计算出排名对应当前左子树规模的第$i$名时, 我们有:\n考虑排名是一个$Catalan_{r}$进制的数字, 那么右子树每完成一轮排名, 左子树就+1, 且初始为1, 所以对应左右子树的排名分别是: $\\lceil \\frac{i}{C_r} \\rceil, i \\% C_r$, 注意如果余数为$0$, 实际上是$C_r$.\n记得向右子问题传一个字符的偏移量$\\Delta+l+1$.\n1234567891011121314151617181920212223242526272829303132333435363738#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cmath&gt;using namespace std;typedef long long ll;int k;ll n, c[20];void dfs(ll N, int K, int delta) &#123;  int ls = 0, rs = K - 1;  while (N) &#123;    if (N &gt; c[ls] * c[rs]) &#123;      N -= c[ls] * c[rs];      ls++; rs--;    &#125;    else break;  &#125;  printf(\"%c\", char(ls + delta + 'a'));  if (ls) dfs((N - 1) / c[rs] + 1, ls, delta);  if (rs) &#123;    ll newrank = N % c[rs];    if (!newrank) newrank = c[rs];    dfs(newrank, rs, delta + ls + 1);  &#125;&#125;int main() &#123;  c[0] = 1;  for (int i = 1; i &lt;= 19; ++i) c[i] = c[i - 1] * (4 * i - 2) / (i + 1);//, printf(\"%lld\\n\", c[i]);  scanf(\"%lld%d\", &amp;n, &amp;k);  dfs(n, k, 0);  return 0;&#125;\n","dateCreated":"2018-11-05T18:18:20+08:00","dateModified":"2018-11-05T18:40:46+08:00","datePublished":"2018-11-05T18:18:20+08:00","description":"Catalan.","headline":"BZOJ2944 POI2000 代码","image":[null,"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/11/05/BZOJ2944/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/11/05/BZOJ2944/","keywords":"OI","thumbnailUrl":"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg"}</script>
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Catalan.\n\n\nDescription一棵二叉树要么为空，要么由一个结点和两棵与其相连的树组成。这两棵树分别称为左子树和右子树。每个结点处有一个英文字母。不包括在任何子树内的结点称为根结点。我们定义二叉搜索树(BST)为：若按字母表中的先后顺序排列，则二叉树的任一个结点均满足，其左子树上的所有字母均在该结点字母之前，而其右子树上所有字母均在该结点字母之后。\n于是，一棵BST的代码为：\n如果是一棵空树，则代码中不包括任何字母，即为空串；\n如果不是空树，则代码为：根结点上的字母，紧跟着左子树的代码和右子树的代码。\n一棵含$k$个结点的BST，其代码会有$k$个小写英文字母，按照字母顺序排列它所有可能的代码，并用$(n,k)$表示其中的第$n$条代码。\n例如，一棵有4个结点的BST共有14个不同的代码，按字母顺序列出：abcd 、abdc、 acbd、 adbc、 adcb、 bacd、 badc、 cabd、 cbad、 dabc、 dacb、 dbac、 dcab、 dcba。\nSolution$n$个节点的二叉树个数有卡塔兰数个, 那么当根确定时, 我们就可以递归地做左右子树. 当树的规模确定时, 我们可以枚举左右子树的规模来计算排名.\n递归边界是某棵树为空.\n当我们计算出排名对应当前左子树规模的第$i$名时, 我们有:\n考虑排名是一个$Catalan_{r}$进制的数字, 那么右子树每完成一轮排名, 左子树就+1, 且初始为1, 所以对应左右子树的排名分别是: $\\lceil \\frac{i}{C_r} \\rceil, i \\% C_r$, 注意如果余数为$0$, 实际上是$C_r$.\n记得向右子问题传一个字符的偏移量$\\Delta+l+1$.\n1234567891011121314151617181920212223242526272829303132333435363738#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cmath&gt;using namespace std;typedef long long ll;int k;ll n, c[20];void dfs(ll N, int K, int delta) &#123;  int ls = 0, rs = K - 1;  while (N) &#123;    if (N &gt; c[ls] * c[rs]) &#123;      N -= c[ls] * c[rs];      ls++; rs--;    &#125;    else break;  &#125;  printf(\"%c\", char(ls + delta + 'a'));  if (ls) dfs((N - 1) / c[rs] + 1, ls, delta);  if (rs) &#123;    ll newrank = N % c[rs];    if (!newrank) newrank = c[rs];    dfs(newrank, rs, delta + ls + 1);  &#125;&#125;int main() &#123;  c[0] = 1;  for (int i = 1; i &lt;= 19; ++i) c[i] = c[i - 1] * (4 * i - 2) / (i + 1);//, printf(\"%lld\\n\", c[i]);  scanf(\"%lld%d\", &amp;n, &amp;k);  dfs(n, k, 0);  return 0;&#125;\n","dateCreated":"2018-11-05T18:18:20+08:00","dateModified":"2019-05-11T20:33:03+08:00","datePublished":"2018-11-05T18:18:20+08:00","description":"Catalan.","headline":"BZOJ2944 POI2000 代码","image":[null,"https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/11/05/BZOJ2944/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/11/05/BZOJ2944/","keywords":"OI","thumbnailUrl":"https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg"}</script>
     <meta name="description" content="Catalan.">
 <meta name="keywords" content="OI">
 <meta property="og:type" content="blog">
@@ -22,7 +22,7 @@
 <meta property="og:site_name" content="Bouvardia&#39;s Blog">
 <meta property="og:description" content="Catalan.">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2018-11-05T10:40:46.473Z">
+<meta property="og:updated_time" content="2019-05-11T12:33:03.311Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="BZOJ2944 POI2000 代码">
 <meta name="twitter:description" content="Catalan.">
@@ -35,8 +35,8 @@
     
     
     
-        <meta property="og:image" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg"/>
-        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg" />
+        <meta property="og:image" content="https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg" />
     
     
     <!--STYLES-->
@@ -192,7 +192,7 @@
         <div class="post-header-cover
                     text-left
                     post-header-cover--full"
-             style="background-image:url('https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg');"
+             style="background-image:url('https://bouvardia0703.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030063744.jpg');"
              data-behavior="5">
             
                 <div class="post-header main-content-wrap text-left">
