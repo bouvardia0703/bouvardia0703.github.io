@@ -1,0 +1,601 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>March Training Contest 3 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"No Abstract.\n\nT1Des.给一个序列每个位置选一个不超过$2^m$的数, 并且每一位不能被这一位指定的数整除, 并且不能和上一位有交.\nSol.DP的过程就是把上一位的补集的所有子集的方案算进来嘛, FMT.\n然后每做一次特殊处理一下, 把倍数的都毙掉, 继续转移.\n12\nT2Des.\n\\begin{align}\n\\sum_{k=a}^{b}\\sum_{i}\\sum_{j}[lcm(i,j)=k]\n\\end{align}$i,j$交换位置只贡献一次\nSol.\nA = \\frac{F(b) - F(a-1) + (b - a + 1)}{2}Conclusion I\n\\text{Let }g(x) = \\sum_{i}\\sum_{j}[lcm(i,j)=x], f(x) = \\sigma^2(x). \\text{Then:}\\\\\nf(x) = \\sum_{d|n}g(d).Prove$f(x)$的定义是遍历每一对可重的约数, 显然这些约数对的最小公倍数一定整除$x$, 并且只有这些约数对的最小公倍数整除$x$.\n莫比乌斯反演\ng(x) = \\sum_{d|x}\\mu(d)f(\\frac{x}{d}) = \\sum_{d|x}\\mu(d)\\sigma^2(\\frac{x}{d})Conclusion II\ng(x) = \\sigma(x^2)Prove先咕着.\nConclusion III\ng(x) = \\sum_{d|x}2^{|\\omega|}, \\omega = \\{p | p \\text{ is prime, } p |d\\}.并且$2^{|\\omega|}$还是$x$的无平方因子的约数个数, 所以有:\n\n2^{|\\omega|} = \\sum_{d|x}{\\mu^2(x)}做各种卷积, 得到:\n\ng(x) = (\\mu^2*\\sigma)(x)枚举约数, 就有:\n\n\\sum_{i=1}^{n}\\mu^2(i)\\sum_{j=1}^{\\lfloor\\frac{n}{i}\\rfloor}\\sigma(j)$\\sigma$可以快速分块. $\\mu^2$我们可以枚举平方因子群, 一开始有$n$个数, 减去含至少一个平方因子的, 加上两个, 减去三个……\n式子就是:\n\n\\sum_{i=1}^{\\sqrt{N}}\\mu(i)\\lfloor\\frac{N}{i^2}\\rfloor然后杜教筛就被踩爆了。\n12\nT3Des.有若干支队伍, 给定出发和返回的时刻. 有规则: 出发时门自动打开, 如果有钥匙可以关上. 返回时要么门开着, 要么有钥匙, 但返回后无论是否有钥匙都可以关门. $n$支队伍只能有$k$把钥匙, 求门的最长关闭时间. 保证所有的$l,r$都不相同.\nSol.把所有坐标排序, 考察相邻两个坐标, 有四种情况, 讨论一下就可以判断这其中谁必须有钥匙.\n对于双方都要有钥匙的, 连一条边, 权值为收益, 只有两点都选时贡献. 最后最多连成若干条链. 做DP即可.\n12\n","dateCreated":"2019-03-06T21:36:14+08:00","dateModified":"2019-03-07T07:37:20+08:00","datePublished":"2019-03-06T21:36:14+08:00","description":"No Abstract.","headline":"March Training Contest 3","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/03/06/march-contest-3/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/03/06/march-contest-3/","keywords":"OI"}</script>
+    <meta name="description" content="No Abstract.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="March Training Contest 3">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/03/06/march-contest-3/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="No Abstract.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-03-06T23:37:20.699Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="March Training Contest 3">
+<meta name="twitter:description" content="No Abstract.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            March Training Contest 3
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-03-06T21:36:14+08:00">
+	
+		    Mar 06, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>No Abstract.</p>
+<a id="more"></a>
+<h1 id="T1"><a href="#T1" class="headerlink" title="T1"></a>T1</h1><h2 id="Des"><a href="#Des" class="headerlink" title="Des."></a>Des.</h2><p>给一个序列每个位置选一个不超过$2^m$的数, 并且每一位不能被这一位指定的数整除, 并且不能和上一位有交.</p>
+<h2 id="Sol"><a href="#Sol" class="headerlink" title="Sol."></a>Sol.</h2><p>DP的过程就是把上一位的补集的所有子集的方案算进来嘛, FMT.</p>
+<p>然后每做一次特殊处理一下, 把倍数的都毙掉, 继续转移.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="T2"><a href="#T2" class="headerlink" title="T2"></a>T2</h1><h2 id="Des-1"><a href="#Des-1" class="headerlink" title="Des."></a>Des.</h2><script type="math/tex; mode=display">
+\begin{align}
+\sum_{k=a}^{b}\sum_{i}\sum_{j}[lcm(i,j)=k]
+\end{align}</script><p>$i,j$交换位置只贡献一次</p>
+<h2 id="Sol-1"><a href="#Sol-1" class="headerlink" title="Sol."></a>Sol.</h2><script type="math/tex; mode=display">
+A = \frac{F(b) - F(a-1) + (b - a + 1)}{2}</script><h3 id="Conclusion-I"><a href="#Conclusion-I" class="headerlink" title="Conclusion I"></a>Conclusion I</h3><script type="math/tex; mode=display">
+\text{Let }g(x) = \sum_{i}\sum_{j}[lcm(i,j)=x], f(x) = \sigma^2(x). \text{Then:}\\
+f(x) = \sum_{d|n}g(d).</script><h4 id="Prove"><a href="#Prove" class="headerlink" title="Prove"></a>Prove</h4><p>$f(x)$的定义是遍历每一对可重的约数, 显然这些约数对的最小公倍数一定整除$x$, 并且只有这些约数对的最小公倍数整除$x$.</p>
+<h3 id="莫比乌斯反演"><a href="#莫比乌斯反演" class="headerlink" title="莫比乌斯反演"></a>莫比乌斯反演</h3><script type="math/tex; mode=display">
+g(x) = \sum_{d|x}\mu(d)f(\frac{x}{d}) = \sum_{d|x}\mu(d)\sigma^2(\frac{x}{d})</script><h3 id="Conclusion-II"><a href="#Conclusion-II" class="headerlink" title="Conclusion II"></a>Conclusion II</h3><script type="math/tex; mode=display">
+g(x) = \sigma(x^2)</script><h4 id="Prove-1"><a href="#Prove-1" class="headerlink" title="Prove"></a>Prove</h4><p>先咕着.</p>
+<h3 id="Conclusion-III"><a href="#Conclusion-III" class="headerlink" title="Conclusion III"></a>Conclusion III</h3><script type="math/tex; mode=display">
+g(x) = \sum_{d|x}2^{|\omega|}, \omega = \{p | p \text{ is prime, } p |d\}.</script><p>并且$2^{|\omega|}$还是$x$的无平方因子的约数个数, 所以有:</p>
+<script type="math/tex; mode=display">
+2^{|\omega|} = \sum_{d|x}{\mu^2(x)}</script><p>做各种卷积, 得到:</p>
+<script type="math/tex; mode=display">
+g(x) = (\mu^2*\sigma)(x)</script><p>枚举约数, 就有:</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{n}\mu^2(i)\sum_{j=1}^{\lfloor\frac{n}{i}\rfloor}\sigma(j)</script><p>$\sigma$可以快速分块. $\mu^2$我们可以枚举平方因子群, 一开始有$n$个数, 减去含至少一个平方因子的, 加上两个, 减去三个……</p>
+<p>式子就是:</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{\sqrt{N}}\mu(i)\lfloor\frac{N}{i^2}\rfloor</script><p>然后杜教筛就被踩爆了。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="T3"><a href="#T3" class="headerlink" title="T3"></a>T3</h1><h2 id="Des-2"><a href="#Des-2" class="headerlink" title="Des."></a>Des.</h2><p>有若干支队伍, 给定出发和返回的时刻. 有规则: 出发时门自动打开, 如果有钥匙可以关上. 返回时要么门开着, 要么有钥匙, 但返回后无论是否有钥匙都可以关门. $n$支队伍只能有$k$把钥匙, 求门的最长关闭时间. 保证所有的$l,r$都不相同.</p>
+<h2 id="Sol-2"><a href="#Sol-2" class="headerlink" title="Sol."></a>Sol.</h2><p>把所有坐标排序, 考察相邻两个坐标, 有四种情况, 讨论一下就可以判断这其中谁必须有钥匙.</p>
+<p>对于双方都要有钥匙的, 连一条边, 权值为收益, 只有两点都选时贡献. 最后最多连成若干条链. 做DP即可.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../07/march-contest-4/" data-tooltip="March Training Contest 4" aria-label="PREVIOUS: March Training Contest 4">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../topocoder-setandset-inclusion-exclusion/" data-tooltip="Topcoder SRM545 Div.1 SetAndSet 容斥" aria-label="NEXT: Topcoder SRM545 Div.1 SetAndSet 容斥">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../07/march-contest-4/" data-tooltip="March Training Contest 4" aria-label="PREVIOUS: March Training Contest 4">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../topocoder-setandset-inclusion-exclusion/" data-tooltip="Topcoder SRM545 Div.1 SetAndSet 容斥" aria-label="NEXT: Topcoder SRM545 Div.1 SetAndSet 容斥">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/06/march-contest-3/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/06/march-contest-3/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/06/march-contest-3/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/06/march-contest-3/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/06/march-contest-3/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/06/march-contest-3/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/03/06/march-contest-3/';
+                 
+                    this.page.identifier = '2019/03/06/march-contest-3/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

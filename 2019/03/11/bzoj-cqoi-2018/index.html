@@ -1,0 +1,601 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>CQOI2018 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"省选考6题, 6道板题.\n\n\nBZOJ5296Des.BSGS.\nSol.复杂度十分匪夷所思, $\\sqrt{N} \\times \\sqrt{N}$居然能过$2^{31}$???\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758#pragma GCC optimize(\"inline\")#pragma GCC optimize(3)#include &lt;bits/stdc++.h&gt;#include &lt;ext/pb_ds/assoc_container.hpp&gt;#include &lt;ext/pb_ds/hash_policy.hpp&gt; using namespace __gnu_pbds;using namespace std;typedef long long ll;gp_hash_table&lt;ll, ll&gt; h;int n, g;ll p, a, b, t;int indexa, indexb;inline ll quick_power(ll base, ll index) &#123;  ll ret = 1;  while (index) &#123;    if (index &amp; 1) ret = ret * base % p;    index &gt;&gt;= 1;    base = base * base % p;  &#125;  return ret;&#125;inline int solve(int z) &#123;  h.clear();  for (int j = 0; j &lt; t; ++j) &#123;    ll val = 1ll * z * quick_power(g, j) % p;    h[val] = j;  &#125;  int tmp = quick_power(g, t);  if (tmp == 0) &#123;    return 1;  &#125; else &#123;    for (int k = 0; k &lt;= t; ++k) &#123;      ll val = quick_power(tmp, k);      ll j = h.find(val) == h.end() ? -1 : h[val];      if (j &gt;= 0 &amp;&amp; k * t - j &gt;= 0) &#123;        return k * t - j;      &#125;    &#125;  &#125;  return 0;&#125;int main() &#123;  scanf(\"%d%lld\", &amp;g, &amp;p);  scanf(\"%d\", &amp;n);  t = (ll)sqrt(p) + 1;  for (int i = 1; i &lt;= n; ++i) &#123;    scanf(\"%lld%lld\", &amp;a, &amp;b);    indexb = solve(b);    int ans = quick_power(a, indexb);    printf(\"%d\\n\", ans);  &#125;   return 0;&#125;\nBZOJ 5297Des.有向图外向生成树计数.\nSol.Matrix - Tree 定理, 度数矩阵只保留入度, 邻接矩阵随便保留一边.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758#include &lt;bits/stdc++.h&gt;#define mod 10007using namespace std;const int maxn = 255;const int maxm = maxn * maxn;struct edge &#123;  int frm, to;&#125;e[maxm];int n, m;int mtr[maxn][maxn], bas[maxn][maxn];int gp[maxn][maxn], dgr[maxn][maxn];inline int solve(int N) &#123;  int tg = 1, ret = 1;  for (int i = 1; i &lt;= N; ++i) &#123;    // int cur = i;    for (int j = i + 1; j &lt;= N; ++j) &#123;      int a = i, b = j;      while (mtr[b][i]) &#123;        int fac = mtr[a][i] / mtr[b][i];        for (int k = i; k &lt;= N; ++k)          mtr[a][k] = (mtr[a][k] - mtr[b][k] * fac % mod + mod) % mod;        swap(a, b);      &#125;      if (a != i) &#123;        for (int k = 1; k &lt;= N; ++k)          swap(mtr[i][k], mtr[a][k]);        tg *= -1;      &#125;    &#125;    ret = (ret * mtr[i][i]) % mod;  &#125;  if (tg &gt; 0) return ret % mod;  else return (mod - ret) % mod;&#125;int main() &#123;  scanf(\"%d\", &amp;n);  scanf(\"%d\", &amp;m);  int a, b;  for (int i = 1; i &lt;= m; ++i) &#123;    scanf(\"%d%d\", &amp;a, &amp;b);    e[i] = (edge)&#123;b, a&#125;;    dgr[a][a]++;  gp[b][a]++;  &#125;  for (int i = 1; i &lt;= n; ++i)    for (int j = 1; j &lt;= n; ++j)      bas[i][j] = dgr[i][j] - gp[i][j];  for (int i = 2; i &lt;= n; ++i)    for (int j = 2; j &lt;= n; ++j)      mtr[i - 1][j - 1] = (bas[i][j] + mod) % mod;  int ret = solve(n - 1);  printf(\"%d\\n\", ret);  return 0;&#125;\nBZOJ 5298Des.令01序列中不得出现连续的1, 一个序列的特征值为$x^ay^b$, 其中$x, y$分别为$0, 1$的个数, 求所有可能方案的特征值和.\nSol.二项式定理展开然后把DP式矩阵优化一下, 但是还有更高效的方案:\n\n\\begin{align}\nx^ay^b &= (n-y)^ay^b\\\\\n       &= y^b \\sum_{i=0}^{a}{(-1)^i \\times {a \\choose i} \\times n^i \\times y^{-i}}\\\\\n       &= \\sum{fac \\times y^{a+b-i}}\n\\end{align}然后考虑转移, 依然是$[0/1]$状态的DP, 转移矩阵就是二项式系数以及一些必要的1. 见代码.\n有一些奇怪的错误就是过不去,把乘法改了就过了???\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long ll;const int maxn = 1e+7 + 7;int N, n, a, b, mod, dgr;struct matrix &#123;  ll arr[205][205];  matrix() &#123;    memset(arr, 0, sizeof arr);  &#125;  ll* operator[](const int &amp;x) &#123;    return arr[x];  &#125;  inline matrix operator*(matrix rhs) &#123;    matrix ret;    /*for (int k = 0; k &lt; N; ++k)      for (int i = 0; i &lt; N; ++i)        for (int j = 0; j &lt; N; ++j)          ret[i][j] = (ret[i][j] + arr[i][k] * rhs[k][j]) % mod;*/    for (int i = 0; i &lt; N; ++i)      for (int j = 0; j &lt; N; ++j) &#123;        for (int k = 0; k &lt; N; ++k)          if (arr[i][k] &amp;&amp; rhs[k][j])            ret[i][j] = (ret[i][j] + arr[i][k] * rhs[k][j]) % mod;      &#125;    return ret;  &#125;&#125;ress, trans;int c[205][205];inline void quick_power(matrix &amp;res, matrix base, ll index) &#123;  while (index) &#123;    if (index &amp; 1) res = res * base;    index &gt;&gt;= 1;    base = base * base;  &#125;&#125;void init() &#123;  c[0][0] = 1;  for (int i = 1; i &lt;= 200; ++i) &#123;    c[i][0] = 1;    for (int j = 1; j &lt;= i; ++j)      c[i][j] = (c[i - 1][j] + c[i - 1][j - 1]) % mod;  &#125;  for (int i = 0; i &lt; dgr; ++i) &#123;    trans[i + dgr][i] = 1;    trans[i][i] = 1;    for (int j = i; j &lt; dgr; ++j)      trans[i][dgr + j] = c[j][i];  &#125;  ress[0][0] = 1;&#125;int main() &#123;  scanf(\"%d%d%d%d\", &amp;n, &amp;a, &amp;b, &amp;mod);  int ans = 0;  dgr = a + b + 1; N = dgr * 2;  init();  quick_power(ress, trans, n);  for (int i = 0; i &lt; dgr; ++i)    ress[0][i] = (ress[0][i] + ress[0][i + dgr]) % mod;  for (int i = 0, pw = 1; i &lt;= a; ++i, pw = 1ll * pw * n % mod) &#123;    ans = (ans + 1ll * (((a - i) &amp; 1) ? -1 : 1) * pw * c[a][i] % mod * ress[0][a + b - i] % mod + mod) % mod;  &#125;  if (ans &lt; 0) ans = mod - ans;  printf(\"%d\\n\", ans);  return 0;&#125;\nBZOJ 5299Des.平面上有若干个点, 由一点走到下一点时, 连线上不能有其他未经过的点, 求所有方案数.\nSol.$O(n^22^n)$, 这复杂度怎么想都过不去结果直接莽过了???\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758#include &lt;bits/stdc++.h&gt;#define mod 100000007using namespace std;const int maxs = 1048579;const int maxn = 21;int n, x[maxn], y[maxn], ban[maxn][maxn];int f[maxs][maxn], popcnt[maxs];inline bool appr(int frm, int to, int trans) &#123;  return ((x[frm] &lt;= x[trans] &amp;&amp; x[to] &gt;= x[trans]) || (x[frm] &gt;= x[trans] &amp;&amp; x[to] &lt;= x[trans]))      &amp;&amp; ((y[frm] &lt;= y[trans] &amp;&amp; y[to] &gt;= y[trans]) || (y[frm] &gt;= y[trans] &amp;&amp; y[to] &lt;= y[trans]));&#125;int main() &#123;  scanf(\"%d\", &amp;n);  for (int i = 1; i &lt;= n; ++i) &#123;    scanf(\"%d%d\", &amp;x[i], &amp;y[i]);  &#125;  for (int i = 1; i &lt;= n; ++i)     for (int j = i + 1; j &lt;= n; ++j) &#123;      for (int k = 1; k &lt;= n; ++k) &#123;        if (k == i || k == j) continue;        if ((y[i] - y[j]) * (x[j] - x[k]) ==             (x[i] - x[j]) * (y[j] - y[k]) &amp;&amp;            appr(i, j, k))           ban[i][j] |= (1 &lt;&lt; (k - 1)),          ban[j][i] |= (1 &lt;&lt; (k - 1));          // printf(\"%d %d %d\\n\", i, j, k);      &#125;    &#125;  f[0][0] = 1;  int lim = (1 &lt;&lt; n) - 1, ans = 0;  for (int i = 0; i &lt;= lim; ++i) &#123;    popcnt[i] = popcnt[i &gt;&gt; 1] + (i &amp; 1);    if (i == 0) &#123;      for (int j = 1; j &lt;= n; ++j)         f[i | (1 &lt;&lt; (j - 1))][j] += f[i][0];    &#125; else &#123;      for (int j = 1; j &lt;= n; ++j)         if (i &amp; (1 &lt;&lt; (j - 1)))          for (int k = 1; k &lt;= n; ++k)            if (!(i &amp; (1 &lt;&lt; (k - 1)))) &#123;              if ((i &amp; ban[j][k]) == ban[j][k])                f[i | (1 &lt;&lt; (k - 1))][k] = (f[i | (1 &lt;&lt; (k - 1))][k] + f[i][j]) % mod;            &#125;    &#125;    if (popcnt[i] &gt;= 4) &#123;      for (int j = 1; j &lt;= n; ++j)        if (i &amp; (1 &lt;&lt; (j - 1)))          ans = (ans + f[i][j]) % mod;    &#125;  &#125;  printf(\"%d\\n\", ans);  return 0;&#125;\nBZOJ 5300Des.$x$连环解锁步骤数.\nSol.手玩一会(不敢相信于是去查九连环)发现确实状态$n$只和$n-1$, $n-2$有关, 列出递推式, 得到:\n\n\\begin{align}\n&F(x) = \\frac{1}{3}{(2^{n+1}-1)}, \\text{ if x is odd}, \\\\\n&F(x) = \\frac{1}{3}{(2^{n+1}-2)}, \\text{ otherwise.}\n\\end{align}然后这题不带取模, 需要使用FFT(Java或Python)\n1234567891011121314151617181920212223242526272829303132333435363738import java.io.*;import java.util.*;import java.math.*;public class Main &#123;  public static BigInteger QuickPower(BigInteger base, int index) &#123;    BigInteger ret = new BigInteger(Integer.toString(1));    while (index &gt; 0) &#123;      if ((index &amp; 1) &gt; 0) ret = ret.multiply(base);      index &gt;&gt;= 1;      base = base.multiply(base);    &#125;    return ret;  &#125;  public static void main(String args[]) throws Exception &#123;    Scanner cin = new Scanner(System.in);    int m = cin.nextInt();    for (int i = 0; i &lt; m; ++i) &#123;      int n = cin.nextInt();      if ((n &amp; 1) &gt; 0) &#123;        BigInteger Thr = new BigInteger(Integer.toString(3));        BigInteger Bin = new BigInteger(Integer.toString(2));        BigInteger One = new BigInteger(Integer.toString(1));        BigInteger Res = QuickPower(Bin, n + 1);        Res = Res.subtract(One);        Res = Res.divide(Thr);        System.out.println(Res.toString());      &#125; else &#123;        BigInteger Thr = new BigInteger(Integer.toString(3));        BigInteger Bin = new BigInteger(Integer.toString(2));        BigInteger Res = QuickPower(Bin, n + 1);        Res = Res.subtract(Bin);        Res = Res.divide(Thr);        System.out.println(Res.toString());      &#125;    &#125;  &#125;&#125;\nBZOJ 5301Des.多次询问区间中满足异或和为$k$的子段数量.\nSol.莫队. 但是怎么快速增量呢? 把前缀和而不是真实值扔桶里, 这样查询$sum_x \\oplus k$时, 桶中的元素刚好满足和该位置组成的区间异或和为$k$, 注意特殊处理$r$位置插入删除时, $l - 1$的前缀和.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;bits/stdc++.h&gt;using namespace std;const int maxn = 1e+5 + 5;int bkt[maxn], a[maxn], bel[maxn], tagl, tagr;int n, m, k, blo, ans[maxn], res;int sum[maxn], L, R;struct question &#123;  int l, r, id;  inline bool operator&lt;(const question &amp;rhs) const &#123;    return bel[l] == bel[rhs.l] ? r &lt; rhs.r : bel[l] &lt; bel[rhs.l];  &#125;&#125;q[maxn];inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;inline void addr(const int &amp;x) &#123;  bkt[sum[x]]++;  res += bkt[sum[x] ^ k];  if ((sum[x] ^ k) == sum[L - 1]) res++;&#125;inline void addl(const int &amp;x) &#123;  bkt[sum[x]]++;  res += bkt[sum[x - 1] ^ k];&#125;inline void delr(const int &amp;x) &#123;  res -= bkt[sum[x] ^ k];  bkt[sum[x]]--;  if ((sum[x] ^ k) == sum[L - 1]) res--;&#125;inline void dell(const int &amp;x) &#123;  res -= bkt[sum[x - 1] ^ k];  bkt[sum[x]]--;&#125;int main() &#123;  n = rd(); m = rd(); k = rd();  blo = sqrt(n);  for (int i = 1; i &lt;= n; ++i)     a[i] = rd(), bel[i] = (i - 1) / blo + 1, sum[i] = sum[i - 1] ^ a[i];  for (int i = 1; i &lt;= m; ++i) &#123;    q[i].l = rd(); q[i].r = rd();    q[i].id = i;  &#125;  sort(q + 1, q + 1 + m);  L = 1, R = 0;  for (int i = 1; i &lt;= m; ++i) &#123;    while (R &lt; q[i].r) addr(++R);    while (L &gt; q[i].l) addl(--L);    while (R &gt; q[i].r) delr(R--);    while (L &lt; q[i].l) dell(L++);    ans[q[i].id] = res;  &#125;  for (int i = 1; i &lt;= m; ++i)    printf(\"%d\\n\", ans[i]);  return 0;&#125;\n","dateCreated":"2019-03-11T23:51:54+08:00","dateModified":"2019-03-14T10:30:02+08:00","datePublished":"2019-03-11T23:51:54+08:00","description":"省选考6题, 6道板题.","headline":"CQOI2018","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/","keywords":"OI"}</script>
+    <meta name="description" content="省选考6题, 6道板题.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="CQOI2018">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="省选考6题, 6道板题.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-03-14T02:30:02.975Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CQOI2018">
+<meta name="twitter:description" content="省选考6题, 6道板题.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            CQOI2018
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-03-11T23:51:54+08:00">
+	
+		    Mar 11, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>省选考6题, 6道板题.</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ5296"><span class="toc-text">BZOJ5296</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Des"><span class="toc-text">Des.</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sol"><span class="toc-text">Sol.</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-5297"><span class="toc-text">BZOJ 5297</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Des-1"><span class="toc-text">Des.</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sol-1"><span class="toc-text">Sol.</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-5298"><span class="toc-text">BZOJ 5298</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Des-2"><span class="toc-text">Des.</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sol-2"><span class="toc-text">Sol.</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-5299"><span class="toc-text">BZOJ 5299</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Des-3"><span class="toc-text">Des.</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sol-3"><span class="toc-text">Sol.</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-5300"><span class="toc-text">BZOJ 5300</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Des-4"><span class="toc-text">Des.</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sol-4"><span class="toc-text">Sol.</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-5301"><span class="toc-text">BZOJ 5301</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Des-5"><span class="toc-text">Des.</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Sol-5"><span class="toc-text">Sol.</span></a></li></ol></li></ol>
+<h1 id="BZOJ5296"><a href="#BZOJ5296" class="headerlink" title="BZOJ5296"></a>BZOJ5296</h1><h2 id="Des"><a href="#Des" class="headerlink" title="Des."></a>Des.</h2><p>BSGS.</p>
+<h2 id="Sol"><a href="#Sol" class="headerlink" title="Sol."></a>Sol.</h2><p>复杂度十分匪夷所思, $\sqrt{N} \times \sqrt{N}$居然能过$2^{31}$???</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC optimize(<span class="meta-string">"inline"</span>)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC optimize(3)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;ext/pb_ds/assoc_container.hpp&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;ext/pb_ds/hash_policy.hpp&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> __gnu_pbds;</span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line">gp_hash_table&lt;ll, ll&gt; h;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, g;</span><br><span class="line">ll p, a, b, t;</span><br><span class="line"><span class="keyword">int</span> indexa, indexb;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">quick_power</span><span class="params">(ll base, ll index)</span> </span>&#123;</span><br><span class="line">  ll ret = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">while</span> (index) &#123;</span><br><span class="line">    <span class="keyword">if</span> (index &amp; <span class="number">1</span>) ret = ret * base % p;</span><br><span class="line">    index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">    base = base * base % p;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">solve</span><span class="params">(<span class="keyword">int</span> z)</span> </span>&#123;</span><br><span class="line">  h.clear();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; t; ++j) &#123;</span><br><span class="line">    ll val = <span class="number">1l</span>l * z * quick_power(g, j) % p;</span><br><span class="line">    h[val] = j;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">int</span> tmp = quick_power(g, t);</span><br><span class="line">  <span class="keyword">if</span> (tmp == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt;= t; ++k) &#123;</span><br><span class="line">      ll val = quick_power(tmp, k);</span><br><span class="line">      ll j = h.find(val) == h.end() ? <span class="number">-1</span> : h[val];</span><br><span class="line">      <span class="keyword">if</span> (j &gt;= <span class="number">0</span> &amp;&amp; k * t - j &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> k * t - j;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d%lld"</span>, &amp;g, &amp;p);</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">  t = (ll)<span class="built_in">sqrt</span>(p) + <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%lld%lld"</span>, &amp;a, &amp;b);</span><br><span class="line">    indexb = solve(b);</span><br><span class="line">    <span class="keyword">int</span> ans = quick_power(a, indexb);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">  &#125; </span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-5297"><a href="#BZOJ-5297" class="headerlink" title="BZOJ 5297"></a>BZOJ 5297</h1><h2 id="Des-1"><a href="#Des-1" class="headerlink" title="Des."></a>Des.</h2><p>有向图外向生成树计数.</p>
+<h2 id="Sol-1"><a href="#Sol-1" class="headerlink" title="Sol."></a>Sol.</h2><p>Matrix - Tree 定理, 度数矩阵只保留入度, 邻接矩阵随便保留一边.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> mod 10007</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">255</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxm = maxn * maxn;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> frm, to;</span><br><span class="line">&#125;e[maxm];</span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line"><span class="keyword">int</span> mtr[maxn][maxn], bas[maxn][maxn];</span><br><span class="line"><span class="keyword">int</span> gp[maxn][maxn], dgr[maxn][maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">solve</span><span class="params">(<span class="keyword">int</span> N)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> tg = <span class="number">1</span>, ret = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; ++i) &#123;</span><br><span class="line">    <span class="comment">// int cur = i;</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = i + <span class="number">1</span>; j &lt;= N; ++j) &#123;</span><br><span class="line">      <span class="keyword">int</span> a = i, b = j;</span><br><span class="line">      <span class="keyword">while</span> (mtr[b][i]) &#123;</span><br><span class="line">        <span class="keyword">int</span> fac = mtr[a][i] / mtr[b][i];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> k = i; k &lt;= N; ++k)</span><br><span class="line">          mtr[a][k] = (mtr[a][k] - mtr[b][k] * fac % mod + mod) % mod;</span><br><span class="line">        swap(a, b);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (a != i) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= N; ++k)</span><br><span class="line">          swap(mtr[i][k], mtr[a][k]);</span><br><span class="line">        tg *= <span class="number">-1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ret = (ret * mtr[i][i]) % mod;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (tg &gt; <span class="number">0</span>) <span class="keyword">return</span> ret % mod;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">return</span> (mod - ret) % mod;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;m);</span><br><span class="line">  <span class="keyword">int</span> a, b;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;a, &amp;b);</span><br><span class="line">    e[i] = (edge)&#123;b, a&#125;;</span><br><span class="line">    dgr[a][a]++;  gp[b][a]++;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; ++j)</span><br><span class="line">      bas[i][j] = dgr[i][j] - gp[i][j];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i)</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">2</span>; j &lt;= n; ++j)</span><br><span class="line">      mtr[i - <span class="number">1</span>][j - <span class="number">1</span>] = (bas[i][j] + mod) % mod;</span><br><span class="line">  <span class="keyword">int</span> ret = solve(n - <span class="number">1</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ret);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-5298"><a href="#BZOJ-5298" class="headerlink" title="BZOJ 5298"></a>BZOJ 5298</h1><h2 id="Des-2"><a href="#Des-2" class="headerlink" title="Des."></a>Des.</h2><p>令01序列中不得出现连续的1, 一个序列的特征值为$x^ay^b$, 其中$x, y$分别为$0, 1$的个数, 求所有可能方案的特征值和.</p>
+<h2 id="Sol-2"><a href="#Sol-2" class="headerlink" title="Sol."></a>Sol.</h2><p>二项式定理展开然后把DP式矩阵优化一下, 但是还有更高效的方案:</p>
+<script type="math/tex; mode=display">
+\begin{align}
+x^ay^b &= (n-y)^ay^b\\
+       &= y^b \sum_{i=0}^{a}{(-1)^i \times {a \choose i} \times n^i \times y^{-i}}\\
+       &= \sum{fac \times y^{a+b-i}}
+\end{align}</script><p>然后考虑转移, 依然是$[0/1]$状态的DP, 转移矩阵就是二项式系数以及一些必要的1. 见代码.</p>
+<p><del>有一些奇怪的错误就是过不去,把乘法改了就过了???</del></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+7</span> + <span class="number">7</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> N, n, a, b, mod, dgr;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">matrix</span> &#123;</span></span><br><span class="line">  ll arr[<span class="number">205</span>][<span class="number">205</span>];</span><br><span class="line">  matrix() &#123;</span><br><span class="line">    <span class="built_in">memset</span>(arr, <span class="number">0</span>, <span class="keyword">sizeof</span> arr);</span><br><span class="line">  &#125;</span><br><span class="line">  ll* <span class="keyword">operator</span>[](<span class="keyword">const</span> <span class="keyword">int</span> &amp;x) &#123;</span><br><span class="line">    <span class="keyword">return</span> arr[x];</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">inline</span> matrix <span class="keyword">operator</span>*(matrix rhs) &#123;</span><br><span class="line">    matrix ret;</span><br><span class="line">    <span class="comment">/*for (int k = 0; k &lt; N; ++k)</span></span><br><span class="line"><span class="comment">      for (int i = 0; i &lt; N; ++i)</span></span><br><span class="line"><span class="comment">        for (int j = 0; j &lt; N; ++j)</span></span><br><span class="line"><span class="comment">          ret[i][j] = (ret[i][j] + arr[i][k] * rhs[k][j]) % mod;*/</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i)</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; N; ++j) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; N; ++k)</span><br><span class="line">          <span class="keyword">if</span> (arr[i][k] &amp;&amp; rhs[k][j])</span><br><span class="line">            ret[i][j] = (ret[i][j] + arr[i][k] * rhs[k][j]) % mod;</span><br><span class="line">      &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;ress, trans;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> c[<span class="number">205</span>][<span class="number">205</span>];</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">quick_power</span><span class="params">(matrix &amp;res, matrix base, ll index)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">while</span> (index) &#123;</span><br><span class="line">    <span class="keyword">if</span> (index &amp; <span class="number">1</span>) res = res * base;</span><br><span class="line">    index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">    base = base * base;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  c[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">200</span>; ++i) &#123;</span><br><span class="line">    c[i][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= i; ++j)</span><br><span class="line">      c[i][j] = (c[i - <span class="number">1</span>][j] + c[i - <span class="number">1</span>][j - <span class="number">1</span>]) % mod;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; dgr; ++i) &#123;</span><br><span class="line">    trans[i + dgr][i] = <span class="number">1</span>;</span><br><span class="line">    trans[i][i] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = i; j &lt; dgr; ++j)</span><br><span class="line">      trans[i][dgr + j] = c[j][i];</span><br><span class="line">  &#125;</span><br><span class="line">  ress[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d%d%d%d"</span>, &amp;n, &amp;a, &amp;b, &amp;mod);</span><br><span class="line">  <span class="keyword">int</span> ans = <span class="number">0</span>;</span><br><span class="line">  dgr = a + b + <span class="number">1</span>; N = dgr * <span class="number">2</span>;</span><br><span class="line">  init();</span><br><span class="line">  quick_power(ress, trans, n);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; dgr; ++i)</span><br><span class="line">    ress[<span class="number">0</span>][i] = (ress[<span class="number">0</span>][i] + ress[<span class="number">0</span>][i + dgr]) % mod;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>, pw = <span class="number">1</span>; i &lt;= a; ++i, pw = <span class="number">1l</span>l * pw * n % mod) &#123;</span><br><span class="line">    ans = (ans + <span class="number">1l</span>l * (((a - i) &amp; <span class="number">1</span>) ? <span class="number">-1</span> : <span class="number">1</span>) * pw * c[a][i] % mod * ress[<span class="number">0</span>][a + b - i] % mod + mod) % mod;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (ans &lt; <span class="number">0</span>) ans = mod - ans;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-5299"><a href="#BZOJ-5299" class="headerlink" title="BZOJ 5299"></a>BZOJ 5299</h1><h2 id="Des-3"><a href="#Des-3" class="headerlink" title="Des."></a>Des.</h2><p>平面上有若干个点, 由一点走到下一点时, 连线上不能有其他未经过的点, 求所有方案数.</p>
+<h2 id="Sol-3"><a href="#Sol-3" class="headerlink" title="Sol."></a>Sol.</h2><p>$O(n^22^n)$, 这复杂度怎么想都过不去结果直接莽过了???</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> mod 100000007</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxs = <span class="number">1048579</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">21</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, x[maxn], y[maxn], ban[maxn][maxn];</span><br><span class="line"><span class="keyword">int</span> f[maxs][maxn], popcnt[maxs];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">appr</span><span class="params">(<span class="keyword">int</span> frm, <span class="keyword">int</span> to, <span class="keyword">int</span> trans)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> ((x[frm] &lt;= x[trans] &amp;&amp; x[to] &gt;= x[trans]) || (x[frm] &gt;= x[trans] &amp;&amp; x[to] &lt;= x[trans]))</span><br><span class="line">      &amp;&amp; ((y[frm] &lt;= y[trans] &amp;&amp; y[to] &gt;= y[trans]) || (y[frm] &gt;= y[trans] &amp;&amp; y[to] &lt;= y[trans]));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;x[i], &amp;y[i]);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) </span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = i + <span class="number">1</span>; j &lt;= n; ++j) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= n; ++k) &#123;</span><br><span class="line">        <span class="keyword">if</span> (k == i || k == j) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">if</span> ((y[i] - y[j]) * (x[j] - x[k]) == </span><br><span class="line">            (x[i] - x[j]) * (y[j] - y[k]) &amp;&amp;</span><br><span class="line">            appr(i, j, k)) </span><br><span class="line">          ban[i][j] |= (<span class="number">1</span> &lt;&lt; (k - <span class="number">1</span>)),</span><br><span class="line">          ban[j][i] |= (<span class="number">1</span> &lt;&lt; (k - <span class="number">1</span>));</span><br><span class="line">          <span class="comment">// printf("%d %d %d\n", i, j, k);</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  f[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">int</span> lim = (<span class="number">1</span> &lt;&lt; n) - <span class="number">1</span>, ans = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= lim; ++i) &#123;</span><br><span class="line">    popcnt[i] = popcnt[i &gt;&gt; <span class="number">1</span>] + (i &amp; <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">if</span> (i == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; ++j) </span><br><span class="line">        f[i | (<span class="number">1</span> &lt;&lt; (j - <span class="number">1</span>))][j] += f[i][<span class="number">0</span>];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; ++j) </span><br><span class="line">        <span class="keyword">if</span> (i &amp; (<span class="number">1</span> &lt;&lt; (j - <span class="number">1</span>)))</span><br><span class="line">          <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= n; ++k)</span><br><span class="line">            <span class="keyword">if</span> (!(i &amp; (<span class="number">1</span> &lt;&lt; (k - <span class="number">1</span>)))) &#123;</span><br><span class="line">              <span class="keyword">if</span> ((i &amp; ban[j][k]) == ban[j][k])</span><br><span class="line">                f[i | (<span class="number">1</span> &lt;&lt; (k - <span class="number">1</span>))][k] = (f[i | (<span class="number">1</span> &lt;&lt; (k - <span class="number">1</span>))][k] + f[i][j]) % mod;</span><br><span class="line">            &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (popcnt[i] &gt;= <span class="number">4</span>) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= n; ++j)</span><br><span class="line">        <span class="keyword">if</span> (i &amp; (<span class="number">1</span> &lt;&lt; (j - <span class="number">1</span>)))</span><br><span class="line">          ans = (ans + f[i][j]) % mod;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-5300"><a href="#BZOJ-5300" class="headerlink" title="BZOJ 5300"></a>BZOJ 5300</h1><h2 id="Des-4"><a href="#Des-4" class="headerlink" title="Des."></a>Des.</h2><p>$x$连环解锁步骤数.</p>
+<h2 id="Sol-4"><a href="#Sol-4" class="headerlink" title="Sol."></a>Sol.</h2><p>手玩一会(<del>不敢相信于是去查九连环</del>)发现确实状态$n$只和$n-1$, $n-2$有关, 列出递推式, 得到:</p>
+<script type="math/tex; mode=display">
+\begin{align}
+&F(x) = \frac{1}{3}{(2^{n+1}-1)}, \text{ if x is odd}, \\
+&F(x) = \frac{1}{3}{(2^{n+1}-2)}, \text{ otherwise.}
+\end{align}</script><p>然后这题不带取模, 需要使用FFT(<del>Java或Python</del>)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"><span class="keyword">import</span> java.math.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Main</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> BigInteger <span class="title">QuickPower</span><span class="params">(BigInteger base, <span class="keyword">int</span> index)</span> </span>&#123;</span><br><span class="line">    BigInteger ret = <span class="keyword">new</span> BigInteger(Integer.toString(<span class="number">1</span>));</span><br><span class="line">    <span class="keyword">while</span> (index &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> ((index &amp; <span class="number">1</span>) &gt; <span class="number">0</span>) ret = ret.multiply(base);</span><br><span class="line">      index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">      base = base.multiply(base);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    Scanner cin = <span class="keyword">new</span> Scanner(System.in);</span><br><span class="line">    <span class="keyword">int</span> m = cin.nextInt();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i) &#123;</span><br><span class="line">      <span class="keyword">int</span> n = cin.nextInt();</span><br><span class="line">      <span class="keyword">if</span> ((n &amp; <span class="number">1</span>) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        BigInteger Thr = <span class="keyword">new</span> BigInteger(Integer.toString(<span class="number">3</span>));</span><br><span class="line">        BigInteger Bin = <span class="keyword">new</span> BigInteger(Integer.toString(<span class="number">2</span>));</span><br><span class="line">        BigInteger One = <span class="keyword">new</span> BigInteger(Integer.toString(<span class="number">1</span>));</span><br><span class="line">        BigInteger Res = QuickPower(Bin, n + <span class="number">1</span>);</span><br><span class="line">        Res = Res.subtract(One);</span><br><span class="line">        Res = Res.divide(Thr);</span><br><span class="line">        System.out.println(Res.toString());</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        BigInteger Thr = <span class="keyword">new</span> BigInteger(Integer.toString(<span class="number">3</span>));</span><br><span class="line">        BigInteger Bin = <span class="keyword">new</span> BigInteger(Integer.toString(<span class="number">2</span>));</span><br><span class="line">        BigInteger Res = QuickPower(Bin, n + <span class="number">1</span>);</span><br><span class="line">        Res = Res.subtract(Bin);</span><br><span class="line">        Res = Res.divide(Thr);</span><br><span class="line">        System.out.println(Res.toString());</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-5301"><a href="#BZOJ-5301" class="headerlink" title="BZOJ 5301"></a>BZOJ 5301</h1><h2 id="Des-5"><a href="#Des-5" class="headerlink" title="Des."></a>Des.</h2><p>多次询问区间中满足异或和为$k$的子段数量.</p>
+<h2 id="Sol-5"><a href="#Sol-5" class="headerlink" title="Sol."></a>Sol.</h2><p>莫队. 但是怎么快速增量呢? 把前缀和而不是真实值扔桶里, 这样查询$sum_x \oplus k$时, 桶中的元素刚好满足和该位置组成的区间异或和为$k$, 注意特殊处理$r$位置插入删除时, $l - 1$的前缀和.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> bkt[maxn], a[maxn], bel[maxn], tagl, tagr;</span><br><span class="line"><span class="keyword">int</span> n, m, k, blo, ans[maxn], res;</span><br><span class="line"><span class="keyword">int</span> sum[maxn], L, R;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">question</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> l, r, id;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="keyword">operator</span>&lt;(<span class="keyword">const</span> question &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> bel[l] == bel[rhs.l] ? r &lt; rhs.r : bel[l] &lt; bel[rhs.l];</span><br><span class="line">  &#125;</span><br><span class="line">&#125;q[maxn];</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">addr</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;x)</span> </span>&#123;</span><br><span class="line">  bkt[sum[x]]++;</span><br><span class="line">  res += bkt[sum[x] ^ k];</span><br><span class="line">  <span class="keyword">if</span> ((sum[x] ^ k) == sum[L - <span class="number">1</span>]) res++;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">addl</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;x)</span> </span>&#123;</span><br><span class="line">  bkt[sum[x]]++;</span><br><span class="line">  res += bkt[sum[x - <span class="number">1</span>] ^ k];</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">delr</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;x)</span> </span>&#123;</span><br><span class="line">  res -= bkt[sum[x] ^ k];</span><br><span class="line">  bkt[sum[x]]--;</span><br><span class="line">  <span class="keyword">if</span> ((sum[x] ^ k) == sum[L - <span class="number">1</span>]) res--;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">dell</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;x)</span> </span>&#123;</span><br><span class="line">  res -= bkt[sum[x - <span class="number">1</span>] ^ k];</span><br><span class="line">  bkt[sum[x]]--;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd(); m = rd(); k = rd();</span><br><span class="line">  blo = <span class="built_in">sqrt</span>(n);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) </span><br><span class="line">    a[i] = rd(), bel[i] = (i - <span class="number">1</span>) / blo + <span class="number">1</span>, sum[i] = sum[i - <span class="number">1</span>] ^ a[i];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    q[i].l = rd(); q[i].r = rd();</span><br><span class="line">    q[i].id = i;</span><br><span class="line">  &#125;</span><br><span class="line">  sort(q + <span class="number">1</span>, q + <span class="number">1</span> + m);</span><br><span class="line">  L = <span class="number">1</span>, R = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    <span class="keyword">while</span> (R &lt; q[i].r) addr(++R);</span><br><span class="line">    <span class="keyword">while</span> (L &gt; q[i].l) addl(--L);</span><br><span class="line">    <span class="keyword">while</span> (R &gt; q[i].r) delr(R--);</span><br><span class="line">    <span class="keyword">while</span> (L &lt; q[i].l) dell(L++);</span><br><span class="line">    ans[q[i].id] = res;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i)</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans[i]);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../12/bzoj-5143-block/" data-tooltip="BZOJ 5143 分块" aria-label="PREVIOUS: BZOJ 5143 分块">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj3625-ogf-polynomial/" data-tooltip="BZOJ 3625 生成函数,多项式科技" aria-label="NEXT: BZOJ 3625 生成函数,多项式科技">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../12/bzoj-5143-block/" data-tooltip="BZOJ 5143 分块" aria-label="PREVIOUS: BZOJ 5143 分块">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj3625-ogf-polynomial/" data-tooltip="BZOJ 3625 生成函数,多项式科技" aria-label="NEXT: BZOJ 3625 生成函数,多项式科技">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/03/11/bzoj-cqoi-2018/';
+                 
+                    this.page.identifier = '2019/03/11/bzoj-cqoi-2018/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

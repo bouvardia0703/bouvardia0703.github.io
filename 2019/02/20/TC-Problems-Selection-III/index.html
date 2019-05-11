@@ -1,0 +1,606 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Topcoder Problems Selection III - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"曾经做过的一些小水题, 总之我是不会做.\n这是最后一篇, 第3篇.\n\nTopcoder SRM 744(Div.1 + Div.2)解题口胡报告 + 吐槽.\n发现其实SRM的题没有很不可做. 不过感觉赛时肯定还是会爆负, 让我75min想到写完这些题是做不到.\nDiv.2 250入门题, 把一个左开右闭区间分成三个左开右闭区间.\n没写, 除一除加一加就好了.\nDiv.2 500入门题, 问一个区间里有多少数是完全平方数且满足各数位的数字是波动的.\n我居然天真地想数位DP\n数据范围不大, 反正枚举平方数再检查是够的.\nDiv.2 1000 / Div.1 250有一个$N \\times M$矩阵, 格子$(i,j)$的权值是$\\max{(i,j)} \\mod{3}$. 求一个给定子矩阵的权值和. $N, M \\le 10^9$.\n什么嘛矩阵是从0开始存的?\n转成二维前缀和. 就讨论一下对角线, 对角线两边, 和较大的那一维多出来的一块, 加起来就行.\n\nModularQuadrant.cpp:\n\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long ll;const int summ[3] = &#123;0, 1, 3&#125;;const int val[3] = &#123;3, 1, 2&#125;;inline ll seq(int init, int count) &#123;  ll tail = (ll)init + 3ll * (count - 1);  return (init + tail) * count / 2ll;&#125;class ModularQuadrant &#123;public:  ll sum(int, int, int, int);  ll prefix(int, int);&#125;;ll ModularQuadrant::sum(int r1, int c1, int r2, int c2) &#123;  return ModularQuadrant::prefix(r2, c2) -          ModularQuadrant::prefix(r2, c1 - 1) -         ModularQuadrant::prefix(r1 - 1, c2) +         ModularQuadrant::prefix(r1 - 1, c1 - 1);&#125;ll ModularQuadrant::prefix(int r, int c) &#123;  if (r == -1 || c == -1) return 0;  int lim = min(r, c) + 1;  ll ang = (lim / 3) * 3 + summ[lim % 3];  ll tri = seq(1, lim / 3) * 1ll + seq(2, lim / 3) * 2ll + seq(0, lim / 3) * 0;   if (lim % 3 == 1) &#123;    tri += (lim - 1) * 0;  &#125; else if (lim % 3 == 2) &#123;    tri += 1ll * (lim - 1) + 0ll * (lim - 2);  &#125;  tri *= 2ll;  if (r == c) return tri + ang;  ll ret = 0; int bgn = lim, eed = max(r, c), len = eed - bgn + 1;  ret += (len / 3) * 1ll * lim + (len / 3) * 2ll * lim + (len / 3) * 0ll * lim;  if (len % 3 == 1) &#123;    ret += 1ll * val[bgn % 3] * lim;  &#125; else if (len % 3 == 2) &#123;    ret += 1ll * val[bgn % 3] * lim + 1ll * val[(bgn + 1) % 3] * lim;  &#125;  return ret + ang + tri;&#125;\nDiv.1 500给一个01矩阵, 每次可以操作一个$(i,j)$, 将$i$行和$j$列除了她自己以外的格子都取反.\n问有没有可能把全部格子都变成1. $N, M \\le 2000$.\n这就是比较经典的套路.\n首先观察一下操作, 发现相当于把行取反再把列取反. 这和我们见过的题相比多出的限制就是行列操作次数必须相等, 只要最后查一下就行了.\n枚举第一行反或不反, 把后面的行都和她对齐, 然后看第一行还有哪些是0, 就要对列取反. 把次数统计起来.\n\nUniformingMatrix.cpp:\n\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556#include &lt;bits/stdc++.h&gt;using namespace std;const string YES = \"Possible\";const string NO = \"Impossible\";int line[200];class UniformingMatrix &#123;public:  string isPossible(vector&lt;string&gt; M);&#125;;string UniformingMatrix::isPossible(vector&lt;string&gt; M) &#123;  int n = M.size(), m = M[0].size();  bool sol = true; int row = 0, col = 0;  for (int i = 0; i &lt; m; ++i)    line[i] = M[0][i] - '0';  for (int i = 1; i &lt; n; ++i) &#123;    int lst = line[0] ^ (M[i][0] - '0');    for (int j = 1; j &lt; m; ++j) &#123;      if ((M[i][j] - '0') ^ line[j] != lst) &#123;        sol = false;        break;      &#125;    &#125;    if (sol == false) break;    if (lst) row++;  &#125;  if (sol) &#123;    for (int i = 0; i &lt; m; ++i)      if (!line[i]) col++;    if (row == col) return YES;  &#125;  for (int i = 0; i &lt; m; ++i)    line[i] = (1 ^ (M[0][i] - '0'));  row = 1; col = 0;  for (int i = 1; i &lt; n; ++i) &#123;    int lst = line[0] ^ (M[i][0] - '0');    for (int j = 1; j &lt; m; ++j) &#123;      if ((M[i][j] - '0') ^ line[j] != lst) &#123;        sol = false;        break;      &#125;    &#125;    if (sol == false) break;    if (lst) row++;  &#125;  if (sol) &#123;    for (int i = 0; i &lt; m; ++i)      if (!line[i]) col++;    if (row == col) return YES;  &#125;  return NO;&#125;\nDiv.1 1000给一颗有根树. 每个点有需求和花费. 给每个点赋值使得每个点到根的路径上的权值和不小于需求, 代价是值乘以点权.\n最小化花费. $N \\le 10^5$.\nTC题正解总是用匪夷所思的简单做法我居然想要DP\n自下而上地贪心考虑. 我们的目的首先是满足权值下限, 先不考虑祖先(后面会更新). 考虑子树中所有和当前节点路径上权值和为0(不包括端点)的节点. 做到这里时他们的要求肯定是满足的. 那么我们可以考虑, 如果减小他们的权值, 而在当前节点增加同样的权值, 如果子节点的费用和大于当前节点的费用, 这一步调整就是优的.\n如何快速做这个过程呢? 可以用小根堆来维护各点权值. 初始先将儿子压入堆. 然后做操作. 当堆顶被减为0时, 把堆顶节点的堆和当前堆合并. 为了保证复杂度要启发式合并. (感觉左偏树也是可以的).\n然后还有一些细节, 大概就是每次减小量的上界还有满足条件就退出之类的, 代码里都写了.\n还有这鬼畜的加密读入\n\nCoverTreePaths.cpp:\n\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long ll;const int maxn = 1e+5 + 5;struct edge &#123;  int to, nxt;&#125;e[maxn];struct node &#123;  ll val; int id;  node(ll v_ = 0, int i_ = 0) : val(v_), id(i_) &#123;&#125;  inline bool operator&lt;(const node &amp;rhs) const &#123;    return (val == rhs.val) ? (id &gt; rhs.id) : (val &gt; rhs.val);  &#125;&#125;;int f[maxn], cs[maxn], nd[maxn];ll sumcs[maxn], sub[maxn];int ptr, lnk[maxn];int v[maxn];priority_queue&lt;node&gt; q[maxn];inline void add(int bgn, int end) &#123;  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;  lnk[bgn] = ptr;&#125;void merge(int frm, int to) &#123;  while (q[frm].size()) &#123;    node u = q[frm].top(); q[frm].pop();    u.val -= sub[frm];    u.val += sub[to];    q[to].push(u);  &#125;&#125;class CoverTreePaths &#123;public:  ll minimumCost(int,                  vector&lt;int&gt;, vector&lt;int&gt;, vector&lt;int&gt;, vector&lt;int&gt;);&#125;;ll CoverTreePaths::minimumCost(int n,                vector&lt;int&gt; p, vector&lt;int&gt; d,                vector&lt;int&gt; c, vector&lt;int&gt; params) &#123;  // PreProcess  for (vector&lt;int&gt;::size_type i = 0; i &lt; p.size(); ++i) &#123;    f[i + 1] = p[i];    add(f[i + 1], i + 1);  &#125;  int bgn = p.size();  for (int i = bgn; i &lt; n - 1; ++i) &#123;    p.push_back((1ll * params[0] * p[i - 1] + params[1]) % (i + 1));    f[i + 1] = p[i];    add(f[i + 1], i + 1);  &#125;  for (vector&lt;int&gt;::size_type i = 0; i &lt; d.size(); ++i) &#123;    nd[i] = d[i];  &#125;  bgn = d.size();  for (int i = bgn; i &lt; n; ++i) &#123;    d.push_back((1ll * params[2] * d[i - 1] + params[3]) % params[4] + 1);    nd[i] = d[i];  &#125;  for (vector&lt;int&gt;::size_type i = 0; i &lt; c.size(); ++i) &#123;    cs[i] = c[i];  &#125;  bgn = c.size();  for (int i = bgn; i &lt; n; ++i) &#123;    c.push_back((1ll * params[5] * c[i - 1] + params[6]) % params[7] + 1);    cs[i] = c[i];  &#125;  // SolvingProblem  ll ans = 0;  for (int k = n - 1; ~k; --k) &#123;    sumcs[k] = 0;    sub[k] = 0;    for (int p = lnk[k]; p; p = e[p].nxt) &#123;      int y = e[p].to;      sumcs[k] += cs[y];      q[k].push(node(v[y], y));    &#125;    while (1) &#123;      ll delta = 0;      if (!q[k].size()) &#123;        if (v[k] &gt;= nd[k]) &#123;          break;        &#125; else delta = nd[k] - v[k];      &#125; else if (cs[k] &lt; sumcs[k]) &#123;        delta = q[k].top().val - sub[k];      &#125; else if (v[k] &lt; nd[k]) &#123;        delta = min((ll)nd[k] - v[k], q[k].top().val - sub[k]);      &#125; else break;      ans += delta * cs[k];      ans -= delta * sumcs[k];      sub[k] += delta;      v[k] += delta;      vector&lt;node&gt; waitList;      while (q[k].size() &amp;&amp; q[k].top().val == sub[k]) &#123;        node u = q[k].top(); q[k].pop();        waitList.push_back(u);        sumcs[k] -= cs[u.id];      &#125;      for (auto u : waitList) &#123;        sumcs[k] += sumcs[u.id];        if (q[u.id].size() &lt;= q[k].size()) &#123;          merge(u.id, k);        &#125; else &#123;          merge(k, u.id);          q[k] = q[u.id];          sub[k] = sub[u.id];        &#125;      &#125;    &#125;  &#125;  return ans;&#125;\n没啦.\n","dateCreated":"2019-02-20T19:40:41+08:00","dateModified":"2019-02-20T19:44:40+08:00","datePublished":"2019-02-20T19:40:41+08:00","description":"曾经做过的一些小水题, 总之我是不会做.\n这是最后一篇, 第3篇.","headline":"Topcoder Problems Selection III","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/","keywords":"OI"}</script>
+    <meta name="description" content="曾经做过的一些小水题, 总之我是不会做. 这是最后一篇, 第3篇.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Topcoder Problems Selection III">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="曾经做过的一些小水题, 总之我是不会做. 这是最后一篇, 第3篇.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-02-20T11:44:40.304Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Topcoder Problems Selection III">
+<meta name="twitter:description" content="曾经做过的一些小水题, 总之我是不会做. 这是最后一篇, 第3篇.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Topcoder Problems Selection III
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-02-20T19:40:41+08:00">
+	
+		    Feb 20, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>曾经做过的一些<del>小水题</del>, 总之我是不会做.</p>
+<p>这是最后一篇, 第3篇.</p>
+<a id="more"></a>
+<h1 id="Topcoder-SRM-744-Div-1-Div-2"><a href="#Topcoder-SRM-744-Div-1-Div-2" class="headerlink" title="Topcoder SRM 744(Div.1 + Div.2)"></a>Topcoder SRM 744(Div.1 + Div.2)</h1><p><del>解题</del>口胡报告 + 吐槽.</p>
+<p>发现其实SRM的题<del>没有</del>很不可做. 不过感觉赛时肯定还是会爆负, 让我75min想到写完这些题是做不到.</p>
+<h2 id="Div-2-250"><a href="#Div-2-250" class="headerlink" title="Div.2 250"></a>Div.2 250</h2><p>入门题, 把一个左开右闭区间分成三个左开右闭区间.</p>
+<p>没写, 除一除加一加就好了.</p>
+<h2 id="Div-2-500"><a href="#Div-2-500" class="headerlink" title="Div.2 500"></a>Div.2 500</h2><p>入门题, 问一个区间里有多少数是完全平方数且满足各数位的数字是波动的.</p>
+<p><del>我居然天真地想数位DP</del></p>
+<p>数据范围不大, 反正枚举平方数再检查是够的.</p>
+<h2 id="Div-2-1000-Div-1-250"><a href="#Div-2-1000-Div-1-250" class="headerlink" title="Div.2 1000 / Div.1 250"></a>Div.2 1000 / Div.1 250</h2><p>有一个$N \times M$矩阵, 格子$(i,j)$的权值是$\max{(i,j)} \mod{3}$. 求一个给定子矩阵的权值和. $N, M \le 10^9$.</p>
+<p><del>什么嘛矩阵是从0开始存的?</del></p>
+<p>转成二维前缀和. 就讨论一下对角线, 对角线两边, 和较大的那一维多出来的一块, 加起来就行.</p>
+<blockquote>
+<p>ModularQuadrant.cpp:</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> summ[<span class="number">3</span>] = &#123;<span class="number">0</span>, <span class="number">1</span>, <span class="number">3</span>&#125;;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> val[<span class="number">3</span>] = &#123;<span class="number">3</span>, <span class="number">1</span>, <span class="number">2</span>&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">seq</span><span class="params">(<span class="keyword">int</span> init, <span class="keyword">int</span> count)</span> </span>&#123;</span><br><span class="line">  ll tail = (ll)init + <span class="number">3l</span>l * (count - <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">return</span> (init + tail) * count / <span class="number">2l</span>l;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ModularQuadrant</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function">ll <span class="title">sum</span><span class="params">(<span class="keyword">int</span>, <span class="keyword">int</span>, <span class="keyword">int</span>, <span class="keyword">int</span>)</span></span>;</span><br><span class="line">  <span class="function">ll <span class="title">prefix</span><span class="params">(<span class="keyword">int</span>, <span class="keyword">int</span>)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">ll ModularQuadrant::sum(<span class="keyword">int</span> r1, <span class="keyword">int</span> c1, <span class="keyword">int</span> r2, <span class="keyword">int</span> c2) &#123;</span><br><span class="line">  <span class="keyword">return</span> ModularQuadrant::prefix(r2, c2) - </span><br><span class="line">         ModularQuadrant::prefix(r2, c1 - <span class="number">1</span>) -</span><br><span class="line">         ModularQuadrant::prefix(r1 - <span class="number">1</span>, c2) +</span><br><span class="line">         ModularQuadrant::prefix(r1 - <span class="number">1</span>, c1 - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">ll ModularQuadrant::prefix(<span class="keyword">int</span> r, <span class="keyword">int</span> c) &#123;</span><br><span class="line">  <span class="keyword">if</span> (r == <span class="number">-1</span> || c == <span class="number">-1</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">int</span> lim = min(r, c) + <span class="number">1</span>;</span><br><span class="line">  ll ang = (lim / <span class="number">3</span>) * <span class="number">3</span> + summ[lim % <span class="number">3</span>];</span><br><span class="line">  ll tri = seq(<span class="number">1</span>, lim / <span class="number">3</span>) * <span class="number">1l</span>l + seq(<span class="number">2</span>, lim / <span class="number">3</span>) * <span class="number">2l</span>l + seq(<span class="number">0</span>, lim / <span class="number">3</span>) * <span class="number">0</span>; </span><br><span class="line">  <span class="keyword">if</span> (lim % <span class="number">3</span> == <span class="number">1</span>) &#123;</span><br><span class="line">    tri += (lim - <span class="number">1</span>) * <span class="number">0</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (lim % <span class="number">3</span> == <span class="number">2</span>) &#123;</span><br><span class="line">    tri += <span class="number">1l</span>l * (lim - <span class="number">1</span>) + <span class="number">0l</span>l * (lim - <span class="number">2</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  tri *= <span class="number">2l</span>l;</span><br><span class="line">  <span class="keyword">if</span> (r == c) <span class="keyword">return</span> tri + ang;</span><br><span class="line">  ll ret = <span class="number">0</span>; <span class="keyword">int</span> bgn = lim, eed = max(r, c), len = eed - bgn + <span class="number">1</span>;</span><br><span class="line">  ret += (len / <span class="number">3</span>) * <span class="number">1l</span>l * lim + (len / <span class="number">3</span>) * <span class="number">2l</span>l * lim + (len / <span class="number">3</span>) * <span class="number">0l</span>l * lim;</span><br><span class="line">  <span class="keyword">if</span> (len % <span class="number">3</span> == <span class="number">1</span>) &#123;</span><br><span class="line">    ret += <span class="number">1l</span>l * val[bgn % <span class="number">3</span>] * lim;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (len % <span class="number">3</span> == <span class="number">2</span>) &#123;</span><br><span class="line">    ret += <span class="number">1l</span>l * val[bgn % <span class="number">3</span>] * lim + <span class="number">1l</span>l * val[(bgn + <span class="number">1</span>) % <span class="number">3</span>] * lim;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ret + ang + tri;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Div-1-500"><a href="#Div-1-500" class="headerlink" title="Div.1 500"></a>Div.1 500</h2><p>给一个01矩阵, 每次可以操作一个$(i,j)$, 将$i$行和$j$列除了她自己以外的格子都取反.</p>
+<p>问有没有可能把全部格子都变成1. $N, M \le 2000$.</p>
+<p>这就是比较经典的套路.</p>
+<p>首先观察一下操作, 发现相当于把行取反再把列取反. 这和我们见过的题相比多出的限制就是行列操作次数必须相等, 只要最后查一下就行了.</p>
+<p>枚举第一行反或不反, 把后面的行都和她对齐, 然后看第一行还有哪些是0, 就要对列取反. 把次数统计起来.</p>
+<blockquote>
+<p>UniformingMatrix.cpp:</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="built_in">string</span> YES = <span class="string">"Possible"</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="built_in">string</span> NO = <span class="string">"Impossible"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> line[<span class="number">200</span>];</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UniformingMatrix</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="built_in">string</span> <span class="title">isPossible</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt; M)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="built_in">string</span> UniformingMatrix::isPossible(<span class="built_in">vector</span>&lt;<span class="built_in">string</span>&gt; M) &#123;</span><br><span class="line">  <span class="keyword">int</span> n = M.size(), m = M[<span class="number">0</span>].size();</span><br><span class="line">  <span class="keyword">bool</span> sol = <span class="literal">true</span>; <span class="keyword">int</span> row = <span class="number">0</span>, col = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i)</span><br><span class="line">    line[i] = M[<span class="number">0</span>][i] - <span class="string">'0'</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i) &#123;</span><br><span class="line">    <span class="keyword">int</span> lst = line[<span class="number">0</span>] ^ (M[i][<span class="number">0</span>] - <span class="string">'0'</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt; m; ++j) &#123;</span><br><span class="line">      <span class="keyword">if</span> ((M[i][j] - <span class="string">'0'</span>) ^ line[j] != lst) &#123;</span><br><span class="line">        sol = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (sol == <span class="literal">false</span>) <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">if</span> (lst) row++;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (sol) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i)</span><br><span class="line">      <span class="keyword">if</span> (!line[i]) col++;</span><br><span class="line">    <span class="keyword">if</span> (row == col) <span class="keyword">return</span> YES;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i)</span><br><span class="line">    line[i] = (<span class="number">1</span> ^ (M[<span class="number">0</span>][i] - <span class="string">'0'</span>));</span><br><span class="line">  row = <span class="number">1</span>; col = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i) &#123;</span><br><span class="line">    <span class="keyword">int</span> lst = line[<span class="number">0</span>] ^ (M[i][<span class="number">0</span>] - <span class="string">'0'</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt; m; ++j) &#123;</span><br><span class="line">      <span class="keyword">if</span> ((M[i][j] - <span class="string">'0'</span>) ^ line[j] != lst) &#123;</span><br><span class="line">        sol = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (sol == <span class="literal">false</span>) <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">if</span> (lst) row++;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (sol) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i)</span><br><span class="line">      <span class="keyword">if</span> (!line[i]) col++;</span><br><span class="line">    <span class="keyword">if</span> (row == col) <span class="keyword">return</span> YES;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> NO;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Div-1-1000"><a href="#Div-1-1000" class="headerlink" title="Div.1 1000"></a>Div.1 1000</h2><p>给一颗有根树. 每个点有需求和花费. 给每个点赋值使得每个点到根的路径上的权值和不小于需求, 代价是值乘以点权.</p>
+<p>最小化花费. $N \le 10^5$.</p>
+<p><del>TC题正解总是用匪夷所思的简单做法我居然想要DP</del></p>
+<p>自下而上地贪心考虑. 我们的目的首先是满足权值下限, 先不考虑祖先(后面会更新). 考虑子树中所有和当前节点路径上权值和为0(不包括端点)的节点. 做到这里时他们的要求肯定是满足的. 那么我们可以考虑, 如果减小他们的权值, 而在当前节点增加同样的权值, 如果子节点的费用和大于当前节点的费用, 这一步调整就是优的.</p>
+<p>如何快速做这个过程呢? 可以用小根堆来维护各点权值. 初始先将儿子压入堆. 然后做操作. 当堆顶被减为0时, 把堆顶节点的堆和当前堆合并. 为了保证复杂度要启发式合并. (感觉左偏树也是可以的).</p>
+<p>然后还有一些细节, 大概就是每次减小量的上界还有满足条件就退出之类的, 代码里都写了.</p>
+<p><del>还有这鬼畜的加密读入</del></p>
+<blockquote>
+<p>CoverTreePaths.cpp:</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> to, nxt;</span><br><span class="line">&#125;e[maxn];</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">node</span> &#123;</span></span><br><span class="line">  ll val; <span class="keyword">int</span> id;</span><br><span class="line">  node(ll v_ = <span class="number">0</span>, <span class="keyword">int</span> i_ = <span class="number">0</span>) : val(v_), id(i_) &#123;&#125;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="keyword">operator</span>&lt;(<span class="keyword">const</span> node &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (val == rhs.val) ? (id &gt; rhs.id) : (val &gt; rhs.val);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">int</span> f[maxn], cs[maxn], nd[maxn];</span><br><span class="line">ll sumcs[maxn], sub[maxn];</span><br><span class="line"><span class="keyword">int</span> ptr, lnk[maxn];</span><br><span class="line"><span class="keyword">int</span> v[maxn];</span><br><span class="line">priority_queue&lt;node&gt; q[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> bgn, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;</span><br><span class="line">  lnk[bgn] = ptr;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">merge</span><span class="params">(<span class="keyword">int</span> frm, <span class="keyword">int</span> to)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">while</span> (q[frm].size()) &#123;</span><br><span class="line">    node u = q[frm].top(); q[frm].pop();</span><br><span class="line">    u.val -= sub[frm];</span><br><span class="line">    u.val += sub[to];</span><br><span class="line">    q[to].push(u);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CoverTreePaths</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function">ll <span class="title">minimumCost</span><span class="params">(<span class="keyword">int</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                 <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">ll CoverTreePaths::minimumCost(<span class="keyword">int</span> n, </span><br><span class="line">               <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; p, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; d, </span><br><span class="line">               <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; c, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; params) &#123;</span><br><span class="line">  <span class="comment">// PreProcess</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;::size_type i = <span class="number">0</span>; i &lt; p.size(); ++i) &#123;</span><br><span class="line">    f[i + <span class="number">1</span>] = p[i];</span><br><span class="line">    add(f[i + <span class="number">1</span>], i + <span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">int</span> bgn = p.size();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = bgn; i &lt; n - <span class="number">1</span>; ++i) &#123;</span><br><span class="line">    p.push_back((<span class="number">1l</span>l * params[<span class="number">0</span>] * p[i - <span class="number">1</span>] + params[<span class="number">1</span>]) % (i + <span class="number">1</span>));</span><br><span class="line">    f[i + <span class="number">1</span>] = p[i];</span><br><span class="line">    add(f[i + <span class="number">1</span>], i + <span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;::size_type i = <span class="number">0</span>; i &lt; d.size(); ++i) &#123;</span><br><span class="line">    nd[i] = d[i];</span><br><span class="line">  &#125;</span><br><span class="line">  bgn = d.size();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = bgn; i &lt; n; ++i) &#123;</span><br><span class="line">    d.push_back((<span class="number">1l</span>l * params[<span class="number">2</span>] * d[i - <span class="number">1</span>] + params[<span class="number">3</span>]) % params[<span class="number">4</span>] + <span class="number">1</span>);</span><br><span class="line">    nd[i] = d[i];</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;::size_type i = <span class="number">0</span>; i &lt; c.size(); ++i) &#123;</span><br><span class="line">    cs[i] = c[i];</span><br><span class="line">  &#125;</span><br><span class="line">  bgn = c.size();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = bgn; i &lt; n; ++i) &#123;</span><br><span class="line">    c.push_back((<span class="number">1l</span>l * params[<span class="number">5</span>] * c[i - <span class="number">1</span>] + params[<span class="number">6</span>]) % params[<span class="number">7</span>] + <span class="number">1</span>);</span><br><span class="line">    cs[i] = c[i];</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// SolvingProblem</span></span><br><span class="line">  ll ans = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> k = n - <span class="number">1</span>; ~k; --k) &#123;</span><br><span class="line">    sumcs[k] = <span class="number">0</span>;</span><br><span class="line">    sub[k] = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[k]; p; p = e[p].nxt) &#123;</span><br><span class="line">      <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">      sumcs[k] += cs[y];</span><br><span class="line">      q[k].push(node(v[y], y));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">      ll delta = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">if</span> (!q[k].size()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (v[k] &gt;= nd[k]) &#123;</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> delta = nd[k] - v[k];</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (cs[k] &lt; sumcs[k]) &#123;</span><br><span class="line">        delta = q[k].top().val - sub[k];</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (v[k] &lt; nd[k]) &#123;</span><br><span class="line">        delta = min((ll)nd[k] - v[k], q[k].top().val - sub[k]);</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">      ans += delta * cs[k];</span><br><span class="line">      ans -= delta * sumcs[k];</span><br><span class="line">      sub[k] += delta;</span><br><span class="line">      v[k] += delta;</span><br><span class="line"></span><br><span class="line">      <span class="built_in">vector</span>&lt;node&gt; waitList;</span><br><span class="line">      <span class="keyword">while</span> (q[k].size() &amp;&amp; q[k].top().val == sub[k]) &#123;</span><br><span class="line">        node u = q[k].top(); q[k].pop();</span><br><span class="line">        waitList.push_back(u);</span><br><span class="line">        sumcs[k] -= cs[u.id];</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">auto</span> u : waitList) &#123;</span><br><span class="line">        sumcs[k] += sumcs[u.id];</span><br><span class="line">        <span class="keyword">if</span> (q[u.id].size() &lt;= q[k].size()) &#123;</span><br><span class="line">          merge(u.id, k);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          merge(k, u.id);</span><br><span class="line">          q[k] = q[u.id];</span><br><span class="line">          sub[k] = sub[u.id];</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>没啦.</p>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../WC2019-two-exercise-problems/" data-tooltip="2 Exercise Problems for WC2019" aria-label="PREVIOUS: 2 Exercise Problems for WC2019">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../TC-Problems-Selection-II/" data-tooltip="Topcoder Problems Selection II" aria-label="NEXT: Topcoder Problems Selection II">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../WC2019-two-exercise-problems/" data-tooltip="2 Exercise Problems for WC2019" aria-label="PREVIOUS: 2 Exercise Problems for WC2019">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../TC-Problems-Selection-II/" data-tooltip="Topcoder Problems Selection II" aria-label="NEXT: Topcoder Problems Selection II">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-III/';
+                 
+                    this.page.identifier = '2019/02/20/TC-Problems-Selection-III/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

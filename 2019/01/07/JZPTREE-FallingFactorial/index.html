@@ -1,0 +1,590 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>JZPTREE Falling Factorial - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Falling Factorial, Tree DP\n\nDescriptionGiven a tree, for every node $x$ compute $\\begin{align}\\sum_{i=1}^{n}{dist(x,i)^k}\\end{align}$.\n$n \\le 50000, k \\le 500$.\nSolutionWhen we solve $k = 1$ or $k = 2$, we can simply use trick of 2-times DFS, and maintain both sum of distance and sum of square of distance.\nHowever, when problem becomes harder, the time complexity of this method will get TLE, for its $O(nk^2)$ time to maintain sum of powers using binomial theorem.\nThere’re some general ways to deal these sum of power problems, one of which is using falling factorial.\n\nDefinition : Falling factorial of $x$ at $k$, denoted as $x^{\\underline{k}}$, equals to $x(x-1)\\cdots (x-k+1)$, which is also known as $P_x ^ k$, where $P$ means permutation.\n\nAnd we have: $x^k = \\sum_{i=0}^{k}{S(k,i)\\times x^{\\underline{i}}}$, where $S(k, i)$ is the Stirling Number of the second kind.\nAs for $S$, we have a recurrence relation that $S(i,j) = S(i-1, j - 1)+ j \\times S(i-1,j) $, we can pre-process all $S$ we need in $O(k^2)$ time.\nThen let’s see how to maintain falling factorial in $O(k)$ time.\nWe have a identity of falling factorial that $(x+1)^{\\underline{i}} = (x+1)x^{\\underline{i-1}} = (x - i + 1 + i)x^{\\underline{i-1}} = x^{\\underline{i}} + i\\times x^{\\underline{i-1}}$.\nAnother way to prove it is using permutation’s properties.\nThink about when we transfer answer from $son_x$ to $x$ or reversely, what we do is actually add $1$ to all numbers in a set.\nThus for case that $son_x \\rightarrow x$, we have: $ans_x^{k} = ans_x^k + ans_{son}^{k} + k \\times ans_{son}^{k-1}$, for all distance in the subtree of $x$ increased.\nAs for $fa_x \\rightarrow x$, it’s all number in father’s answer increasing, but it is larger than what we need. So we should minus numbers $+2$ in subtree of $x$, for these numbers get $+1$ when calculating father’s answer and this time they get a $+1$ again. Then add original answer in subtree of $x$. That is:\n$(all_{fa}+1)^{\\underline{k}} - (all_x + 2)^{\\underline{k}} + ans_x^k$. Split the expression out we get:\n$ans_{fa}^k + k \\times ans_{fa}^{k-1} - 2k ans_{x}^{k-1} - k(k-1)ans_x^{k-2}$ for all $k \\ge 2$.\nWhen $k = 1$ it’s $ans_x^1 = ans_{fa}^1 + ans_{fa}^0 - 2ans_{x}^{0}$ , and $ans_x^0 = ans_{fa}^0$ for $k = 0$.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980818283#include &lt;bits/stdc++.h&gt;using namespace std;const int maxn = 50005;const int maxk = 505;const int mod = 10007;struct edge &#123;  int to, nxt;&#125;e[maxn &lt;&lt; 1];int n, k, ptr, lnk[maxn];int s[maxk][maxk], downp[maxn][maxk], dep[maxn], ans[maxn][maxk];void init() &#123;  s[0][0] = 1;  for (int i = 1; i &lt;= 500; ++i)    for (int j = 1; j &lt;= 500; ++j) &#123;      s[i][j] = (s[i - 1][j - 1] + j * s[i - 1][j] % mod) % mod;    &#125;&#125;inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;inline void add(int bgn, int end) &#123;  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;  lnk[bgn] = ptr;&#125;void dfs(int x, int fa) &#123;  ans[x][0] = 1;  for (int i = 1; i &lt;= k; ++i) ans[x][i] = 0;  for (int p = lnk[x]; p; p = e[p].nxt) &#123;    int y = e[p].to;    if (y == fa) continue;    dfs(y, x);    ans[x][0] = (ans[x][0] + ans[y][0]) % mod;    for (int i = 1; i &lt;= k; ++i)      ans[x][i] = (ans[x][i] + ans[y][i] + i * ans[y][i - 1]) % mod;  &#125;&#125;void dfs2(int x, int fa) &#123;  if (fa) &#123;    for (int i = k; i &gt;= 2; --i) &#123;      ans[x][i] = (ans[fa][i] + i * ans[fa][i - 1] % mod -                    2ll * i * ans[x][i - 1] % mod + mod -                    1ll * i * (i - 1) * ans[x][i - 2] % mod + mod) % mod;    &#125;    ans[x][1] = (ans[fa][1] + ans[fa][0] - 2 * ans[x][0] % mod + mod) % mod;    ans[x][0] = ans[fa][0];  &#125;  for (int p = lnk[x]; p; p = e[p].nxt) &#123;    int y = e[p].to;    if (y == fa) continue;    dfs2(y, x);  &#125;&#125;int main() &#123;  init();  int T = rd();  while (T--) &#123;    ptr = 0; memset(lnk, 0, sizeof lnk);    n = rd(); k = rd();    int u, v;    for (int i = 1; i &lt; n; ++i) &#123;      u = rd(); v = rd();      add(u, v);      add(v, u);    &#125;    dfs(1, 0);    dfs2(1, 0);    for (int i = 1; i &lt;= n; ++i) &#123;      int sum = 0;      for (int j = 0; j &lt;= k; ++j)        sum = (sum + ans[i][j] * s[k][j] % mod) % mod;      printf(\"%d\\n\", sum);    &#125;  &#125;  return 0;&#125;\n","dateCreated":"2019-01-07T21:34:01+08:00","dateModified":"2019-01-08T07:41:21+08:00","datePublished":"2019-01-07T21:34:01+08:00","description":"Falling Factorial, Tree DP","headline":"JZPTREE Falling Factorial","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/","keywords":"OI"}</script>
+    <meta name="description" content="Falling Factorial, Tree DP">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="JZPTREE Falling Factorial">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Falling Factorial, Tree DP">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-01-07T23:41:21.387Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JZPTREE Falling Factorial">
+<meta name="twitter:description" content="Falling Factorial, Tree DP">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            JZPTREE Falling Factorial
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-01-07T21:34:01+08:00">
+	
+		    Jan 07, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Falling Factorial, Tree DP</p>
+<a id="more"></a>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>Given a tree, for every node $x$ compute $\begin{align}\sum_{i=1}^{n}{dist(x,i)^k}\end{align}$.</p>
+<p>$n \le 50000, k \le 500$.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>When we solve $k = 1$ or $k = 2$, we can simply use trick of 2-times DFS, and maintain both sum of distance and sum of square of distance.</p>
+<p>However, when problem becomes harder, the time complexity of this method will get TLE, for its $O(nk^2)$ time to maintain sum of powers using binomial theorem.</p>
+<p>There’re some general ways to deal these sum of power problems, one of which is using falling factorial.</p>
+<ul>
+<li><strong>Definition</strong> : <em>Falling factorial</em> of $x$ at $k$, denoted as $x^{\underline{k}}$, equals to $x(x-1)\cdots (x-k+1)$, which is also known as $P_x ^ k$, where $P$ means permutation.</li>
+</ul>
+<p>And we have: $x^k = \sum_{i=0}^{k}{S(k,i)\times x^{\underline{i}}}$, where $S(k, i)$ is the Stirling Number of the second kind.</p>
+<p>As for $S$, we have a recurrence relation that $S(i,j) = S(i-1, j - 1)+ j \times S(i-1,j) $, we can pre-process all $S$ we need in $O(k^2)$ time.</p>
+<p>Then let’s see how to maintain falling factorial in $O(k)$ time.</p>
+<p>We have a identity of falling factorial that $(x+1)^{\underline{i}} = (x+1)x^{\underline{i-1}} = (x - i + 1 + i)x^{\underline{i-1}} = x^{\underline{i}} + i\times x^{\underline{i-1}}$.</p>
+<p>Another way to prove it is using permutation’s properties.</p>
+<p>Think about when we transfer answer from $son_x$ to $x$ or reversely, what we do is actually add $1$ to all numbers in a set.</p>
+<p>Thus for case that $son_x \rightarrow x$, we have: $ans_x^{k} = ans_x^k + ans_{son}^{k} + k \times ans_{son}^{k-1}$, for all distance in the subtree of $x$ increased.</p>
+<p>As for $fa_x \rightarrow x$, it’s all number in father’s answer increasing, but it is larger than what we need. So we should minus numbers $+2$ in subtree of $x$, for these numbers get $+1$ when calculating father’s answer and this time they get a $+1$ again. Then add original answer in subtree of $x$. That is:</p>
+<p>$(all_{fa}+1)^{\underline{k}} - (all_x + 2)^{\underline{k}} + ans_x^k$. Split the expression out we get:</p>
+<p>$ans_{fa}^k + k \times ans_{fa}^{k-1} - 2k ans_{x}^{k-1} - k(k-1)ans_x^{k-2}$ for all $k \ge 2$.</p>
+<p>When $k = 1$ it’s $ans_x^1 = ans_{fa}^1 + ans_{fa}^0 - 2ans_{x}^{0}$ , and $ans_x^0 = ans_{fa}^0$ for $k = 0$.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">50005</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxk = <span class="number">505</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> mod = <span class="number">10007</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> to, nxt;</span><br><span class="line">&#125;e[maxn &lt;&lt; <span class="number">1</span>];</span><br><span class="line"><span class="keyword">int</span> n, k, ptr, lnk[maxn];</span><br><span class="line"><span class="keyword">int</span> s[maxk][maxk], downp[maxn][maxk], dep[maxn], ans[maxn][maxk];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  s[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">500</span>; ++i)</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= <span class="number">500</span>; ++j) &#123;</span><br><span class="line">      s[i][j] = (s[i - <span class="number">1</span>][j - <span class="number">1</span>] + j * s[i - <span class="number">1</span>][j] % mod) % mod;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> bgn, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;</span><br><span class="line">  lnk[bgn] = ptr;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> fa)</span> </span>&#123;</span><br><span class="line">  ans[x][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= k; ++i) ans[x][i] = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt) &#123;</span><br><span class="line">    <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">    <span class="keyword">if</span> (y == fa) <span class="keyword">continue</span>;</span><br><span class="line">    dfs(y, x);</span><br><span class="line">    ans[x][<span class="number">0</span>] = (ans[x][<span class="number">0</span>] + ans[y][<span class="number">0</span>]) % mod;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= k; ++i)</span><br><span class="line">      ans[x][i] = (ans[x][i] + ans[y][i] + i * ans[y][i - <span class="number">1</span>]) % mod;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs2</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> fa)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (fa) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = k; i &gt;= <span class="number">2</span>; --i) &#123;</span><br><span class="line">      ans[x][i] = (ans[fa][i] + i * ans[fa][i - <span class="number">1</span>] % mod - </span><br><span class="line">                   <span class="number">2l</span>l * i * ans[x][i - <span class="number">1</span>] % mod + mod - </span><br><span class="line">                   <span class="number">1l</span>l * i * (i - <span class="number">1</span>) * ans[x][i - <span class="number">2</span>] % mod + mod) % mod;</span><br><span class="line">    &#125;</span><br><span class="line">    ans[x][<span class="number">1</span>] = (ans[fa][<span class="number">1</span>] + ans[fa][<span class="number">0</span>] - <span class="number">2</span> * ans[x][<span class="number">0</span>] % mod + mod) % mod;</span><br><span class="line">    ans[x][<span class="number">0</span>] = ans[fa][<span class="number">0</span>];</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt) &#123;</span><br><span class="line">    <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">    <span class="keyword">if</span> (y == fa) <span class="keyword">continue</span>;</span><br><span class="line">    dfs2(y, x);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  init();</span><br><span class="line">  <span class="keyword">int</span> T = rd();</span><br><span class="line">  <span class="keyword">while</span> (T--) &#123;</span><br><span class="line">    ptr = <span class="number">0</span>; <span class="built_in">memset</span>(lnk, <span class="number">0</span>, <span class="keyword">sizeof</span> lnk);</span><br><span class="line">    n = rd(); k = rd();</span><br><span class="line">    <span class="keyword">int</span> u, v;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i) &#123;</span><br><span class="line">      u = rd(); v = rd();</span><br><span class="line">      add(u, v);</span><br><span class="line">      add(v, u);</span><br><span class="line">    &#125;</span><br><span class="line">    dfs(<span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">    dfs2(<span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">      <span class="keyword">int</span> sum = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= k; ++j)</span><br><span class="line">        sum = (sum + ans[i][j] * s[k][j] % mod) % mod;</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, sum);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../08/DynamicDynamicProgramming/" data-tooltip="动态DP" aria-label="PREVIOUS: 动态DP">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../06/MinimumProductSpanningTree/" data-tooltip="Minimum Product Spanning Tree" aria-label="NEXT: Minimum Product Spanning Tree">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../08/DynamicDynamicProgramming/" data-tooltip="动态DP" aria-label="PREVIOUS: 动态DP">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../06/MinimumProductSpanningTree/" data-tooltip="Minimum Product Spanning Tree" aria-label="NEXT: Minimum Product Spanning Tree">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/01/07/JZPTREE-FallingFactorial/';
+                 
+                    this.page.identifier = '2019/01/07/JZPTREE-FallingFactorial/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

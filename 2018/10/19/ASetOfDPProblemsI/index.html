@@ -1,0 +1,615 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>A Set of Linear DP Problems 1 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"不过不得不说，liu_runda确实很强呢。\n\n\nOverview一种新的思路, 线性DP是在找合理的拓扑序.\n同时DP的思路要灵活. 这是一些题目.\nBZOJ 1334 ElectDescription$N$个政党要组成一个联合内阁，每个党都有自己的席位数. 现在希望你找出一种方案，你选中的党的席位数要大于\n总数的一半，并且联合内阁的席位数越多越好. 对于一个联合内阁，如果某个政党退出后，其它党的席位仍大于总\n数的一半，则这个政党被称为是多余的，这是不允许的.\nSolution需要使去掉一个政党后, 答案小于总数的一半, 如果直接做的话, 我们不能确定减掉最小的是否符合要求, 不妨排个序.\n那么对于每个物品, 在对她DP时的体积上限就是 $\\frac{sum}{2} + a_i$.\n然后我们做一个可达DP, 更新答案就好了.\n1234567891011121314151617181920212223242526272829303132#include &lt;iostream&gt;#include &lt;cstdio&gt;#include &lt;cstring&gt;#include &lt;algorithm&gt;using namespace std;const int maxn = 305;const int maxm = 100005;int n, a[maxn], s, ans;bool f[maxm];bool cmp(int a, int b) &#123;  return a &gt; b;&#125;int main() &#123;  scanf(\"%d\", &amp;n);  for (int i = 1; i &lt;= n; ++i) scanf(\"%d\", &amp;a[i]), s += a[i];  sort(a + 1, a + 1 + n, cmp);  f[0] = true;  for (int i = 1; i &lt;= n; ++i) &#123;    for (int j = s / 2 + a[i]; j &gt;= a[i]; --j) &#123;      f[j] |= f[j - a[i]];      if (f[j]) ans = max(ans, j);    &#125;  &#125;  printf(\"%d\\n\", ans);  return 0;&#125;\nBZOJ 2287 消失之物Description有$n$个物品, 体积上限为$m$, 计算去掉每个物品$i$, 装满体积上限为$[1,m]$的背包的方案数的最后一位.\nSolution一开始以为是做一遍前缀DP, 做一遍后缀DP, 然后把两边合并起来, 但这样其实是$O(nm^2)$的.\n首先做完一遍DP. 考虑容斥一下, 如果当前枚举的体积$&lt; a_i$, 那么$i$一定不在背包里, 直接复制答案.\n如果$\\ge a_i$, 那么答案就是总的方案数减去使用了$i$的方案数, 使用了$i$代表用其他物品填满$j - a_i$, 这个答案是已经求出的, 即$ans_{i,j-a_i}$.\n补集转化的思路, 在正常DP行不通时经常用到. 要加以注意.\n123456789101112131415161718192021222324252627282930313233#include &lt;iostream&gt;#include &lt;cstring&gt;#include &lt;algorithm&gt;#include &lt;cstdio&gt;using namespace std;const int maxn = 2005;int n, m, a[maxn], f[maxn];int ans[maxn][maxn];int main() &#123;  scanf(\"%d%d\", &amp;n, &amp;m);  f[0] = 1;  for (int i = 1; i &lt;= n; ++i) scanf(\"%d\", &amp;a[i]);  for (int i = 1; i &lt;= n; ++i)    for (int j = m; j &gt;= a[i]; --j)      f[j] = (f[j] + f[j - a[i]]) % 10;  for (int i = 1; i &lt;= n; ++i) &#123;    ans[i][0] = 1;    for (int j = 1; j &lt;= m; ++j) &#123;      if (j &lt; a[i]) ans[i][j] = f[j];      else ans[i][j] = (f[j] - ans[i][j - a[i]] + 10) % 10;    &#125;  &#125;  for (int i = 1; i &lt;= n; ++i) &#123;    for (int j = 1; j &lt;= m; ++j)      printf(\"%d\",ans[i][j]);    putchar('\\n');  &#125;   return 0;&#125;\nBZOJ 2794 CloakroomDescription有$n$件物品，每件物品有三个属性$a[i], b[i], c[i] (a[i]&lt;b[i])$。\n再给出$q$个询问，每个询问由非负整数$m, k, s$组成，问是否能够选出某些物品使得：\n对于每个选的物品$i$，满足$a[i] \\le m$且$b[i]&gt;m+s$。\n所有选出物品的$c[i]$的和正好是$k$。\nSolution每次都做一遍DP太慢了, 考虑将问题离线, 按顺序用一遍背包解决所有问题.\n这样就将问题转化成了, 在装满$k$的情况下, 最小的$b_i$大于一个值.\n这是可以DP的, 我们只要求出每次转移时选择该物品的答案较小值, 并更新答案为选或不选的较大值即可.\n每次完成询问时检查$f_k$是否大于要求的值即可.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162#include &lt;iostream&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;algorithm&gt;using namespace std;const int maxn = 1005;const int maxq = 1e+6 + 5;const int maxv = 1e+5 + 5;inline int rd() &#123;  register int x = 0; register char c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;class obj &#123; public:  int a, b, c;  bool operator &lt; (const obj &amp;rhs) const &#123;    return a &lt; rhs.a;  &#125;&#125;;class query &#123; public:  int M, k, s, id;  bool operator &lt; (const query &amp;rhs) const &#123;    return M &lt; rhs.M;  &#125;&#125;;int n, m;obj t[maxn]; query q[maxq];int ans[maxq], f[maxv];int main() &#123;  n = rd();  for (int i = 1; i &lt;= n; ++i) //t[i].init();    t[i].c = rd(), t[i].a = rd(), t[i].b = rd();  m = rd();  for (int i = 1; i &lt;= m; ++i) //q[i].init(i);    q[i].M = rd(), q[i].k = rd(), q[i].s = rd(), q[i].id = i;  sort(t + 1, t + 1 + n);  sort(q + 1, q + 1 + m);  f[0] = 0x3f3f3f3f;  int ptr = 1;  for (int i = 1; i &lt;= m; ++i) &#123;    while (t[ptr].a &lt;= q[i].M &amp;&amp; ptr &lt;= n) &#123;      for (int j = 100000; j &gt;= t[ptr].c; --j)    f[j] = max(f[j], min(f[j - t[ptr].c], t[ptr].b));      ptr++;    &#125;    // printf(\"%d %d\\n\", i, f[q[i].k]);    if (f[q[i].k] &gt; q[i].M + q[i].s) ans[q[i].id] = 1;  &#125;  for (int i = 1; i &lt;= m; ++i) &#123;    if (ans[i]) puts(\"TAK\");    else puts(\"NIE\");  &#125;  return 0;&#125;\nBZOJ 1190 HNOI2007 梦幻岛宝珠Description给你$N$颗宝石，每颗宝石都有重量和价值。要你从这些宝石中选取一些宝石，保证总重量不超过$W$，且总价值最大，并输出最大的总价值。\n$ N \\le 100, W \\le 2^30$,并且保证每颗宝石的重量符合$a \\times 2^b（a \\le 10, b \\le 30)$.\nSolution看起来就是一个背包, 但是无论是体积还是背包限制都太大了, 既然题目说满足$a \\times 2^b$的性质, 我们就可以从这里入手, 由于$2$的同次幂是可以转移的, 我们只要考虑如何在相邻幂之间做系数的转化.\n可以考虑将高于当前二进制位的数都看作系数， 那么当二进制位继续右移时，系数将变为$ \\big\\lceil \\small{fac - [w\\, \\&amp;\\, (1 &lt;&lt; i)]} \\big\\rceil$ .\n然后就可以做了.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546#include &lt;iostream&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;algorithm&gt;using namespace std;typedef long long ll;const int maxn = 105;struct stu &#123;  int b, c, v;  bool operator &lt; (const stu &amp;rhs) const &#123;    return b &lt; rhs.b;  &#125;&#125;a[maxn];int n, w;int f[32][1005];int main() &#123;  while (scanf(\"%d%d\", &amp;n, &amp;w) &amp;&amp;\t n != -1 &amp;&amp; w != -1) &#123;    memset(a, 0, sizeof a); memset(f, 0, sizeof f);    for (int i = 1; i &lt;= n; ++i) &#123;      scanf(\"%d%d\", &amp;a[i].c, &amp;a[i].v);      while (!(a[i].c &amp; 1)) a[i].c &gt;&gt;= 1, a[i].b++;    &#125;    sort(a + 1, a + 1 + n);    int ptr = 1, fac = 0;    for (int i = 0; i &lt;= 30; ++i) &#123;      while (ptr &lt;= n &amp;&amp; a[ptr].b == i) &#123;\tfac = min(fac + a[ptr].c, w &gt;&gt; i);\tfor (int j = fac; j &gt;= a[ptr].c; --j)\t  f[i][j] = max(f[i][j], f[i][j - a[ptr].c] + a[ptr].v);\t++ptr;      &#125;      for (int j = 0; j &lt;= fac; ++j)\tf[i + 1][(j - ((w &amp; (1 &lt;&lt; i))?1:0) + 1) &gt;&gt; 1] =\t  max(f[i + 1][(j - ((w &amp; (1 &lt;&lt; i))?1:0) + 1) &gt;&gt; 1], f[i][j]);      fac = (fac - ((w &amp; (1 &lt;&lt; i))?1:0) + 1) &gt;&gt; 1;    &#125;    printf(\"%d\\n\", f[31][0]);  &#125;  return 0;&#125;\n","dateCreated":"2018-10-19T07:03:30+08:00","dateModified":"2018-10-19T13:25:00+08:00","datePublished":"2018-10-19T07:03:30+08:00","description":"不过不得不说，liu_runda确实很强呢。","headline":"A Set of Linear DP Problems 1","image":["https://i.loli.net/2018/10/18/5bc88d6c197c8.jpg","https://i.loli.net/2018/10/18/5bc88afd7af34.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/10/18/5bc88d6c197c8.jpg"}</script>
+    <meta name="description" content="不过不得不说，liu_runda确实很强呢。">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="A Set of Linear DP Problems 1">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="不过不得不说，liu_runda确实很强呢。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-10-19T05:25:00.009Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="A Set of Linear DP Problems 1">
+<meta name="twitter:description" content="不过不得不说，liu_runda确实很强呢。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/10/18/5bc88d6c197c8.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/10/18/5bc88d6c197c8.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/10/18/5bc88afd7af34.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/10/18/5bc88afd7af34.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/10/18/5bc88afd7af34.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            A Set of Linear DP Problems 1
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-10-19T07:03:30+08:00">
+	
+		    Oct 19, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>不过不得不说，liu_runda确实很强呢。</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Overview"><span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-1334-Elect"><span class="toc-text">BZOJ 1334 Elect</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-2287-消失之物"><span class="toc-text">BZOJ 2287 消失之物</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description-1"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution-1"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-2794-Cloakroom"><span class="toc-text">BZOJ 2794 Cloakroom</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description-2"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution-2"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BZOJ-1190-HNOI2007-梦幻岛宝珠"><span class="toc-text">BZOJ 1190 HNOI2007 梦幻岛宝珠</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description-3"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution-3"><span class="toc-text">Solution</span></a></li></ol></li></ol>
+<h1 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h1><p>一种新的思路, 线性DP是在<strong>找合理的拓扑序</strong>.</p>
+<p>同时DP的思路要灵活. 这是一些题目.</p>
+<h1 id="BZOJ-1334-Elect"><a href="#BZOJ-1334-Elect" class="headerlink" title="BZOJ 1334 Elect"></a>BZOJ 1334 Elect</h1><h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>$N$个政党要组成一个联合内阁，每个党都有自己的席位数. 现在希望你找出一种方案，你选中的党的席位数要大于</p>
+<p>总数的一半，并且联合内阁的席位数越多越好. 对于一个联合内阁，如果某个政党退出后，其它党的席位仍大于总</p>
+<p>数的一半，则这个政党被称为是多余的，这是不允许的.</p>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>需要使去掉一个政党后, 答案小于总数的一半, 如果直接做的话, 我们不能确定减掉最小的是否符合要求, 不妨排个序.</p>
+<p>那么对于每个物品, 在对她DP时的体积上限就是 $\frac{sum}{2} + a_i$.</p>
+<p>然后我们做一个可达DP, 更新答案就好了.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">305</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxm = <span class="number">100005</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, a[maxn], s, ans;</span><br><span class="line"><span class="keyword">bool</span> f[maxm];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">cmp</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> a &gt; b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;a[i]), s += a[i];</span><br><span class="line">  sort(a + <span class="number">1</span>, a + <span class="number">1</span> + n, cmp);</span><br><span class="line"></span><br><span class="line">  f[<span class="number">0</span>] = <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = s / <span class="number">2</span> + a[i]; j &gt;= a[i]; --j) &#123;</span><br><span class="line">      f[j] |= f[j - a[i]];</span><br><span class="line">      <span class="keyword">if</span> (f[j]) ans = max(ans, j);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-2287-消失之物"><a href="#BZOJ-2287-消失之物" class="headerlink" title="BZOJ 2287 消失之物"></a>BZOJ 2287 消失之物</h1><h2 id="Description-1"><a href="#Description-1" class="headerlink" title="Description"></a>Description</h2><p>有$n$个物品, 体积上限为$m$, 计算去掉每个物品$i$, 装满体积上限为$[1,m]$的背包的方案数的最后一位.</p>
+<h2 id="Solution-1"><a href="#Solution-1" class="headerlink" title="Solution"></a>Solution</h2><p>一开始以为是做一遍前缀DP, 做一遍后缀DP, 然后把两边合并起来, 但这样其实是$O(nm^2)$的.</p>
+<p>首先做完一遍DP. 考虑容斥一下, 如果当前枚举的体积$&lt; a_i$, 那么$i$一定不在背包里, 直接复制答案.</p>
+<p>如果$\ge a_i$, 那么答案就是总的方案数减去使用了$i$的方案数, 使用了$i$代表用其他物品填满$j - a_i$, 这个答案是已经求出的, 即$ans_{i,j-a_i}$.</p>
+<p>补集转化的思路, 在正常DP行不通时经常用到. 要加以注意.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">2005</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m, a[maxn], f[maxn];</span><br><span class="line"><span class="keyword">int</span> ans[maxn][maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;n, &amp;m);</span><br><span class="line">  f[<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;a[i]);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = m; j &gt;= a[i]; --j)</span><br><span class="line">      f[j] = (f[j] + f[j - a[i]]) % <span class="number">10</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    ans[i][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j) &#123;</span><br><span class="line">      <span class="keyword">if</span> (j &lt; a[i]) ans[i][j] = f[j];</span><br><span class="line">      <span class="keyword">else</span> ans[i][j] = (f[j] - ans[i][j - a[i]] + <span class="number">10</span>) % <span class="number">10</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j)</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">"%d"</span>,ans[i][j]);</span><br><span class="line">    <span class="built_in">putchar</span>(<span class="string">'\n'</span>);</span><br><span class="line">  &#125; </span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-2794-Cloakroom"><a href="#BZOJ-2794-Cloakroom" class="headerlink" title="BZOJ 2794 Cloakroom"></a>BZOJ 2794 Cloakroom</h1><h2 id="Description-2"><a href="#Description-2" class="headerlink" title="Description"></a>Description</h2><p>有$n$件物品，每件物品有三个属性$a[i], b[i], c[i] (a[i]&lt;b[i])$。</p>
+<p>再给出$q$个询问，每个询问由非负整数$m, k, s$组成，问是否能够选出某些物品使得：</p>
+<p>对于每个选的物品$i$，满足$a[i] \le m$且$b[i]&gt;m+s$。</p>
+<p>所有选出物品的$c[i]$的和正好是$k$。</p>
+<h2 id="Solution-2"><a href="#Solution-2" class="headerlink" title="Solution"></a>Solution</h2><p>每次都做一遍DP太慢了, 考虑将问题离线, 按顺序用一遍背包解决所有问题.</p>
+<p>这样就将问题转化成了, 在装满$k$的情况下, 最小的$b_i$大于一个值.</p>
+<p>这是可以DP的, 我们只要求出每次转移时选择该物品的答案较小值, 并更新答案为选或不选的较大值即可.</p>
+<p>每次完成询问时检查$f_k$是否大于要求的值即可.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1005</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxq = <span class="number">1e+6</span> + <span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxv = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>; <span class="keyword">register</span> <span class="keyword">char</span> c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">obj</span> &#123;</span></span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">int</span> a, b, c;</span><br><span class="line">  <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> obj &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> a &lt; rhs.a;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">query</span> &#123;</span></span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">int</span> M, k, s, id;</span><br><span class="line">  <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> query &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> M &lt; rhs.M;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line">obj t[maxn]; query q[maxq];</span><br><span class="line"><span class="keyword">int</span> ans[maxq], f[maxv];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) <span class="comment">//t[i].init();</span></span><br><span class="line">    t[i].c = rd(), t[i].a = rd(), t[i].b = rd();</span><br><span class="line">  m = rd();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) <span class="comment">//q[i].init(i);</span></span><br><span class="line">    q[i].M = rd(), q[i].k = rd(), q[i].s = rd(), q[i].id = i;</span><br><span class="line">  sort(t + <span class="number">1</span>, t + <span class="number">1</span> + n);</span><br><span class="line">  sort(q + <span class="number">1</span>, q + <span class="number">1</span> + m);</span><br><span class="line">  f[<span class="number">0</span>] = <span class="number">0x3f3f3f3f</span>;</span><br><span class="line">  <span class="keyword">int</span> ptr = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    <span class="keyword">while</span> (t[ptr].a &lt;= q[i].M &amp;&amp; ptr &lt;= n) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">100000</span>; j &gt;= t[ptr].c; --j)</span><br><span class="line">    f[j] = max(f[j], min(f[j - t[ptr].c], t[ptr].b));</span><br><span class="line">      ptr++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// printf("%d %d\n", i, f[q[i].k]);</span></span><br><span class="line">    <span class="keyword">if</span> (f[q[i].k] &gt; q[i].M + q[i].s) ans[q[i].id] = <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (ans[i]) <span class="built_in">puts</span>(<span class="string">"TAK"</span>);</span><br><span class="line">    <span class="keyword">else</span> <span class="built_in">puts</span>(<span class="string">"NIE"</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="BZOJ-1190-HNOI2007-梦幻岛宝珠"><a href="#BZOJ-1190-HNOI2007-梦幻岛宝珠" class="headerlink" title="BZOJ 1190 HNOI2007 梦幻岛宝珠"></a>BZOJ 1190 HNOI2007 梦幻岛宝珠</h1><h2 id="Description-3"><a href="#Description-3" class="headerlink" title="Description"></a>Description</h2><p>给你$N$颗宝石，每颗宝石都有重量和价值。要你从这些宝石中选取一些宝石，保证总重量不超过$W$，且总价值最大，并输出最大的总价值。</p>
+<p>$ N \le 100, W \le 2^30$,并且保证每颗宝石的重量符合$a \times 2^b（a \le 10, b \le 30)$.</p>
+<h2 id="Solution-3"><a href="#Solution-3" class="headerlink" title="Solution"></a>Solution</h2><p>看起来就是一个背包, 但是无论是体积还是背包限制都太大了, 既然题目说满足$a \times 2^b$的性质, 我们就可以从这里入手, 由于$2$的同次幂是可以转移的, 我们只要考虑如何在相邻幂之间做系数的转化.</p>
+<p>可以考虑将高于当前二进制位的数都看作系数， 那么当二进制位继续右移时，系数将变为$ \big\lceil \small{fac - [w\, \&amp;\, (1 &lt;&lt; i)]} \big\rceil$ .</p>
+<p>然后就可以做了.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">105</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">stu</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> b, c, v;</span><br><span class="line">  <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> stu &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> b &lt; rhs.b;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;a[maxn];</span><br><span class="line"><span class="keyword">int</span> n, w;</span><br><span class="line"><span class="keyword">int</span> f[<span class="number">32</span>][<span class="number">1005</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;n, &amp;w) &amp;&amp;</span><br><span class="line">	 n != <span class="number">-1</span> &amp;&amp; w != <span class="number">-1</span>) &#123;</span><br><span class="line">    <span class="built_in">memset</span>(a, <span class="number">0</span>, <span class="keyword">sizeof</span> a); <span class="built_in">memset</span>(f, <span class="number">0</span>, <span class="keyword">sizeof</span> f);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">      <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;a[i].c, &amp;a[i].v);</span><br><span class="line">      <span class="keyword">while</span> (!(a[i].c &amp; <span class="number">1</span>)) a[i].c &gt;&gt;= <span class="number">1</span>, a[i].b++;</span><br><span class="line">    &#125;</span><br><span class="line">    sort(a + <span class="number">1</span>, a + <span class="number">1</span> + n);</span><br><span class="line">    <span class="keyword">int</span> ptr = <span class="number">1</span>, fac = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= <span class="number">30</span>; ++i) &#123;</span><br><span class="line">      <span class="keyword">while</span> (ptr &lt;= n &amp;&amp; a[ptr].b == i) &#123;</span><br><span class="line">	fac = min(fac + a[ptr].c, w &gt;&gt; i);</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> j = fac; j &gt;= a[ptr].c; --j)</span><br><span class="line">	  f[i][j] = max(f[i][j], f[i][j - a[ptr].c] + a[ptr].v);</span><br><span class="line">	++ptr;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= fac; ++j)</span><br><span class="line">	f[i + <span class="number">1</span>][(j - ((w &amp; (<span class="number">1</span> &lt;&lt; i))?<span class="number">1</span>:<span class="number">0</span>) + <span class="number">1</span>) &gt;&gt; <span class="number">1</span>] =</span><br><span class="line">	  max(f[i + <span class="number">1</span>][(j - ((w &amp; (<span class="number">1</span> &lt;&lt; i))?<span class="number">1</span>:<span class="number">0</span>) + <span class="number">1</span>) &gt;&gt; <span class="number">1</span>], f[i][j]);</span><br><span class="line">      fac = (fac - ((w &amp; (<span class="number">1</span> &lt;&lt; i))?<span class="number">1</span>:<span class="number">0</span>) + <span class="number">1</span>) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, f[<span class="number">31</span>][<span class="number">0</span>]);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../27/POI2005-DWU-BZOJ1539/" data-tooltip="BZOJ 1539 POI2005-DWU" aria-label="PREVIOUS: BZOJ 1539 POI2005-DWU">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../ASetOfFunProblemI/" data-tooltip="A Set Of Fun Problems 1" aria-label="NEXT: A Set Of Fun Problems 1">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../27/POI2005-DWU-BZOJ1539/" data-tooltip="BZOJ 1539 POI2005-DWU" aria-label="PREVIOUS: BZOJ 1539 POI2005-DWU">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../ASetOfFunProblemI/" data-tooltip="A Set Of Fun Problems 1" aria-label="NEXT: A Set Of Fun Problems 1">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/10/19/ASetOfDPProblemsI/';
+                 
+                    this.page.identifier = '2018/10/19/ASetOfDPProblemsI/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

@@ -1,0 +1,581 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>BZOJ 5143 分块 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"YNOI题.\n\nDes.区间$-x$, 区间查询$x$个数.\nSol.分块, 对每个块维护减法标记和区间最大值, 粗略估计极差, 讨论几种情况:\n\n极差$&lt; x$: 没得减.\n极差$\\ge x$, 但$&lt; 2x$: 把大于$x$的值都减掉. 这里要加速, 所以并查集维护. 直接把值相同的元素都挂到减后的值上.\n极差$\\ge 2x$: 给所有$\\le x$的加上$x$, 再整体打$x$的标记, 体现在极差上也有所缩小.\n\n小块朴素.\n这样询问的时候我们根据极差查数就可以了.\n为什么能这么做??找一找这样分阈值的效果和套路.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980818283848586878889909192#pragma GCC optimize(\"inline\")#pragma GCC optimize(3)#include &lt;bits/stdc++.h&gt;using namespace std;const int maxn = 1e+5 + 5;const int maxb = maxn / 650 + 5;int n, m, a[maxn], blo, bel[maxn];int mx[maxb], tag[maxb], f[maxb][maxn];int bkt[maxb][maxn], in[maxb], out[maxb];inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;int find(int *fa, int x) &#123;  return fa[x] ? fa[x] = find(fa, fa[x]) : x;&#125;inline void modify(const int &amp;l, const int &amp;r, const int &amp;x) &#123;  int lb = bel[l], rb = bel[r];  for (register int i = l; i &lt;= r &amp;&amp; i &lt;= out[lb]; ++i)    if (((a[i] = find(f[lb], a[i])) - tag[lb]) &gt; x) &#123;      bkt[lb][a[i]]--;      a[i] -= x;      bkt[lb][a[i]]++;    &#125;  for (register int i = lb + 1; i &lt; rb; ++i) &#123;    if (mx[i] - tag[i] &gt; (x &lt;&lt; 1)) &#123;      for (register int j = 1; j &lt;= x; ++j) &#123;        f[i][j + tag[i]] = j + tag[i] + x;        bkt[i][f[i][j + tag[i]]] += bkt[i][j + tag[i]];      &#125;      tag[i] += x;    &#125; else &#123;      for (register int j = x + 1; j &lt;= mx[i] - tag[i]; ++j) &#123;        f[i][j + tag[i]] = j + tag[i] - x;        bkt[i][f[i][j + tag[i]]] += bkt[i][j + tag[i]];      &#125;      mx[i] = min(mx[i], x + tag[i]);    &#125;  &#125;  if (lb != rb) &#123;    for (register int i = in[rb]; i &lt;= r; ++i) &#123;      if (((a[i] = find(f[rb], a[i])) - tag[rb]) &gt; x) &#123;        bkt[rb][a[i]]--;        a[i] -= x;        bkt[rb][a[i]]++;      &#125;    &#125;  &#125;&#125;inline int query(const int &amp;l, const int &amp;r, const int &amp;x) &#123;  int lb = bel[l], rb = bel[r], ret = 0;  for (register int i = l; i &lt;= r &amp;&amp; i &lt;= out[lb]; ++i)    if (find(f[lb], a[i]) - tag[lb] == x) ret++;  for (register int i = lb + 1; i &lt; rb; ++i) &#123;    if (tag[i] + x &lt;= mx[i]) ret += bkt[i][x + tag[i]];  &#125;  if (lb != rb)     for (register int i = in[rb]; i &lt;= r; ++i)      if (find(f[rb], a[i]) - tag[rb] == x) ret++;  return ret;&#125;int main() &#123;  n = rd(); m = rd();  blo = 650;  for (register int i = 1; i &lt;= n; ++i) &#123;    a[i] = rd();    bel[i] = (i - 1) / blo + 1;    bkt[bel[i]][a[i]]++;    if (!in[bel[i]]) in[bel[i]] = i;  &#125;  for (int i = 1; i &lt;= bel[n]; ++i)    mx[i] = 1e+5, out[i] = i * blo;  out[bel[n]] = n;      int opt, l, r, x;  while (m--) &#123;    opt = rd(); l = rd(); r = rd(); x = rd();    if (opt == 1) &#123;      modify(l, r, x);    &#125; else if (opt == 2) &#123;      printf(\"%d\\n\", query(l, r, x));    &#125;  &#125;   return 0;&#125;\n","dateCreated":"2019-03-12T15:17:25+08:00","dateModified":"2019-03-14T10:43:39+08:00","datePublished":"2019-03-12T15:17:25+08:00","description":"YNOI题.","headline":"BZOJ 5143 分块","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/","keywords":"OI"}</script>
+    <meta name="description" content="YNOI题.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="BZOJ 5143 分块">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="YNOI题.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-03-14T02:43:39.852Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BZOJ 5143 分块">
+<meta name="twitter:description" content="YNOI题.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            BZOJ 5143 分块
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-03-12T15:17:25+08:00">
+	
+		    Mar 12, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>YNOI题.</p>
+<a id="more"></a>
+<h1 id="Des"><a href="#Des" class="headerlink" title="Des."></a>Des.</h1><p>区间$-x$, 区间查询$x$个数.</p>
+<h1 id="Sol"><a href="#Sol" class="headerlink" title="Sol."></a>Sol.</h1><p>分块, 对每个块维护减法标记和区间最大值, 粗略估计极差, 讨论几种情况:</p>
+<ul>
+<li>极差$&lt; x$: 没得减.</li>
+<li>极差$\ge x$, 但$&lt; 2x$: 把大于$x$的值都减掉. 这里要加速, 所以并查集维护. 直接把值相同的元素都挂到减后的值上.</li>
+<li>极差$\ge 2x$: 给所有$\le x$的加上$x$, 再整体打$x$的标记, 体现在极差上也有所缩小.</li>
+</ul>
+<p>小块朴素.</p>
+<p>这样询问的时候我们根据极差查数就可以了.</p>
+<p><del>为什么能这么做??找一找这样分阈值的效果和套路.</del></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC optimize(<span class="meta-string">"inline"</span>)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC optimize(3)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxb = maxn / <span class="number">650</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m, a[maxn], blo, bel[maxn];</span><br><span class="line"><span class="keyword">int</span> mx[maxb], tag[maxb], f[maxb][maxn];</span><br><span class="line"><span class="keyword">int</span> bkt[maxb][maxn], in[maxb], out[maxb];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">find</span><span class="params">(<span class="keyword">int</span> *fa, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> fa[x] ? fa[x] = find(fa, fa[x]) : x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">modify</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;l, <span class="keyword">const</span> <span class="keyword">int</span> &amp;r, <span class="keyword">const</span> <span class="keyword">int</span> &amp;x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> lb = bel[l], rb = bel[r];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = l; i &lt;= r &amp;&amp; i &lt;= out[lb]; ++i)</span><br><span class="line">    <span class="keyword">if</span> (((a[i] = find(f[lb], a[i])) - tag[lb]) &gt; x) &#123;</span><br><span class="line">      bkt[lb][a[i]]--;</span><br><span class="line">      a[i] -= x;</span><br><span class="line">      bkt[lb][a[i]]++;</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = lb + <span class="number">1</span>; i &lt; rb; ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (mx[i] - tag[i] &gt; (x &lt;&lt; <span class="number">1</span>)) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= x; ++j) &#123;</span><br><span class="line">        f[i][j + tag[i]] = j + tag[i] + x;</span><br><span class="line">        bkt[i][f[i][j + tag[i]]] += bkt[i][j + tag[i]];</span><br><span class="line">      &#125;</span><br><span class="line">      tag[i] += x;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> j = x + <span class="number">1</span>; j &lt;= mx[i] - tag[i]; ++j) &#123;</span><br><span class="line">        f[i][j + tag[i]] = j + tag[i] - x;</span><br><span class="line">        bkt[i][f[i][j + tag[i]]] += bkt[i][j + tag[i]];</span><br><span class="line">      &#125;</span><br><span class="line">      mx[i] = min(mx[i], x + tag[i]);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (lb != rb) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = in[rb]; i &lt;= r; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (((a[i] = find(f[rb], a[i])) - tag[rb]) &gt; x) &#123;</span><br><span class="line">        bkt[rb][a[i]]--;</span><br><span class="line">        a[i] -= x;</span><br><span class="line">        bkt[rb][a[i]]++;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">query</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;l, <span class="keyword">const</span> <span class="keyword">int</span> &amp;r, <span class="keyword">const</span> <span class="keyword">int</span> &amp;x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> lb = bel[l], rb = bel[r], ret = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = l; i &lt;= r &amp;&amp; i &lt;= out[lb]; ++i)</span><br><span class="line">    <span class="keyword">if</span> (find(f[lb], a[i]) - tag[lb] == x) ret++;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = lb + <span class="number">1</span>; i &lt; rb; ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (tag[i] + x &lt;= mx[i]) ret += bkt[i][x + tag[i]];</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (lb != rb) </span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = in[rb]; i &lt;= r; ++i)</span><br><span class="line">      <span class="keyword">if</span> (find(f[rb], a[i]) - tag[rb] == x) ret++;</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd(); m = rd();</span><br><span class="line">  blo = <span class="number">650</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    a[i] = rd();</span><br><span class="line">    bel[i] = (i - <span class="number">1</span>) / blo + <span class="number">1</span>;</span><br><span class="line">    bkt[bel[i]][a[i]]++;</span><br><span class="line">    <span class="keyword">if</span> (!in[bel[i]]) in[bel[i]] = i;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= bel[n]; ++i)</span><br><span class="line">    mx[i] = <span class="number">1e+5</span>, out[i] = i * blo;</span><br><span class="line">  out[bel[n]] = n;</span><br><span class="line">    </span><br><span class="line">  <span class="keyword">int</span> opt, l, r, x;</span><br><span class="line">  <span class="keyword">while</span> (m--) &#123;</span><br><span class="line">    opt = rd(); l = rd(); r = rd(); x = rd();</span><br><span class="line">    <span class="keyword">if</span> (opt == <span class="number">1</span>) &#123;</span><br><span class="line">      modify(l, r, x);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (opt == <span class="number">2</span>) &#123;</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, query(l, r, x));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; </span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj-4008-expectation-dp/" data-tooltip="BZOJ 4008 期望DP" aria-label="PREVIOUS: BZOJ 4008 期望DP">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../11/bzoj-cqoi-2018/" data-tooltip="CQOI2018" aria-label="NEXT: CQOI2018">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj-4008-expectation-dp/" data-tooltip="BZOJ 4008 期望DP" aria-label="PREVIOUS: BZOJ 4008 期望DP">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../11/bzoj-cqoi-2018/" data-tooltip="CQOI2018" aria-label="NEXT: CQOI2018">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/03/12/bzoj-5143-block/';
+                 
+                    this.page.identifier = '2019/03/12/bzoj-5143-block/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

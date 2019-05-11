@@ -1,0 +1,641 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Computational Geometry - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"This is a BIG set of Computational Geometry related notes.\nBouvardia的计算几何入门大合集.\n\n\nOverviewNAN.\nBasic ElementPoint定义在二维平面上的点.\nVector基于坐标表示法的向量, 支持向量运算.\nLine基于点+向量表示法的直线, 在模板中右侧定义为半平面.\nCircle定义了坐标(点) 和半径的圆.\nPolygon定义了顶点个数和顶点集合的多边形.\nBasic OptionJudging Direction Relationship between 2 Vectors叉积$\\overrightarrow{a} \\times \\overrightarrow{b} \\le 0$, 则 $a$ 在 $b$ 左侧.\nGetting Perpendicular Vector (Right Hand)$(x, y) \\rightarrow (y, -x)$\nGetting The Distance From Point to Line面积转换, 定义直线 $l$ , 有$d = \\frac{|( P - l.P ) \\times l.v|}{|l.v|} $\n快速排斥实验与跨立实验判断两线段覆盖矩形是否交, 叉积判断两点是否分立.\nJudging Direction Relationship between Point and Line定义向量$a = p - l.p$, 判断向量关系.\nCalculating 2 Lines’ intersection position对于直线$a, b$: $Point  P = b.p + b.v * (a.v \\times (a.p - b.p)) / (a.v \\times b.v)$ , 根据向量叉积面积放缩, 负值可抵消.\nCalculating the Area of Polygon对于每两个点计算叉积面积并累加, 多余部分可抵消. 叉积计算的是平行四边形面积, 记得$\\times 0.5$的说.\n\nBouvardia有话要说. 对于某些基于整点的多边形面积问题, 或有关问题, 可以想到叉积法求出的面积$\\times 2$总是整数, 从而设计状态.\n\n*To Be Continue...*\n\nHalf-Plane Intersection(HPI)话说Bouvardia做题的时候手贱写成了NOI来的……\n给出二维平面上的若干个半平面, 或者线性规划关系, 通常以直线方向向量向右为可行域. 求半平面的交集, 也即可行域. 问题可能有凸包顶点, 可行域面积等.\n常用的$O(nlogn)$算法是, 对所有直线按极角排序, 维护一个双端队列. 每次插入时, 判断队尾&amp;队头两线交点与新线是否合法, 弹队列, 新线插入队尾.\n需要注意的是, 若队列中只有一个元素, 而仍与新线不合法, 则无解.\n做完后我们得到了一个凸包, 利用叉积求面积, 或者做一些其他操作就好了.\n放一个模板, 这是POJ 2451.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cmath&gt;#include &lt;cstdio&gt;#include &lt;cstring&gt;using namespace std;const int inf = 10000;const int maxn = 20005;namespace geometric_lib&#123;\tusing std::sort;\t//basic geometry element\ttypedef long double ldb;\tconst ldb eps = 1e-10;\tstruct Vector\t&#123;\t\tldb x, y;\t\tVector(ldb x_ = 0.0, ldb y_ = 0.0):x(x_), y(y_)&#123;&#125;\t\tVector operator + (Vector rhs)\t\t&#123;\t\t\treturn Vector(x + rhs.x, y + rhs.y);\t\t&#125;\t\tVector operator - (Vector rhs)\t\t&#123;\t\t\treturn Vector(x - rhs.x, y - rhs.y);\t\t&#125;\t\tfriend Vector operator * (Vector lhs, ldb rhs)\t\t&#123;\t\t\treturn Vector(rhs * lhs.x, rhs * lhs.y);\t\t&#125;\t\tldb operator * (Vector rhs)\t\t&#123;\t\t\treturn x * rhs.x + y * rhs.y;\t\t&#125;\t\tldb operator ^ (Vector rhs)\t\t&#123;\t\t\treturn x * rhs.y - y * rhs.x;\t\t&#125;\t&#125;;\ttypedef Vector Point;\t//public functions:\tint DCMP(ldb x)\t&#123;\t\treturn (x &lt; -eps) ? -1 : (x &gt; eps);\t&#125;\tstruct Line\t&#123;\t\tPoint P;\t\tPoint V;\t\tldb Ang;\t\tLine(Point P_ = Point(), Point V_ = Point()):P(P_), V(V_)\t\t&#123;Ang = atan2(V_.y, V_.x);&#125;//&#125;\t\t/*inline void getAngle()\t\t&#123;\t\t\tAng = atan2(V.y, V.x);\t\t&#125;*/\t\tbool operator &lt; (const Line &amp;rhs) const\t\t&#123;\t\t\t//getAngle(); rhs.getAngle();\t\t\treturn Ang &lt; rhs.Ang;\t\t&#125;\t&#125;;\t\t// half-plane intersection:\tint n;\tPoint pts[maxn];\tLine pln[maxn], q[maxn];\tbool LEGAL(Point P_, Line L_)\t&#123;\t\treturn DCMP((P_ - L_.P)^L_.V) &gt;= 0;\t&#125;\tPoint intersection(Line a, Line b)\t&#123;\t\treturn b.P + b.V*((a.V ^ (a.P - b.P))/(a.V ^ b.V));\t&#125;\tldb HPI() //right hand HPI\t&#123;\t\tpln[++n] = Line(Point(0, 0), Point(0, 1));\t\tpln[++n] = Line(Point(0, inf), Point(1, 0));\t\tpln[++n] = Line(Point(inf, inf), Point(0, -1));\t\tpln[++n] = Line(Point(inf, 0), Point(-1, 0));\t\tsort(pln + 1, pln + 1 + n);\t\tint tot = 0;\t\t//unique:\t\tfor(int i = 1; i &lt;= n; ++i)\t\t&#123;\t\t\tif(!tot) pln[++tot] = pln[i];\t\t\telse if(DCMP(pln[tot].Ang - pln[i].Ang) != 0) pln[++tot] = pln[i];\t\t\telse if(LEGAL(pln[i].P, pln[tot])) pln[tot] = pln[i];\t\t&#125;\t\tn = tot; int hd = 1, tl = 2;\t\tq[1] = pln[1]; q[2] = pln[2];\t\tfor(int i = 3; i &lt;= n; ++i)\t\t&#123;\t\t\twhile(hd != tl &amp;&amp; !LEGAL(intersection(q[tl], q[tl - 1]), pln[i])) --tl;\t\t\twhile(hd != tl &amp;&amp; !LEGAL(intersection(q[hd], q[hd + 1]), pln[i])) ++hd;\t\t\tif(hd == tl &amp;&amp; DCMP(q[hd].V ^ pln[i].V) &lt;= 0) return 0;// No Solution\t\t\tq[++tl] = pln[i];\t\t&#125;\t\twhile(hd != tl &amp;&amp; !LEGAL(intersection(q[tl], q[tl - 1]), q[hd])) --tl;\t\tint len = tl - hd + 1;\t\tfor(int i = 1; i &lt; len; ++i) pts[i] = intersection(q[hd + i], q[hd + i - 1]);\t\tpts[0] = pts[len] = intersection(q[tl], q[hd]);\t\tldb area = 0.0;\t\tfor(int i = 0; i &lt; len; ++i) area += pts[i] ^ pts[i + 1];\t\treturn area * 0.5;\t&#125;\tvoid HPI_main()\t&#123;\t\twhile(scanf(\"%d\", &amp;n) != EOF)\t\t&#123;\t\t\tldb x1, x2, y1, y2;\t\t\tfor(int i = 1; i &lt;= n; ++i)\t\t\t&#123;\t\t\t\tscanf(\"%Lf%Lf%Lf%Lf\", &amp;x1, &amp;y1, &amp;x2, &amp;y2);\t\t\t\tPoint u(x1, y1), v(x2, y2);\t\t\t\tpln[i] = Line(v, u - v);\t\t\t&#125;\t\t\tprintf(\"%.1Lf\\n\", HPI());\t\t&#125;\t&#125;&#125;;int main()&#123;\tgeometric_lib::HPI_main();\treturn 0;&#125;\n似乎有点过度封装了呢……不过Bouvardia还打算继续加入功能的说.\nRotating CalipersBOI2011 2circlesDescription我们将会研究一个有N 个顶点的凸多边形。我们希望找到一个最大的半径R，使得两个半径为R 的圆能完全地放置在给出的多边形内，并没有重叠。 \nSolution最大化不太好做的说. 所以要考虑二分答案.\n那么如何验证呢?\n把多边形向里推, 如果推完后多边形内仍存在一条$\\ge 2mid$的线段, 则合法.\n证明:\n所以做法就是二分答案+半平面交+旋转卡壳啦.\n向量的 Perpendicular, Adjust 以及直线的 Translate 操作已经集成进来啦.\nCode只有核心代码~\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081//in namespace geometric_lib:\t\tldb norm(Point a)\t&#123;\t\treturn sqrt(a*a);\t&#125;\tldb dist(Point a, Point b)\t&#123;\t\treturn norm(a - b);\t&#125;\tPoint perpendicular(Point a)\t&#123;\t\treturn Point(a.y, -a.x);\t&#125;\tPoint adjust(Point a, ldb d)\t&#123;\t\treturn Point(a*(d/norm(a)));\t&#125;\tLine translate(Line a, ldb d)//d: &lt;0 left, &gt;0 right\t&#123;\t\treturn Line(a.P + adjust(perpendicular(a.V), d), a.V);\t&#125;\t\tldb checking_bound;\t\tbool rotating_caliper(Point *ps, int ps_count)\t&#123;\t\tldb mx = 0, x; int pos;\t\tfor(int i = 2; i &lt;= ps_count; ++i)\t\t&#123;\t\t\tx = dist(ps[1], ps[i]);\t\t\tif(x &gt; mx) mx = x, pos = i;\t\t&#125;\t\t//plug-in: run faster\t\tif(mx &gt;= checking_bound) return 1;\t\tfor(int i = 2; i &lt;= ps_count; ++i)\t\t&#123;\t\t\tmx = dist(ps[pos], ps[i]);\t\t\twhile(1)\t\t\t&#123;\t\t\t\tx = dist(ps[pos % ps_count + 1], ps[i]);\t\t\t\tif(x &gt; mx) mx = x, pos = pos % ps_count +1;\t\t\t\telse break;\t\t\t&#125;\t\t\tif(mx &gt;= checking_bound) return 1;\t\t&#125;\t\treturn 0;\t&#125;\t//addition\t#define MAX_N 50001\tPoint a[MAX_N];\tLine tpln[MAX_N];\tbool chk(ldb mid)\t&#123;\t\t//set checking_bound\t\tchecking_bound = mid * 2.0;\t\tfor(int i = 1; i &lt;= n; ++i) pln[i] = translate(tpln[i], mid);\t\t//int pcnt = HPI();\t\treturn rotating_caliper(pts, HPI());\t&#125;\tvoid solution_main()\t&#123;\t\tscanf(\"%d\", &amp;n);\t\tfor(int i = 1; i &lt;= n; ++i) scanf(\"%Lf%Lf\", &amp;a[i].x, &amp;a[i].y);\t\tfor(int i = 1; i &lt;= n; ++i)\t\t&#123;\t\t\tint j = i % n + 1;\t\t\ttpln[i] = Line(a[j], a[i] - a[j]);\t\t&#125;\t\t\tldb l = 0.0, r = 20000000.0;\t\twhile(l &lt; r)\t\t&#123;\t\t\tldb mid = (l + r + 0.001) * 0.5;\t\t\tif(chk(mid)) l = mid;\t\t\telse r = mid - 0.001;\t\t&#125;\t\tprintf(\"%.3Lf\\n\", l);\t&#125;\t#undef MAX_N\nMinimum Circle-Coverage ProblemBZOJ 1336&amp;1337一种可以在$O(n)$时间内求出覆盖所有点的最小圆的算法.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cmath&gt;#include &lt;ctime&gt;#include &lt;cstdlib&gt;namespace geometric_lib&#123;\tconst double eps = 1e-10;\tconst int maxn = 1e+5 + 5;\tusing std::srand;\tusing std::time;\tusing std::random_shuffle;\tstruct Vector\t&#123;\t\tdouble x, y;\t\tVector(double x_ = 0.0, double y_ = 0.0):x(x_), y(y_)&#123;&#125;\t\tVector operator + (Vector rhs)\t\t&#123;\t\t\treturn Vector(x + rhs.x, y + rhs.y);\t\t&#125;\t\tVector operator - (Vector rhs)\t\t&#123;\t\t\treturn Vector(x - rhs.x, y - rhs.y);\t\t&#125;\t\tfriend Vector operator * (Vector lhs, double rhs)\t\t&#123;\t\t\treturn Vector(rhs * lhs.x, rhs * lhs.y);\t\t&#125;\t\tdouble operator * (Vector rhs)\t\t&#123;\t\t\treturn x * rhs.x + y * rhs.y;\t\t&#125;\t\tdouble operator ^ (Vector rhs)\t\t&#123;\t\t\treturn x * rhs.y - y * rhs.x;\t\t&#125;\t&#125;;\ttypedef Vector Point;\tdouble norm(Point a)\t&#123;\t\treturn sqrt(a*a);\t&#125;\tstruct Circle\t&#123;\t\tPoint c;\t\tdouble r;\t\tCircle(Point P_ = Point(), double r_ = 0.0):c(P_), r(r_)&#123;&#125; \t&#125;;\t\t//Minimal circle-cover\tint N;\tPoint pts[maxn];\tCircle o;\tvoid circum(Point p, Point q, Point s)\t&#123;\t\tdouble a = 2 * (q.x - p.x), b = 2 * (q.y - p.y);\t\tdouble c = q.x * q.x + q.y * q.y - p.x * p.x - p.y * p.y;\t\tdouble d = 2 * (s.x - p.x), e = 2 * (s.y - p.y);\t\tdouble f = s.x * s.x + s.y * s.y - p.x * p.x - p.y * p.y;\t\to.c.x = (b * f - e * c) / (b * d - e * a);\t\to.c.y = (d * c - a * f) / (b * d - e * a);\t\to.r = norm(p - o.c);\t&#125;\tvoid cover_main()\t&#123;\t\tsrand(time(NULL));\t\tscanf(\"%d\", &amp;N);\t\tfor(int i = 1; i &lt;= N; ++i) scanf(\"%lf%lf\", &amp;pts[i].x, &amp;pts[i].y);\t\trandom_shuffle(pts + 1, pts + 1 + N);\t\to.c = pts[1]; o.r = 0.0;\t\tfor(int i = 2; i &lt;= N; ++i)\t\t&#123;\t\t\tif(norm(pts[i] - o.c) &gt; o.r + eps)\t\t\t&#123;\t\t\t\to.c = pts[i]; o.r = 0.0;\t\t\t\tfor(int j = 1; j &lt;= i - 1; ++j)\t\t\t\t&#123;\t\t\t\t\tif(norm(pts[j] - o.c) &gt; o.r + eps)\t\t\t\t\t&#123;\t\t\t\t\t\to.c.x = (pts[j].x + pts[i].x) * 0.5;\t\t\t\t\t\to.c.y = (pts[j].y + pts[i].y) * 0.5;\t\t\t\t\t\to.r = norm(o.c - pts[j]);\t\t\t\t\t\tfor(int k = 1; k &lt;= j - 1; ++k)\t\t\t\t\t\t\tif(norm(pts[k] - o.c) &gt; o.r + eps)\t\t\t\t\t\t\t\tcircum(pts[i], pts[j], pts[k]);\t\t\t\t\t&#125;\t\t\t\t&#125;\t\t\t&#125;\t\t&#125;\t\tprintf(\"%.3lf\\n\", o.r);\t&#125;&#125;;int main()&#123;\tgeometric_lib::cover_main();\treturn 0;&#125;\nConvex HullBZOJ 1007Description站在无限高处向下看，计算可见直线的编号。\nSolution这就是一个维护凸壳的板题啦。首先对直线按极角/斜率排序，单调栈(也可能有其他数据结构的说，建立在直线加入的顺序上)维护凸壳，每次加入新直线，若交点更靠左则弹栈。\n123456789101112131415161718192021222324252627282930313233343536373839404142434445#include &lt;iostream&gt;#include &lt;cstdio&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cmath&gt;using namespace std;const int maxn = 50005;const double eps = 1e-8;struct Line&#123;\tdouble k, b;\tint id;\tbool operator &lt; (const Line &amp;rhs) const\t&#123;\t\treturn k == rhs.k ? b &lt; rhs.b : k &lt; rhs.k;\t&#125;&#125;l[maxn];int n, stk[maxn], top, v[maxn];double intersection(Line p, Line q)&#123;\treturn (q.b - p.b) / (p.k - q.k);&#125;int main()&#123;\tscanf(\"%d\", &amp;n);\tfor(int i = 1; i &lt;= n; ++i) \t\tscanf(\"%lf%lf\", &amp;l[i].k, &amp;l[i].b), l[i].id = i;\tsort(l + 1, l + 1 + n);\tfor(int i = 1; i &lt;= n; ++i)\t&#123;\t\tif(l[i].k == l[i + 1].k &amp;&amp; i != n) continue;\t\twhile(top &gt; 1 &amp;&amp; \t\t\tintersection(l[i], l[stk[top]]) - intersection(l[stk[top]], l[stk[top - 1]]) &lt;= eps) top--;\t\tstk[++top] = i;\t&#125;\tfor(int i = 1; i &lt;= top; ++i) v[i] = l[stk[i]].id;\tsort(v + 1, v + 1 + top);\tfor(int i = 1; i &lt;= top; ++i) printf(\"%d \", v[i]);\treturn 0;&#125;\n51Nod 1543Description铁人两项包含两个部分：游泳和跑步。选手们先跑R米，然后再游S米。胜者是用时最短的人（如果多个人用时最短，那么他们同时获胜）。\n比赛开始之前，我们已经知道有n个人要参加比赛。第i个人游泳的速度是si米每秒，跑步速度是ri米每秒。但是R和S的具体值并不知道，只知道他们是大于0的实数。\n所以我们现在想要知道谁可能获胜。\nSolution这是Bouvardia上课时听来的题，思路很巧妙呢。\n确定一项的长度，若总长固定，则另一项可定，接着把选手获胜的不等式写出来，发现可以调整为直线的斜截式。但不需要线性规划或者半平面交，我们求一个凸壳就可以了，构成凸壳的直线就是可能的选手。\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cmath&gt;#include &lt;cctype&gt;using std::min;using std::max;using std::sort;using std::swap;using std::memset;using std::isdigit;const int maxn = 2e+5 + 5;const double eps = 1e-8;int n;double s[maxn], r[maxn];struct Point&#123;\tint x, y;\t//plus\tint id;\tPoint(int x_ = 0.0, int y_ = 0.0):x(x_), y(y_)&#123;&#125;&#125;p[maxn];int top, q[maxn], v[maxn];bool cmp1(Point p_, Point q_)&#123;\treturn p_.x == q_.x ? p_.y &gt; q_.y : p_.x &gt; q_.x;&#125;bool cmp2(Point p_, Point q_)&#123;\treturn p_.x == q_.x ? p_.y &gt; q_.y : p_.x &lt; q_.x;&#125;inline double k(Point p_, Point q_)&#123;\treturn (1.0/q_.y - 1.0/p_.y) / (1.0/p_.x - 1.0/q_.x);&#125;inline int rd()&#123;\tint x = 0; char c = getchar();\twhile(!isdigit(c)) c = getchar();\twhile(isdigit(c))x = x * 10 + (c ^ 48), c = getchar();\treturn x;&#125;inline void write(int x)&#123;\tint y = 10, len = 1;\twhile(y &lt;= x) y *= 10, ++len;\twhile(len--) &#123;y /= 10; putchar(x / y + 48); x %= y;&#125;&#125;int main()&#123;\tn = rd();\tfor(register int i = 1; i &lt;= n; ++i)\t\tp[i].x = rd(), p[i].y = rd(), p[i].id = i;\tsort(p + 1, p + 1 + n, cmp1);\tint tot = 0, lst = 0;\tfor(register int i = 1; i &lt;= n; ++i)\t&#123;\t\tif(p[i].y &gt; lst || (p[i].y == lst &amp;&amp; p[i].x == p[tot].x)) p[++tot] = p[i];\t\tlst = max(lst, p[i].y);\t&#125;\tn = tot;\tsort(p + 1, p + 1 + n, cmp2);\tint top = 1; q[1] = 1;\tfor(register int i = 2; i &lt;= n; ++i)\t&#123;\t\twhile(top &gt;= 1 &amp;&amp; k(p[i], p[q[top]]) &lt; k(p[q[top]], p[q[top - 1]])) --top;\t\tq[++top] = i;\t&#125;\tfor(register int i = 1; i &lt;= top; ++i) v[i] = p[q[i]].id;\tsort(v + 1, v + 1 + top);\tfor(register int i = 1; i &lt;= top; ++i) write(v[i]), putchar(' ');\treturn 0;&#125;\nPractical UsageCodeM 2018 Final FDescription袋鼠先生在玩一个塔防游戏。这个游戏中，一共有n个防御塔，第i个塔位于(xi,yi)的位置，这n个防御塔形成了一个严格的凸多边形。有m道防御网，你可以把第i道防御网看做连接第ui个防御塔和第vi个防御塔的一条线段，穿越它就需要消耗ci的血量。\n袋鼠先生想从(sx, sy)位置走到(tx,ty)位置，他想知道最少要消耗多少血量。 \nSolution对偶图最短路的点数太多啦.\n观察样例, 发现路径分为两种情况: 走出多边形/在多边形内穿过\n所以我们可以分别来求.\n对于走出多边形, 一定是到达多边形的某条边. 而障碍一定会覆盖一组连续的边. 差分求前缀和就可以得到到达每条边的代价.\n至于内穿, 计算哪些障碍和直线相交, 代价加和就好了.\n判断是否在多边形内部是一个很有用的技能.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cmath&gt;#include &lt;cctype&gt;using std::max;using std::min;using std::swap;using std::memset;typedef long long ll;const int maxn = 1e+5 + 5;const double eps = 1e-6;int n, m;struct point&#123;\tdouble x, y;\tpoint(double x_ = 0, double y_ = 0):x(x_),y(y_)&#123;&#125;\tpoint operator + (point rhs)\t&#123;\t\treturn point(x + rhs.x, y + rhs.y);\t&#125;\tpoint operator - (point rhs)\t&#123;\t\treturn point(x - rhs.x, y - rhs.y);\t&#125;\tdouble operator * (point rhs)\t&#123;\t\treturn x * rhs.x + y * rhs.y;\t&#125;\tdouble operator ^ (point rhs)\t&#123;\t\treturn x * rhs.y - y * rhs.x;\t&#125;&#125;p[maxn], s, t;struct line&#123;\tpoint p, v;\tline(point p_ = point(), point v_ = point()):\t\tp(p_), v(v_) &#123;&#125;&#125;l[maxn];ll u[maxn], v[maxn], c[maxn];ll val[maxn];int DCMP(ll x)&#123;\treturn x &lt; -eps ? -1 : x &gt; eps;&#125;inline int rd()&#123;\tint x = 0; bool f = false; char c = getchar();\twhile(!isdigit(c)) &#123; if(c == '-') f = true; c = getchar();&#125;\twhile(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();\treturn f ? -x : x;&#125;inline ll rdll()&#123;\tll x = 0; bool f = false; char c = getchar();\twhile(!isdigit(c)) &#123; if(c == '-') f = true; c = getchar();&#125;\twhile(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();\treturn f ? -x : x;&#125;inline bool in(point p_)&#123;\tint cnt = 0;\tfor(int i = 1; i &lt;= n; ++i)\t&#123;\t\tint dir = DCMP((p_ - l[i].p)^l[i].v);\t\tint dlt1 = DCMP(p[i + 1].y - p_.y);\t\tint dlt2 = DCMP(p[i].y - p_.y);\t\tif(dir &gt; 0 &amp;&amp; dlt1 &lt; 0 &amp;&amp; dlt2 &gt;= 0) cnt++;\t\tif(dir &lt; 0 &amp;&amp; dlt1 &gt;= 0 &amp;&amp; dlt2 &lt; 0) cnt--;\t\t//printf(\"%d\\n\", cnt);\t\t//if()\t&#125;\treturn cnt;&#125;inline void pre(point p_)&#123;\t//memset(val, 0, sizeof val);\tfor(int i = 1; i &lt;= n; ++i) val[i] = 0;\tif(!in(p_)) return;\tfor(int i = 1; i &lt;= m; ++i)\t&#123;\t\tline fnc = line(p[u[i]], p[v[i]] - p[u[i]]);\t\tint dir = (p_ - fnc.p) ^ fnc.v;\t\tif(dir &gt; 0)\t\t&#123;\t\t\tval[1] += c[i]; val[u[i]] -= c[i];\t\t\tval[v[i]] += c[i];\t\t&#125;\t\telse\t\t&#123;\t\t\tval[u[i]] += c[i];\t\t\tval[v[i]] -= c[i];\t\t&#125;\t&#125;&#125;int main()&#123;\tn = rd(); m = rd();\tfor(int i = 1; i &lt;= n; ++i)\t\tp[i].x = rdll(), p[i].y = rdll();\tp[n + 1] = p[1];\tfor(int i = 1; i &lt;= n; ++i)\t&#123;\t\tl[i] = line(p[i], p[i + 1] - p[i]);\t&#125;\tfor(int i = 1; i &lt;= m; ++i)\t&#123;\t\tu[i] = rdll(), v[i] = rdll();\t\tif(u[i] &gt; v[i]) swap(u[i], v[i]);\t\tc[i] = rdll();\t&#125;\tll sums = 1e18, sumt = 1e18;\ts.x = rdll(); s.y = rdll(); pre(s); \tfor(int i = 1; i &lt;= n; ++i) val[i] += val[i - 1], sums = min(sums, val[i]);\tt.x = rdll(); t.y = rdll(); pre(t);\tfor(int i = 1; i &lt;= n; ++i) val[i] += val[i - 1], sumt = min(sumt, val[i]);\tif(!sums)\t&#123;\t\tprintf(\"%lld\\n\", sumt); return 0;\t&#125;\tif(!sumt)\t&#123;\t\tprintf(\"%lld\\n\", sums); return 0;\t&#125;\tll ans = 0;\tfor(int i = 1; i &lt;= m; ++i)\t&#123;\t\tint dir1 = DCMP((s - p[u[i]]) ^ (p[v[i]] - p[u[i]]));\t\tint dir2 = DCMP((t - p[u[i]]) ^ (p[v[i]] - p[u[i]]));\t\tif(dir1 * dir2 &lt; 0) ans += c[i];\t&#125;\tans = min(ans, sums + sumt);\tprintf(\"%lld\\n\", ans);\treturn 0;&#125;\n","dateCreated":"2018-08-13T21:22:50+08:00","dateModified":"2018-08-15T20:49:05+08:00","datePublished":"2018-08-13T21:22:50+08:00","description":"This is a BIG set of Computational Geometry related notes.\nBouvardia的计算几何入门大合集.","headline":"Computational Geometry","image":["https://i.loli.net/2018/08/13/5b7187de4b31b.jpg","https://i.loli.net/2018/08/10/5b6d14aac5a7b.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/08/13/5b7187de4b31b.jpg"}</script>
+    <meta name="description" content="This is a BIG set of Computational Geometry related notes. Bouvardia的计算几何入门大合集.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Computational Geometry">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="This is a BIG set of Computational Geometry related notes. Bouvardia的计算几何入门大合集.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-08-15T12:49:05.719Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Computational Geometry">
+<meta name="twitter:description" content="This is a BIG set of Computational Geometry related notes. Bouvardia的计算几何入门大合集.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/13/5b7187de4b31b.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/13/5b7187de4b31b.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6d14aac5a7b.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/10/5b6d14aac5a7b.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/08/10/5b6d14aac5a7b.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Computational Geometry
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-08-13T21:22:50+08:00">
+	
+		    Aug 13, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>This is a BIG set of Computational Geometry related notes.</p>
+<p>Bouvardia的计算几何入门大合集.</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Overview"><span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Basic-Element"><span class="toc-text">Basic Element</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Point"><span class="toc-text">Point</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Vector"><span class="toc-text">Vector</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Line"><span class="toc-text">Line</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Circle"><span class="toc-text">Circle</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Polygon"><span class="toc-text">Polygon</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Basic-Option"><span class="toc-text">Basic Option</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Judging-Direction-Relationship-between-2-Vectors"><span class="toc-text">Judging Direction Relationship between 2 Vectors</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Getting-Perpendicular-Vector-Right-Hand"><span class="toc-text">Getting Perpendicular Vector (Right Hand)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Getting-The-Distance-From-Point-to-Line"><span class="toc-text">Getting The Distance From Point to Line</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#快速排斥实验与跨立实验"><span class="toc-text">快速排斥实验与跨立实验</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Judging-Direction-Relationship-between-Point-and-Line"><span class="toc-text">Judging Direction Relationship between Point and Line</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Calculating-2-Lines’-intersection-position"><span class="toc-text">Calculating 2 Lines’ intersection position</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Calculating-the-Area-of-Polygon"><span class="toc-text">Calculating the Area of Polygon</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Half-Plane-Intersection-HPI"><span class="toc-text">Half-Plane Intersection(HPI)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Rotating-Calipers"><span class="toc-text">Rotating Calipers</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#BOI2011-2circles"><span class="toc-text">BOI2011 2circles</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Code"><span class="toc-text">Code</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Minimum-Circle-Coverage-Problem"><span class="toc-text">Minimum Circle-Coverage Problem</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#BZOJ-1336-amp-1337"><span class="toc-text">BZOJ 1336&amp;1337</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Convex-Hull"><span class="toc-text">Convex Hull</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#BZOJ-1007"><span class="toc-text">BZOJ 1007</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Description-1"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution-1"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#51Nod-1543"><span class="toc-text">51Nod 1543</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Description-2"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution-2"><span class="toc-text">Solution</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Practical-Usage"><span class="toc-text">Practical Usage</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CodeM-2018-Final-F"><span class="toc-text">CodeM 2018 Final F</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Description-3"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution-3"><span class="toc-text">Solution</span></a></li></ol></li></ol></li></ol></li></ol>
+<h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p>NAN.</p>
+<h2 id="Basic-Element"><a href="#Basic-Element" class="headerlink" title="Basic Element"></a>Basic Element</h2><h4 id="Point"><a href="#Point" class="headerlink" title="Point"></a>Point</h4><p>定义在二维平面上的点.</p>
+<h4 id="Vector"><a href="#Vector" class="headerlink" title="Vector"></a>Vector</h4><p>基于坐标表示法的向量, 支持向量运算.</p>
+<h4 id="Line"><a href="#Line" class="headerlink" title="Line"></a>Line</h4><p>基于点+向量表示法的直线, 在模板中右侧定义为半平面.</p>
+<h4 id="Circle"><a href="#Circle" class="headerlink" title="Circle"></a>Circle</h4><p>定义了坐标(点) 和半径的圆.</p>
+<h4 id="Polygon"><a href="#Polygon" class="headerlink" title="Polygon"></a>Polygon</h4><p>定义了顶点个数和顶点集合的多边形.</p>
+<h2 id="Basic-Option"><a href="#Basic-Option" class="headerlink" title="Basic Option"></a>Basic Option</h2><h4 id="Judging-Direction-Relationship-between-2-Vectors"><a href="#Judging-Direction-Relationship-between-2-Vectors" class="headerlink" title="Judging Direction Relationship between 2 Vectors"></a>Judging Direction Relationship between 2 Vectors</h4><p>叉积$\overrightarrow{a} \times \overrightarrow{b} \le 0$, 则 $a$ 在 $b$ 左侧.</p>
+<h4 id="Getting-Perpendicular-Vector-Right-Hand"><a href="#Getting-Perpendicular-Vector-Right-Hand" class="headerlink" title="Getting Perpendicular Vector (Right Hand)"></a>Getting Perpendicular Vector (Right Hand)</h4><p>$(x, y) \rightarrow (y, -x)$</p>
+<h4 id="Getting-The-Distance-From-Point-to-Line"><a href="#Getting-The-Distance-From-Point-to-Line" class="headerlink" title="Getting The Distance From Point to Line"></a>Getting The Distance From Point to Line</h4><p>面积转换, 定义直线 $l$ , 有$d = \frac{|( P - l.P ) \times l.v|}{|l.v|} $</p>
+<h4 id="快速排斥实验与跨立实验"><a href="#快速排斥实验与跨立实验" class="headerlink" title="快速排斥实验与跨立实验"></a>快速排斥实验与跨立实验</h4><p>判断两线段覆盖矩形是否交, 叉积判断两点是否分立.</p>
+<h4 id="Judging-Direction-Relationship-between-Point-and-Line"><a href="#Judging-Direction-Relationship-between-Point-and-Line" class="headerlink" title="Judging Direction Relationship between Point and Line"></a>Judging Direction Relationship between Point and Line</h4><p>定义向量$a = p - l.p$, 判断向量关系.</p>
+<h4 id="Calculating-2-Lines’-intersection-position"><a href="#Calculating-2-Lines’-intersection-position" class="headerlink" title="Calculating 2 Lines’ intersection position"></a>Calculating 2 Lines’ intersection position</h4><p>对于直线$a, b$: $Point  P = b.p + b.v * (a.v \times (a.p - b.p)) / (a.v \times b.v)$ , 根据向量叉积面积放缩, 负值可抵消.</p>
+<h4 id="Calculating-the-Area-of-Polygon"><a href="#Calculating-the-Area-of-Polygon" class="headerlink" title="Calculating the Area of Polygon"></a>Calculating the Area of Polygon</h4><p>对于每两个点计算叉积面积并累加, 多余部分可抵消. 叉积计算的是平行四边形面积, 记得$\times 0.5$的说.</p>
+<blockquote>
+<p>Bouvardia有话要说. 对于某些基于整点的多边形面积问题, 或有关问题, 可以想到叉积法求出的面积$\times 2$总是整数, 从而设计状态.</p>
+</blockquote>
+<center>*To Be Continue...*</center>
+
+<h2 id="Half-Plane-Intersection-HPI"><a href="#Half-Plane-Intersection-HPI" class="headerlink" title="Half-Plane Intersection(HPI)"></a>Half-Plane Intersection(HPI)</h2><p>话说Bouvardia做题的时候手贱写成了NOI来的……</p>
+<p>给出二维平面上的若干个半平面, 或者线性规划关系, 通常以直线方向向量向右为可行域. 求半平面的交集, 也即可行域. 问题可能有凸包顶点, 可行域面积等.</p>
+<p>常用的$O(nlogn)$算法是, 对所有直线按<strong>极角排序</strong>, 维护一个双端队列. 每次插入时, 判断队尾&amp;队头两线交点与新线是否合法, 弹队列, 新线插入队尾.</p>
+<p>需要注意的是, 若队列中只有一个元素, 而仍与新线不合法, 则无解.</p>
+<p>做完后我们得到了一个凸包, 利用叉积求面积, 或者做一些其他操作就好了.</p>
+<p>放一个模板, 这是<a href="http://poj.org/problem?id=2451" target="_blank" rel="noopener">POJ 2451</a>.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> inf = <span class="number">10000</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">20005</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> geometric_lib</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">using</span> <span class="built_in">std</span>::sort;</span><br><span class="line">	<span class="comment">//basic geometry element</span></span><br><span class="line">	<span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">double</span> ldb;</span><br><span class="line">	<span class="keyword">const</span> ldb eps = <span class="number">1e-10</span>;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">Vector</span></span></span><br><span class="line"><span class="class">	&#123;</span></span><br><span class="line">		ldb x, y;</span><br><span class="line">		Vector(ldb x_ = <span class="number">0.0</span>, ldb y_ = <span class="number">0.0</span>):x(x_), y(y_)&#123;&#125;</span><br><span class="line">		Vector <span class="keyword">operator</span> + (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> Vector(x + rhs.x, y + rhs.y);</span><br><span class="line">		&#125;</span><br><span class="line">		Vector <span class="keyword">operator</span> - (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> Vector(x - rhs.x, y - rhs.y);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">friend</span> Vector <span class="keyword">operator</span> * (Vector lhs, ldb rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> Vector(rhs * lhs.x, rhs * lhs.y);</span><br><span class="line">		&#125;</span><br><span class="line">		ldb <span class="keyword">operator</span> * (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> x * rhs.x + y * rhs.y;</span><br><span class="line">		&#125;</span><br><span class="line">		ldb <span class="keyword">operator</span> ^ (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> x * rhs.y - y * rhs.x;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;;</span><br><span class="line">	<span class="keyword">typedef</span> Vector Point;</span><br><span class="line">	<span class="comment">//public functions:</span></span><br><span class="line">	<span class="function"><span class="keyword">int</span> <span class="title">DCMP</span><span class="params">(ldb x)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> (x &lt; -eps) ? <span class="number">-1</span> : (x &gt; eps);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">Line</span></span></span><br><span class="line"><span class="class">	&#123;</span></span><br><span class="line">		Point P;</span><br><span class="line">		Point V;</span><br><span class="line">		ldb Ang;</span><br><span class="line">		Line(Point P_ = Point(), Point V_ = Point()):P(P_), V(V_)</span><br><span class="line">		&#123;Ang = <span class="built_in">atan2</span>(V_.y, V_.x);&#125;<span class="comment">//&#125;</span></span><br><span class="line">		<span class="comment">/*inline void getAngle()</span></span><br><span class="line"><span class="comment">		&#123;</span></span><br><span class="line"><span class="comment">			Ang = atan2(V.y, V.x);</span></span><br><span class="line"><span class="comment">		&#125;*/</span></span><br><span class="line">		<span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> Line &amp;rhs) <span class="keyword">const</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">//getAngle(); rhs.getAngle();</span></span><br><span class="line">			<span class="keyword">return</span> Ang &lt; rhs.Ang;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// half-plane intersection:</span></span><br><span class="line">	<span class="keyword">int</span> n;</span><br><span class="line">	Point pts[maxn];</span><br><span class="line">	Line pln[maxn], q[maxn];</span><br><span class="line">	<span class="function"><span class="keyword">bool</span> <span class="title">LEGAL</span><span class="params">(Point P_, Line L_)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> DCMP((P_ - L_.P)^L_.V) &gt;= <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function">Point <span class="title">intersection</span><span class="params">(Line a, Line b)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> b.P + b.V*((a.V ^ (a.P - b.P))/(a.V ^ b.V));</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function">ldb <span class="title">HPI</span><span class="params">()</span> <span class="comment">//right hand HPI</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		pln[++n] = Line(Point(<span class="number">0</span>, <span class="number">0</span>), Point(<span class="number">0</span>, <span class="number">1</span>));</span><br><span class="line">		pln[++n] = Line(Point(<span class="number">0</span>, inf), Point(<span class="number">1</span>, <span class="number">0</span>));</span><br><span class="line">		pln[++n] = Line(Point(inf, inf), Point(<span class="number">0</span>, <span class="number">-1</span>));</span><br><span class="line">		pln[++n] = Line(Point(inf, <span class="number">0</span>), Point(<span class="number">-1</span>, <span class="number">0</span>));</span><br><span class="line">		sort(pln + <span class="number">1</span>, pln + <span class="number">1</span> + n);</span><br><span class="line">		<span class="keyword">int</span> tot = <span class="number">0</span>;</span><br><span class="line">		<span class="comment">//unique:</span></span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span>(!tot) pln[++tot] = pln[i];</span><br><span class="line">			<span class="keyword">else</span> <span class="keyword">if</span>(DCMP(pln[tot].Ang - pln[i].Ang) != <span class="number">0</span>) pln[++tot] = pln[i];</span><br><span class="line">			<span class="keyword">else</span> <span class="keyword">if</span>(LEGAL(pln[i].P, pln[tot])) pln[tot] = pln[i];</span><br><span class="line">		&#125;</span><br><span class="line">		n = tot; <span class="keyword">int</span> hd = <span class="number">1</span>, tl = <span class="number">2</span>;</span><br><span class="line">		q[<span class="number">1</span>] = pln[<span class="number">1</span>]; q[<span class="number">2</span>] = pln[<span class="number">2</span>];</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">3</span>; i &lt;= n; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">while</span>(hd != tl &amp;&amp; !LEGAL(intersection(q[tl], q[tl - <span class="number">1</span>]), pln[i])) --tl;</span><br><span class="line">			<span class="keyword">while</span>(hd != tl &amp;&amp; !LEGAL(intersection(q[hd], q[hd + <span class="number">1</span>]), pln[i])) ++hd;</span><br><span class="line">			<span class="keyword">if</span>(hd == tl &amp;&amp; DCMP(q[hd].V ^ pln[i].V) &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;<span class="comment">// No Solution</span></span><br><span class="line">			q[++tl] = pln[i];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">while</span>(hd != tl &amp;&amp; !LEGAL(intersection(q[tl], q[tl - <span class="number">1</span>]), q[hd])) --tl;</span><br><span class="line">		<span class="keyword">int</span> len = tl - hd + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; len; ++i) pts[i] = intersection(q[hd + i], q[hd + i - <span class="number">1</span>]);</span><br><span class="line">		pts[<span class="number">0</span>] = pts[len] = intersection(q[tl], q[hd]);</span><br><span class="line">		ldb area = <span class="number">0.0</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; ++i) area += pts[i] ^ pts[i + <span class="number">1</span>];</span><br><span class="line">		<span class="keyword">return</span> area * <span class="number">0.5</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">HPI_main</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">while</span>(<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n) != EOF)</span><br><span class="line">		&#123;</span><br><span class="line">			ldb x1, x2, y1, y2;</span><br><span class="line">			<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">scanf</span>(<span class="string">"%Lf%Lf%Lf%Lf"</span>, &amp;x1, &amp;y1, &amp;x2, &amp;y2);</span><br><span class="line">				Point u(x1, y1), v(x2, y2);</span><br><span class="line">				pln[i] = Line(v, u - v);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="built_in">printf</span>(<span class="string">"%.1Lf\n"</span>, HPI());</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	geometric_lib::HPI_main();</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>似乎有点过度封装了呢……不过Bouvardia还打算继续加入功能的说.</p>
+<h2 id="Rotating-Calipers"><a href="#Rotating-Calipers" class="headerlink" title="Rotating Calipers"></a>Rotating Calipers</h2><h4 id="BOI2011-2circles"><a href="#BOI2011-2circles" class="headerlink" title="BOI2011 2circles"></a>BOI2011 2circles</h4><h5 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h5><p>我们将会研究一个有N 个顶点的凸多边形。我们希望找到一个最大的半径R，使得两个半径为R 的圆能完全地放置在给出的多边形内，并没有重叠。 </p>
+<h5 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h5><p>最大化不太好做的说. 所以要考虑二分答案.</p>
+<p>那么如何验证呢?</p>
+<p>把多边形向里推, 如果推完后多边形内仍存在一条$\ge 2mid$的线段, 则合法.</p>
+<p>证明:</p>
+<p>所以做法就是二分答案+半平面交+旋转卡壳啦.</p>
+<p>向量的 <strong>Perpendicular, Adjust</strong> 以及直线的 <strong>Translate</strong> 操作已经集成进来啦.</p>
+<h5 id="Code"><a href="#Code" class="headerlink" title="Code"></a>Code</h5><p>只有核心代码~</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//in namespace geometric_lib:</span></span><br><span class="line">	</span><br><span class="line">	<span class="function">ldb <span class="title">norm</span><span class="params">(Point a)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="built_in">sqrt</span>(a*a);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function">ldb <span class="title">dist</span><span class="params">(Point a, Point b)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> norm(a - b);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function">Point <span class="title">perpendicular</span><span class="params">(Point a)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> Point(a.y, -a.x);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function">Point <span class="title">adjust</span><span class="params">(Point a, ldb d)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> Point(a*(d/norm(a)));</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function">Line <span class="title">translate</span><span class="params">(Line a, ldb d)</span><span class="comment">//d: &lt;0 left, &gt;0 right</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> Line(a.P + adjust(perpendicular(a.V), d), a.V);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	ldb checking_bound;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">bool</span> <span class="title">rotating_caliper</span><span class="params">(Point *ps, <span class="keyword">int</span> ps_count)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		ldb mx = <span class="number">0</span>, x; <span class="keyword">int</span> pos;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= ps_count; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			x = dist(ps[<span class="number">1</span>], ps[i]);</span><br><span class="line">			<span class="keyword">if</span>(x &gt; mx) mx = x, pos = i;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">//plug-in: run faster</span></span><br><span class="line">		<span class="keyword">if</span>(mx &gt;= checking_bound) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= ps_count; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			mx = dist(ps[pos], ps[i]);</span><br><span class="line">			<span class="keyword">while</span>(<span class="number">1</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				x = dist(ps[pos % ps_count + <span class="number">1</span>], ps[i]);</span><br><span class="line">				<span class="keyword">if</span>(x &gt; mx) mx = x, pos = pos % ps_count +<span class="number">1</span>;</span><br><span class="line">				<span class="keyword">else</span> <span class="keyword">break</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span>(mx &gt;= checking_bound) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//addition</span></span><br><span class="line">	<span class="meta">#<span class="meta-keyword">define</span> MAX_N 50001</span></span><br><span class="line">	Point a[MAX_N];</span><br><span class="line">	Line tpln[MAX_N];</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">bool</span> <span class="title">chk</span><span class="params">(ldb mid)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="comment">//set checking_bound</span></span><br><span class="line">		checking_bound = mid * <span class="number">2.0</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) pln[i] = translate(tpln[i], mid);</span><br><span class="line">		<span class="comment">//int pcnt = HPI();</span></span><br><span class="line">		<span class="keyword">return</span> rotating_caliper(pts, HPI());</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">solution_main</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) <span class="built_in">scanf</span>(<span class="string">"%Lf%Lf"</span>, &amp;a[i].x, &amp;a[i].y);</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">int</span> j = i % n + <span class="number">1</span>;</span><br><span class="line">			tpln[i] = Line(a[j], a[i] - a[j]);</span><br><span class="line">		&#125;	</span><br><span class="line">		ldb l = <span class="number">0.0</span>, r = <span class="number">20000000.0</span>;</span><br><span class="line">		<span class="keyword">while</span>(l &lt; r)</span><br><span class="line">		&#123;</span><br><span class="line">			ldb mid = (l + r + <span class="number">0.001</span>) * <span class="number">0.5</span>;</span><br><span class="line">			<span class="keyword">if</span>(chk(mid)) l = mid;</span><br><span class="line">			<span class="keyword">else</span> r = mid - <span class="number">0.001</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%.3Lf\n"</span>, l);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="meta">#<span class="meta-keyword">undef</span> MAX_N</span></span><br></pre></td></tr></table></figure>
+<h2 id="Minimum-Circle-Coverage-Problem"><a href="#Minimum-Circle-Coverage-Problem" class="headerlink" title="Minimum Circle-Coverage Problem"></a>Minimum Circle-Coverage Problem</h2><h4 id="BZOJ-1336-amp-1337"><a href="#BZOJ-1336-amp-1337" class="headerlink" title="BZOJ 1336&amp;1337"></a>BZOJ 1336&amp;1337</h4><p>一种可以在$O(n)$时间内求出覆盖所有点的最小圆的算法.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;ctime&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdlib&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> geometric_lib</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">const</span> <span class="keyword">double</span> eps = <span class="number">1e-10</span>;</span><br><span class="line">	<span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line">	<span class="keyword">using</span> <span class="built_in">std</span>::srand;</span><br><span class="line">	<span class="keyword">using</span> <span class="built_in">std</span>::time;</span><br><span class="line">	<span class="keyword">using</span> <span class="built_in">std</span>::random_shuffle;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">Vector</span></span></span><br><span class="line"><span class="class">	&#123;</span></span><br><span class="line">		<span class="keyword">double</span> x, y;</span><br><span class="line">		Vector(<span class="keyword">double</span> x_ = <span class="number">0.0</span>, <span class="keyword">double</span> y_ = <span class="number">0.0</span>):x(x_), y(y_)&#123;&#125;</span><br><span class="line">		Vector <span class="keyword">operator</span> + (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> Vector(x + rhs.x, y + rhs.y);</span><br><span class="line">		&#125;</span><br><span class="line">		Vector <span class="keyword">operator</span> - (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> Vector(x - rhs.x, y - rhs.y);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">friend</span> Vector <span class="keyword">operator</span> * (Vector lhs, <span class="keyword">double</span> rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> Vector(rhs * lhs.x, rhs * lhs.y);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">double</span> <span class="keyword">operator</span> * (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> x * rhs.x + y * rhs.y;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">double</span> <span class="keyword">operator</span> ^ (Vector rhs)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> x * rhs.y - y * rhs.x;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;;</span><br><span class="line">	<span class="keyword">typedef</span> Vector Point;</span><br><span class="line">	<span class="function"><span class="keyword">double</span> <span class="title">norm</span><span class="params">(Point a)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="built_in">sqrt</span>(a*a);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">Circle</span></span></span><br><span class="line"><span class="class">	&#123;</span></span><br><span class="line">		Point c;</span><br><span class="line">		<span class="keyword">double</span> r;</span><br><span class="line">		Circle(Point P_ = Point(), <span class="keyword">double</span> r_ = <span class="number">0.0</span>):c(P_), r(r_)&#123;&#125; </span><br><span class="line">	&#125;;</span><br><span class="line">	</span><br><span class="line"></span><br><span class="line">	<span class="comment">//Minimal circle-cover</span></span><br><span class="line">	<span class="keyword">int</span> N;</span><br><span class="line">	Point pts[maxn];</span><br><span class="line">	Circle o;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">circum</span><span class="params">(Point p, Point q, Point s)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">double</span> a = <span class="number">2</span> * (q.x - p.x), b = <span class="number">2</span> * (q.y - p.y);</span><br><span class="line">		<span class="keyword">double</span> c = q.x * q.x + q.y * q.y - p.x * p.x - p.y * p.y;</span><br><span class="line">		<span class="keyword">double</span> d = <span class="number">2</span> * (s.x - p.x), e = <span class="number">2</span> * (s.y - p.y);</span><br><span class="line">		<span class="keyword">double</span> f = s.x * s.x + s.y * s.y - p.x * p.x - p.y * p.y;</span><br><span class="line">		o.c.x = (b * f - e * c) / (b * d - e * a);</span><br><span class="line">		o.c.y = (d * c - a * f) / (b * d - e * a);</span><br><span class="line">		o.r = norm(p - o.c);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">cover_main</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		srand(time(<span class="literal">NULL</span>));</span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;N);</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= N; ++i) <span class="built_in">scanf</span>(<span class="string">"%lf%lf"</span>, &amp;pts[i].x, &amp;pts[i].y);</span><br><span class="line">		random_shuffle(pts + <span class="number">1</span>, pts + <span class="number">1</span> + N);</span><br><span class="line">		o.c = pts[<span class="number">1</span>]; o.r = <span class="number">0.0</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= N; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span>(norm(pts[i] - o.c) &gt; o.r + eps)</span><br><span class="line">			&#123;</span><br><span class="line">				o.c = pts[i]; o.r = <span class="number">0.0</span>;</span><br><span class="line">				<span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= i - <span class="number">1</span>; ++j)</span><br><span class="line">				&#123;</span><br><span class="line">					<span class="keyword">if</span>(norm(pts[j] - o.c) &gt; o.r + eps)</span><br><span class="line">					&#123;</span><br><span class="line">						o.c.x = (pts[j].x + pts[i].x) * <span class="number">0.5</span>;</span><br><span class="line">						o.c.y = (pts[j].y + pts[i].y) * <span class="number">0.5</span>;</span><br><span class="line">						o.r = norm(o.c - pts[j]);</span><br><span class="line">						<span class="keyword">for</span>(<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= j - <span class="number">1</span>; ++k)</span><br><span class="line">							<span class="keyword">if</span>(norm(pts[k] - o.c) &gt; o.r + eps)</span><br><span class="line">								circum(pts[i], pts[j], pts[k]);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%.3lf\n"</span>, o.r);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	geometric_lib::cover_main();</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Convex-Hull"><a href="#Convex-Hull" class="headerlink" title="Convex Hull"></a>Convex Hull</h2><h4 id="BZOJ-1007"><a href="#BZOJ-1007" class="headerlink" title="BZOJ 1007"></a><a href="https://www.lydsy.com/JudgeOnline/problem.php?id=1007" target="_blank" rel="noopener">BZOJ 1007</a></h4><h5 id="Description-1"><a href="#Description-1" class="headerlink" title="Description"></a>Description</h5><p>站在无限高处向下看，计算可见直线的编号。</p>
+<h5 id="Solution-1"><a href="#Solution-1" class="headerlink" title="Solution"></a>Solution</h5><p>这就是一个维护凸壳的板题啦。首先对直线按极角/斜率排序，单调栈(也可能有其他数据结构的说，建立在直线加入的顺序上)维护凸壳，每次加入新直线，若交点更靠左则弹栈。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">50005</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">double</span> eps = <span class="number">1e-8</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Line</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">double</span> k, b;</span><br><span class="line">	<span class="keyword">int</span> id;</span><br><span class="line">	<span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> Line &amp;rhs) <span class="keyword">const</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> k == rhs.k ? b &lt; rhs.b : k &lt; rhs.k;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;l[maxn];</span><br><span class="line"><span class="keyword">int</span> n, stk[maxn], top, v[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">double</span> <span class="title">intersection</span><span class="params">(Line p, Line q)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> (q.b - p.b) / (p.k - q.k);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) </span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%lf%lf"</span>, &amp;l[i].k, &amp;l[i].b), l[i].id = i;</span><br><span class="line">	sort(l + <span class="number">1</span>, l + <span class="number">1</span> + n);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>(l[i].k == l[i + <span class="number">1</span>].k &amp;&amp; i != n) <span class="keyword">continue</span>;</span><br><span class="line">		<span class="keyword">while</span>(top &gt; <span class="number">1</span> &amp;&amp; </span><br><span class="line">			intersection(l[i], l[stk[top]]) - intersection(l[stk[top]], l[stk[top - <span class="number">1</span>]]) &lt;= eps) top--;</span><br><span class="line">		stk[++top] = i;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= top; ++i) v[i] = l[stk[i]].id;</span><br><span class="line">	sort(v + <span class="number">1</span>, v + <span class="number">1</span> + top);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= top; ++i) <span class="built_in">printf</span>(<span class="string">"%d "</span>, v[i]);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="51Nod-1543"><a href="#51Nod-1543" class="headerlink" title="51Nod 1543"></a><a href="http://www.51nod.com/onlineJudge/questionCode.html#!problemId=1543" target="_blank" rel="noopener">51Nod 1543</a></h4><h5 id="Description-2"><a href="#Description-2" class="headerlink" title="Description"></a>Description</h5><p>铁人两项包含两个部分：游泳和跑步。选手们先跑R米，然后再游S米。胜者是用时最短的人（如果多个人用时最短，那么他们同时获胜）。</p>
+<p>比赛开始之前，我们已经知道有n个人要参加比赛。第i个人游泳的速度是si米每秒，跑步速度是ri米每秒。但是R和S的具体值并不知道，只知道他们是大于0的实数。</p>
+<p>所以我们现在想要知道谁可能获胜。</p>
+<h5 id="Solution-2"><a href="#Solution-2" class="headerlink" title="Solution"></a>Solution</h5><p>这是Bouvardia上课时听来的题，思路很巧妙呢。</p>
+<p>确定一项的长度，若总长固定，则另一项可定，接着把选手获胜的不等式写出来，发现可以调整为直线的斜截式。但不需要线性规划或者半平面交，我们求一个凸壳就可以了，构成凸壳的直线就是可能的选手。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::min;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::max;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::sort;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::swap;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">memset</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">isdigit</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">2e+5</span> + <span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">double</span> eps = <span class="number">1e-8</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n;</span><br><span class="line"><span class="keyword">double</span> s[maxn], r[maxn];</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Point</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">int</span> x, y;</span><br><span class="line">	<span class="comment">//plus</span></span><br><span class="line">	<span class="keyword">int</span> id;</span><br><span class="line">	Point(<span class="keyword">int</span> x_ = <span class="number">0.0</span>, <span class="keyword">int</span> y_ = <span class="number">0.0</span>):x(x_), y(y_)&#123;&#125;</span><br><span class="line">&#125;p[maxn];</span><br><span class="line"><span class="keyword">int</span> top, q[maxn], v[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">cmp1</span><span class="params">(Point p_, Point q_)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> p_.x == q_.x ? p_.y &gt; q_.y : p_.x &gt; q_.x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">cmp2</span><span class="params">(Point p_, Point q_)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> p_.x == q_.x ? p_.y &gt; q_.y : p_.x &lt; q_.x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">double</span> <span class="title">k</span><span class="params">(Point p_, Point q_)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> (<span class="number">1.0</span>/q_.y - <span class="number">1.0</span>/p_.y) / (<span class="number">1.0</span>/p_.x - <span class="number">1.0</span>/q_.x);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> x = <span class="number">0</span>; <span class="keyword">char</span> c = getchar();</span><br><span class="line">	<span class="keyword">while</span>(!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">	<span class="keyword">while</span>(<span class="built_in">isdigit</span>(c))x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">	<span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> y = <span class="number">10</span>, len = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(y &lt;= x) y *= <span class="number">10</span>, ++len;</span><br><span class="line">	<span class="keyword">while</span>(len--) &#123;y /= <span class="number">10</span>; <span class="built_in">putchar</span>(x / y + <span class="number">48</span>); x %= y;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	n = rd();</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">		p[i].x = rd(), p[i].y = rd(), p[i].id = i;</span><br><span class="line">	sort(p + <span class="number">1</span>, p + <span class="number">1</span> + n, cmp1);</span><br><span class="line">	<span class="keyword">int</span> tot = <span class="number">0</span>, lst = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>(p[i].y &gt; lst || (p[i].y == lst &amp;&amp; p[i].x == p[tot].x)) p[++tot] = p[i];</span><br><span class="line">		lst = max(lst, p[i].y);</span><br><span class="line">	&#125;</span><br><span class="line">	n = tot;</span><br><span class="line">	sort(p + <span class="number">1</span>, p + <span class="number">1</span> + n, cmp2);</span><br><span class="line">	<span class="keyword">int</span> top = <span class="number">1</span>; q[<span class="number">1</span>] = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">while</span>(top &gt;= <span class="number">1</span> &amp;&amp; k(p[i], p[q[top]]) &lt; k(p[q[top]], p[q[top - <span class="number">1</span>]])) --top;</span><br><span class="line">		q[++top] = i;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= top; ++i) v[i] = p[q[i]].id;</span><br><span class="line">	sort(v + <span class="number">1</span>, v + <span class="number">1</span> + top);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= top; ++i) write(v[i]), <span class="built_in">putchar</span>(<span class="string">' '</span>);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Practical-Usage"><a href="#Practical-Usage" class="headerlink" title="Practical Usage"></a>Practical Usage</h2><h4 id="CodeM-2018-Final-F"><a href="#CodeM-2018-Final-F" class="headerlink" title="CodeM 2018 Final F"></a><a href="https://www.nowcoder.com/acm/contest/162/F" target="_blank" rel="noopener">CodeM 2018 Final F</a></h4><h5 id="Description-3"><a href="#Description-3" class="headerlink" title="Description"></a>Description</h5><p>袋鼠先生在玩一个塔防游戏。这个游戏中，一共有n个防御塔，第i个塔位于(xi,yi)的位置，这n个防御塔形成了一个严格的凸多边形。有m道防御网，你可以把第i道防御网看做连接第ui个防御塔和第vi个防御塔的一条线段，穿越它就需要消耗ci的血量。</p>
+<p>袋鼠先生想从(sx, sy)位置走到(tx,ty)位置，他想知道最少要消耗多少血量。 </p>
+<h5 id="Solution-3"><a href="#Solution-3" class="headerlink" title="Solution"></a>Solution</h5><p>对偶图最短路的点数太多啦.</p>
+<p><u>观察样例, 发现路径分为两种情况: 走出多边形/在多边形内穿过</u></p>
+<p>所以我们可以分别来求.</p>
+<p>对于走出多边形, 一定是到达多边形的某条边. 而障碍一定会覆盖一组连续的边. 差分求前缀和就可以得到到达每条边的代价.</p>
+<p>至于内穿, 计算哪些障碍和直线相交, 代价加和就好了.</p>
+<p>判断是否在多边形内部是一个很有用的技能.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::max;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::min;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::swap;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">memset</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">double</span> eps = <span class="number">1e-6</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">point</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">double</span> x, y;</span><br><span class="line">	point(<span class="keyword">double</span> x_ = <span class="number">0</span>, <span class="keyword">double</span> y_ = <span class="number">0</span>):x(x_),y(y_)&#123;&#125;</span><br><span class="line">	point <span class="keyword">operator</span> + (point rhs)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> point(x + rhs.x, y + rhs.y);</span><br><span class="line">	&#125;</span><br><span class="line">	point <span class="keyword">operator</span> - (point rhs)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> point(x - rhs.x, y - rhs.y);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">double</span> <span class="keyword">operator</span> * (point rhs)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> x * rhs.x + y * rhs.y;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">double</span> <span class="keyword">operator</span> ^ (point rhs)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> x * rhs.y - y * rhs.x;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;p[maxn], s, t;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">line</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	point p, v;</span><br><span class="line">	line(point p_ = point(), point v_ = point()):</span><br><span class="line">		p(p_), v(v_) &#123;&#125;</span><br><span class="line">&#125;l[maxn];</span><br><span class="line">ll u[maxn], v[maxn], c[maxn];</span><br><span class="line">ll val[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">DCMP</span><span class="params">(ll x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> x &lt; -eps ? <span class="number">-1</span> : x &gt; eps;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> x = <span class="number">0</span>; <span class="keyword">bool</span> f = <span class="literal">false</span>; <span class="keyword">char</span> c = getchar();</span><br><span class="line">	<span class="keyword">while</span>(!<span class="built_in">isdigit</span>(c)) &#123; <span class="keyword">if</span>(c == <span class="string">'-'</span>) f = <span class="literal">true</span>; c = getchar();&#125;</span><br><span class="line">	<span class="keyword">while</span>(<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">	<span class="keyword">return</span> f ? -x : x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">rdll</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ll x = <span class="number">0</span>; <span class="keyword">bool</span> f = <span class="literal">false</span>; <span class="keyword">char</span> c = getchar();</span><br><span class="line">	<span class="keyword">while</span>(!<span class="built_in">isdigit</span>(c)) &#123; <span class="keyword">if</span>(c == <span class="string">'-'</span>) f = <span class="literal">true</span>; c = getchar();&#125;</span><br><span class="line">	<span class="keyword">while</span>(<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">	<span class="keyword">return</span> f ? -x : x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">in</span><span class="params">(point p_)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> cnt = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">int</span> dir = DCMP((p_ - l[i].p)^l[i].v);</span><br><span class="line">		<span class="keyword">int</span> dlt1 = DCMP(p[i + <span class="number">1</span>].y - p_.y);</span><br><span class="line">		<span class="keyword">int</span> dlt2 = DCMP(p[i].y - p_.y);</span><br><span class="line">		<span class="keyword">if</span>(dir &gt; <span class="number">0</span> &amp;&amp; dlt1 &lt; <span class="number">0</span> &amp;&amp; dlt2 &gt;= <span class="number">0</span>) cnt++;</span><br><span class="line">		<span class="keyword">if</span>(dir &lt; <span class="number">0</span> &amp;&amp; dlt1 &gt;= <span class="number">0</span> &amp;&amp; dlt2 &lt; <span class="number">0</span>) cnt--;</span><br><span class="line">		<span class="comment">//printf("%d\n", cnt);</span></span><br><span class="line">		<span class="comment">//if()</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> cnt;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">pre</span><span class="params">(point p_)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">//memset(val, 0, sizeof val);</span></span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) val[i] = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">if</span>(!in(p_)) <span class="keyword">return</span>;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		line fnc = line(p[u[i]], p[v[i]] - p[u[i]]);</span><br><span class="line">		<span class="keyword">int</span> dir = (p_ - fnc.p) ^ fnc.v;</span><br><span class="line">		<span class="keyword">if</span>(dir &gt; <span class="number">0</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			val[<span class="number">1</span>] += c[i]; val[u[i]] -= c[i];</span><br><span class="line">			val[v[i]] += c[i];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			val[u[i]] += c[i];</span><br><span class="line">			val[v[i]] -= c[i];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	n = rd(); m = rd();</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">		p[i].x = rdll(), p[i].y = rdll();</span><br><span class="line">	p[n + <span class="number">1</span>] = p[<span class="number">1</span>];</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		l[i] = line(p[i], p[i + <span class="number">1</span>] - p[i]);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		u[i] = rdll(), v[i] = rdll();</span><br><span class="line">		<span class="keyword">if</span>(u[i] &gt; v[i]) swap(u[i], v[i]);</span><br><span class="line">		c[i] = rdll();</span><br><span class="line">	&#125;</span><br><span class="line">	ll sums = <span class="number">1e18</span>, sumt = <span class="number">1e18</span>;</span><br><span class="line">	s.x = rdll(); s.y = rdll(); pre(s); </span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) val[i] += val[i - <span class="number">1</span>], sums = min(sums, val[i]);</span><br><span class="line">	t.x = rdll(); t.y = rdll(); pre(t);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) val[i] += val[i - <span class="number">1</span>], sumt = min(sumt, val[i]);</span><br><span class="line">	<span class="keyword">if</span>(!sums)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, sumt); <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(!sumt)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, sums); <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	ll ans = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">int</span> dir1 = DCMP((s - p[u[i]]) ^ (p[v[i]] - p[u[i]]));</span><br><span class="line">		<span class="keyword">int</span> dir2 = DCMP((t - p[u[i]]) ^ (p[v[i]] - p[u[i]]));</span><br><span class="line">		<span class="keyword">if</span>(dir1 * dir2 &lt; <span class="number">0</span>) ans += c[i];</span><br><span class="line">	&#125;</span><br><span class="line">	ans = min(ans, sums + sumt);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, ans);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../15/JZOJ-5819-DP-on-Trees/" data-tooltip="JZOJ5819 DP on Tree" aria-label="PREVIOUS: JZOJ5819 DP on Tree">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../11/Diary/" data-tooltip="Diary" aria-label="NEXT: Diary">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../15/JZOJ-5819-DP-on-Trees/" data-tooltip="JZOJ5819 DP on Tree" aria-label="PREVIOUS: JZOJ5819 DP on Tree">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../11/Diary/" data-tooltip="Diary" aria-label="NEXT: Diary">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/08/13/ComputationalGeometry/';
+                 
+                    this.page.identifier = '2018/08/13/ComputationalGeometry/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

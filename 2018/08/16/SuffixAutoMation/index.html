@@ -1,0 +1,651 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Suffix Automation! - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Bouvardia纠结了好久的后缀自动机……\n\n\nOverview后缀自动机确实是个挺玄的东西呐. 是解决许多字符串问题强有力的工具.\n顾名思义, 后缀自动机是能够识别一个字符串所有后缀的结构, 根据她的性质, 她同时可以识别一个字符串的所有字串.\nDefinition定义超多的说…… Bouvardia也是翻来覆去研究了好久, 所以特意记在这里哦.\n$trans(St, c)$ : 在状态 $St$ 后加入字符 $c$ 到达的状态.\n$ST(str)$ : $trans(init, str)$, 从初始状态读入字符串 $str$ 后到达的状态.\n$Suf$ : 字符串 $S$ 的后缀集合\n$Fac$ : 字符串 $S$ 的连续字串集合\n$Right(\\alpha)$ : 字符串 $\\alpha$ 在字符串 $S$ 中出现位置右端点的集合.\nProperties可以发现, 如果得到了 $Right(\\alpha)$, 又得到了一个 $len$ , 我们就可以唯一确定一个字串.\n那么我们不妨把所有 $Right$ 集相等的子串压缩到一个状态下, 这时她的合法 $len$ 就有了一个区间 $[Min, Max]$, 当长度小于$Min$ 时, $Right$ 集可能会扩大, 这不符合定义, 相对地, 长度大于 $Max$ 时, 由这个 $Right$ 集和这个 $len$ 确定的字串就不相等, 相应地 $Right$ 集也不相等.\n所以一个状态的可行长度一定是一个连续区间.\n考虑两个状态 $\\alpha, \\beta$, 有$Right(\\alpha), Right(\\beta)$, 记作$R_a, R_b$, 若$R_a \\cap R_b = \\gamma \\not= \\varnothing$.\n由于$ST(\\alpha) \\not= ST(\\beta)$根据定义, $str_a, str_b$ 没有交集. 由于 $ \\gamma \\not= \\varnothing$ , 所以$[Min(\\alpha), Max(\\alpha)] \\cap [Min(\\beta), Max(\\beta)] = \\varnothing​$.\n不妨设 $Max(\\alpha) &lt; Min(\\beta)$, 那么状态$\\alpha$表示的所有串都比$\\beta$的短. 所以对于从 $\\gamma$向前的所有可表出串,  $\\alpha$ 都是 $\\beta$ 的后缀, 又根据$Right$集合的定义, 会有所有$\\alpha$ 中的元素跟随$\\beta$作为后缀出现. 那么, 在每个 $p \\in Right(\\beta)$ 向前的串, $\\alpha$ 都是 $\\beta$ 的后缀, 即 $R_a \\subset R_b$.\n所以, 我们有:\n$\\begin{cases}R_u \\subset R_v, &amp; \\text{$u$ suffix $v$}\\ R_u \\cap R_v = \\varnothing, &amp; \\text{otherwise.}\\end{cases}$\n由于$Right$ 集合只有包含和不交关系, 这种关系实际构成了一颗树.\n我们定义一颗$Parent$树, 则状态$s$在树上的直接父亲一定是满足$R_s \\subset R_{fa}$中$| R | $最小的一个节点.\n根据上面对$Min$的说明, 当长度为$Min - 1$时, $R$集合一定进入了父亲的范围, 并且是首次进入, 所以我们有:\n$Max(fa) = Min(s) - 1$\n定义状态$NULL$ 为不存在 $trans(init, str)$ 到达 $ST(str)$. 反过来, 一个串$str$是$S$的字串当且仅当在 $SAM_S$ 中, $ST(str) \\not= NULL$.\n而一个字串的出现次数就是她所在状态$Right$集合的大小.\n实际应用中我们通常不直接求出每个状态的$Right$ 集, 根据定义, 一定有:\n$Right_s = \\bigcup_{y \\in son(s)}{Right_y}$\n所以利用DFS序的子树连续区间性质可以解决一些子串位置问题.\n最后一个证明, 根据定义, 对于一个有限长度字符串$S$,  $SAM_S$ 可以识别的串一定是有限个, 也即对于任意一个状态$ST(str)$, 不存在一种$trans(ST(str), str’)$, 使得$trans(ST(str), str’) = ST(str),  | str’ | \\not= 0$, 否则$| S | = \\infty$, 与条件矛盾.\n那么, 将 $trans$ 视作边, 则SAM是一个DAG.\nConstruction对于当前字符串 $T$, 新加入字符 $c$, 我们要\n$SAM_T$ $\\rightarrow SAM_{Tc}$\n添加字符后, 我们得到了一些新的子串, 她们一定是$Tc$的后缀, 而这些后缀一定是在 $T$的后缀后面添加一个 $c$.\n定义$T$的右端点 $Q$, 考虑所有能表示$T$的后缀的节点 $v_1, v_2, v_3, \\ldots$, 由于一定存在一个节点$P$, 使得$Right(P) = \\{L\\}$, 所以$v_1, v_2, v_3, \\ldots$ 在 $Parent$ 树上一定是 $P$ 的祖先.\n插入字符后, 新建一个节点$nP = ST(Tc)$, 则$Right(nP) = \\{Q + 1\\}$. 不妨按照从后代到祖先的顺序定义: $v_1 = P, v2, \\ldots, v_k = root$.\n对于每个$v$, 若$Right(v)$中除不考虑 $r_n = Q$ 外没有符合要求的元素, 则连一条边 $\\begin{align}v \\xrightarrow{c} nP \\end{align}$, 这是这个状态首次可以转移到结尾为$c$的状态.\n再考虑 $v_p$为 $1 \\ldots k$ 中第一个有标号为 $c$ 的边的状态. 不考虑$r_n$, 令$q = trans(v_p, c)$, 那么$Right(q) = \\{r_i + 1| T_{r_i + 1} = c\\}  $ , 但是我们不能直接在 $Right(q)$ 中添加一个元素 $Q + 1$.\n例如对于一个 $v_p$, 长度为 $Max(v_p)$的串:\nAAAAAAxAAAAAAAAAAAAAAxAAAAAAAABAAAAAx\n而对于$q$, 长度为$Max(q)$的串:\nAAAAAAxAAAAAAAAAAAAAAxAAAAAAAABAAAAAx\n如果在她的 $Right$ 集中插入 $Q + 1$, 则修改了$Max(q)$, 这是错误的.\n当然, 如果恰好有 $Max(q) = Max(v_p) + 1$, 即我们可以直接在一个字串后连接一个字符$c$来转移到q状态, 那么在整个$T$后连接一个当然也是合法转移. 所以直接令$Parent(nP) = q$ 即可.\n继续考虑当前状态. 我们可以新建一个节点 $nQ$, 使得$Right(nQ) = Right(q) \\cup \\{Q + 1\\}$, 这个新节点是可以通过$v_p$直接连接一个$c$得到的, 所以$Max(nQ) = Max(v_p) + 1$.\n那么一定有 $Right(q) \\subset Right(nQ)$, 故新的 $Parent(q) = nQ$, 同时因为 $nQ$ 是我们目前有的第一个包含了${Q + 1}$ 和其他元素的节点, 故$Parent(nP) = nQ$. 又因为 $Right(q) \\subset Right(Parent(q)_{former}) $, 新的$nQ$节点能表示的串一定是$q$能表示的串的一个后缀,  不会越过范围表示其他的串, 所以她可以继承$q$的真子集特性, 那么$Parent(nQ)  = Parent(q)_{former}$. 同时后缀这个性质还可以帮助我们得出, $trans(nQ) = trans(q)$.\n最后, 我们处理原来转移到 $q$ 的一段$v$节点, 在添加新字符后, 她们实际可以转移到的状态较 $q$ 扩充了, 所以将 $q$ 替换为 $nQ$ 即可.\n至此, SAM的扩展操作就全部完成啦, 按顺序扩展就可以建出整个字符串的SAM！\n结合代码食用喵~\n12345678910111213141516171819202122232425struct SuffixAutomation&#123;\tint tr[maxn][26], fa[maxn], mx[maxn];\tint lst, cnt;\tvoid Insert(int c)\t&#123;\t\tint p = lst, np = ++cnt;\t\tlst = np; mx[np] = mx[p] + 1;\t\tfor(;p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;\t\tif(!p) fa[np] = 1;\t\telse\t\t&#123;\t\t\tint q = tr[p][c];\t\t\tif(mx[p] + 1 == mx[q]) fa[np] = q;\t\t\telse\t\t\t&#123;\t\t\t\tint nq = ++cnt;mx[nq] = mx[p] + 1;\t\t\t\tmemcpy(t[nq].tr, t[q].tr, sizeof(t[q].tr));\t\t\t\tfa[nq] = fa[q]; fa[q] = fa[np] = nq;\t\t\t\tfor(; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;\t\t\t&#125;\t\t&#125;\t\tsiz[np] = 1;\t&#125;&#125;\nSamplesLuogu 3804Description给定一个字符串，求其出现次数 × 长度的最大值。\nSolution根据Parent树的特性，按Right集大小做基数排序，倒序累加，一定可以保证儿子的贡献累加到父亲上。而在相同次数下，能产生贡献的一定是最长串，所以用$siz_x \\times Max(x)$ 更新答案就好啦。\nCode123456789101112131415161718192021//in struct SuffixAutoMation:\t\tvoid build()    &#123;        scanf(\"%s\", str + 1); n = strlen(str + 1);        lst = cnt = 1;        for(int i = 1; i &lt;= n; ++i)            Insert(str[i] - 'a');    &#125;    void solve()    &#123;        for(int i = 1; i &lt;= cnt; ++i) bkt[mx[i]]++;        for(int i = 1; i &lt;= cnt; ++i) bkt[i] += bkt[i - 1];        for(int i = 1; i &lt;= cnt; ++i) arr[bkt[mx[i]]--] = i;        for(int i = cnt; i; --i)        &#123;            int cur = arr[i];            siz[fa[cur]] += siz[cur];            if(siz[cur] &gt; 1) ans = max(ans, (ll)siz[cur] * (ll)mx[cur]);        &#125;        printf(\"%lld\\n\", ans);    &#125;\nLuogu 1368Description求一个字符串循环同构串中字典序最小的串.\nSolution把字符串在SAM上插入两遍, 从根节点开始每次选最小的转移边转移, 直到转移n次.\n字符集比较大, 用map.\n12345678910111213141516171819202122232425262728293031323334353637383940414243struct SuffixAutoMation&#123;    map&lt;int, int&gt; tr[maxn];    int fa[maxn], mx[maxn];    int lst, cnt;    void Insert(int c)    &#123;        int p = lst, np = ++cnt;        lst = np; mx[np] = mx[p] + 1;        for(; p &amp;&amp; !tr[p].count(c); p = fa[p]) tr[p][c] = np;        if(!p) fa[np] = 1;        else        &#123;            int q = tr[p][c];            if(mx[p] + 1 == mx[q]) fa[np] = q;            else            &#123;                int nq = ++cnt; mx[nq] = mx[p] + 1;                tr[nq] = tr[q];                fa[nq] = fa[q]; fa[q] = fa[np] = nq;                for(; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;             &#125;        &#125;    &#125;    void build()    &#123;        scanf(\"%d\", &amp;n);        lst = cnt = 1;        for(int i = 1; i &lt;= n; ++i)            str[i] = rd();        for(int i = 1; i &lt;= n; ++i) Insert(str[i]);        for(int i = 1; i &lt;= n; ++i) Insert(str[i]);    &#125;    void solve()    &#123;        int now = 1;        for(int i = 1; i &lt;= n; ++i)        &#123;            printf(\"%d \", tr[now].begin()-&gt;first);            now = tr[now].begin()-&gt;second;        &#125;    &#125;&#125;SAM;\nBZOJ 4032Description在虐各种最长公共子串、子序列的题虐的不耐烦了之后，你决定反其道而行之。\n一个串的“子串”指的是它的连续的一段，例如bcd是abcdef的子串，但bde不是。\n一个串的“子序列”指的是它的可以不连续的一段，例如bde是abcdef的子串，但bdd不是。\n下面，给两个小写字母串A，B，请你计算：\n(1) A的一个最短的子串，它不是B的子串\n(2) A的一个最短的子串，它不是B的子序列\n(3) A的一个最短的子序列，它不是B的子串\n(4) A的一个最短的子序列，它不是B的子序列\nSolution我们可以$O(n^2)$地建出一个序列自动机.\n好吧其实这就是暴力的说.\n也就是贪心地匹配子序列的转移.\n对于每个问题在相应的自动机上跑BFS就好啦.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174175176177178179180181182#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;queue&gt;#include &lt;bitset&gt;using namespace std;const int maxn = 2005;char a[maxn], b[maxn];struct SuffixAutomation&#123;\tint tr[maxn &lt;&lt; 1][26], mx[maxn &lt;&lt; 1], fa[maxn &lt;&lt; 1];\tint lst, cnt;\tSuffixAutomation()\t&#123;\t\tlst = cnt = 1;\t&#125;\tvoid Insert(int c)\t&#123;\t\tint p = lst, np = ++cnt;\t\tlst = np; mx[np] = mx[p] + 1;\t\tfor(; p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;\t\tif(!p) fa[np] = 1;\t\telse\t\t&#123;\t\t\tint q = tr[p][c];\t\t\tif(mx[p] + 1 == mx[q]) fa[np] = q;\t\t\telse\t\t\t&#123;\t\t\t\tint nq = ++cnt; mx[nq] = mx[p] + 1;\t\t\t\tmemcpy(tr[nq], tr[q], sizeof(tr[q]));\t\t\t\tfa[nq] = fa[q]; fa[q] = fa[np] = nq;\t\t\t\tfor(; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;\t\t\t&#125;\t\t&#125;\t&#125;&#125;sama, samb;struct SeqAutomation&#123;\tint tr[maxn][26], lst[26], pre[maxn];\tint cnt;\tSeqAutomation()\t&#123;\t\tcnt = 1;\t\tfor(int i = 0; i &lt; 26; ++i) lst[i] = 1;\t&#125;\tvoid Insert(int c)\t&#123;\t\tint np = ++cnt;\t\tpre[np] = lst[c];\t\tfor(int i = 0; i &lt; 26; ++i)\t\t&#123;\t\t\tfor(int j = lst[i]; j &amp;&amp; !tr[j][c]; j = pre[j])\t\t\t\ttr[j][c] = np;\t\t&#125;\t\tlst[c] = np;\t&#125;&#125;seqa, seqb;struct node&#123;\tint a, b, len;\tnode(int a_ = 0, int b_ = 0, int l = 0):\t\ta(a_), b(b_), len(l)&#123;&#125;;&#125;;bitset&lt;maxn &lt;&lt; 1&gt; vis[maxn &lt;&lt; 1];inline void sam_sam()&#123;\tqueue&lt;node&gt; q;\tq.push(node(1, 1, 0));\tvis[1][1] = 1;\twhile(!q.empty())\t&#123;\t\tnode u = q.front(); q.pop();\t\tfor(int i = 0; i &lt; 26; ++i)\t\t&#123;\t\t\tint ya = sama.tr[u.a][i], yb = samb.tr[u.b][i];\t\t\tif(ya &amp;&amp; yb)\t\t\t&#123;\t\t\t\tif(vis[ya][yb]) continue;\t\t\t\tq.push(node(ya, yb, u.len + 1));\t\t\t\tvis[ya][yb] = 1;\t\t\t&#125;\t\t\tif(ya &amp;&amp; !yb) &#123;printf(\"%d\\n\", u.len + 1); return;&#125;\t\t&#125;\t&#125;\tputs(\"-1\");\treturn;&#125;inline void sam_seq()&#123;\tqueue&lt;node&gt; q;\tfor(int i = 0; i &lt; (maxn &lt;&lt; 1); ++i) vis[i].reset();\tq.push(node(1, 1, 0));\tvis[1][1] = 1;\twhile(!q.empty())\t&#123;\t\tnode u = q.front(); q.pop();\t\tfor(int i = 0; i &lt; 26; ++i)\t\t&#123;\t\t\tint ya = sama.tr[u.a][i], yb = seqb.tr[u.b][i];\t\t\tif(ya &amp;&amp; yb)\t\t\t&#123;\t\t\t\tif(vis[ya][yb]) continue;\t\t\t\tq.push(node(ya, yb, u.len + 1));\t\t\t\tvis[ya][yb] = 1;\t\t\t&#125;\t\t\tif(ya &amp;&amp; !yb) &#123;printf(\"%d\\n\", u.len + 1); return;&#125;\t\t&#125;\t&#125;\tputs(\"-1\");\treturn;&#125;inline void seq_sam()&#123;\tfor(int i = 0; i &lt; (maxn &lt;&lt; 1); ++i) vis[i].reset();\tqueue&lt;node&gt; q;\tq.push(node(1, 1, 0));\tvis[1][1] = 1;\twhile(!q.empty())\t&#123;\t\tnode u = q.front(); q.pop();\t\tfor(int i = 0; i &lt; 26; ++i)\t\t&#123;\t\t\tint ya = seqa.tr[u.a][i], yb = samb.tr[u.b][i];\t\t\tif(ya &amp;&amp; yb)\t\t\t&#123;\t\t\t\tif(vis[ya][yb]) continue;\t\t\t\tq.push(node(ya, yb, u.len + 1));\t\t\t\tvis[ya][yb] = 1;\t\t\t&#125;\t\t\telse if(ya &amp;&amp; !yb) &#123;printf(\"%d\\n\", u.len + 1); return;&#125;\t\t&#125;\t&#125;\tputs(\"-1\");\treturn;&#125;inline void seq_seq()&#123;\tfor(int i = 0; i &lt; (maxn &lt;&lt; 1); ++i) \t\tvis[i].reset();\tqueue&lt;node&gt; q;\tq.push(node(1, 1, 0));\tvis[1][1] = 1;\twhile(!q.empty())\t&#123;\t\tnode u = q.front(); q.pop();\t\tfor(int i = 0; i &lt; 26; ++i)\t\t&#123;\t\t\tint ya = seqa.tr[u.a][i], yb = seqb.tr[u.b][i];\t\t\tif(ya &amp;&amp; yb)\t\t\t&#123;\t\t\t\tif(vis[ya][yb]) continue;\t\t\t\tq.push(node(ya, yb, u.len + 1));\t\t\t\tvis[ya][yb] = 1;\t\t\t&#125;\t\t\telse if(ya &amp;&amp; !yb) &#123;printf(\"%d\\n\", u.len + 1); return;&#125;\t\t&#125;\t&#125;\tputs(\"-1\");\treturn;&#125;int main()&#123;\tscanf(\"%s\", a);\tscanf(\"%s\", b);\tint la = strlen(a), lb = strlen(b);\tfor(int i = 0; i &lt; la; ++i) sama.Insert(a[i] - 'a');\tfor(int i = 0; i &lt; lb; ++i) samb.Insert(b[i] - 'a');\tfor(int i = 0; i &lt; la; ++i) seqa.Insert(a[i] - 'a');\tfor(int i = 0; i &lt; lb; ++i) seqb.Insert(b[i] - 'a');\tsam_sam();\tsam_seq();\tseq_sam();\tseq_seq();\treturn 0;&#125;\n","dateCreated":"2018-08-16T20:01:04+08:00","dateModified":"2018-11-22T07:24:36+08:00","datePublished":"2018-08-16T20:01:04+08:00","description":"Bouvardia纠结了好久的后缀自动机……","headline":"Suffix Automation!","image":["https://i.loli.net/2018/08/16/5b7567be7e44e.jpg","https://i.loli.net/2018/08/16/5b75680e99b9a.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/08/16/5b7567be7e44e.jpg"}</script>
+    <meta name="description" content="Bouvardia纠结了好久的后缀自动机……">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Suffix Automation!">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Bouvardia纠结了好久的后缀自动机……">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-11-21T23:24:36.456Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Suffix Automation!">
+<meta name="twitter:description" content="Bouvardia纠结了好久的后缀自动机……">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/16/5b7567be7e44e.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/16/5b7567be7e44e.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/16/5b75680e99b9a.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/16/5b75680e99b9a.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/08/16/5b75680e99b9a.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Suffix Automation!
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-08-16T20:01:04+08:00">
+	
+		    Aug 16, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Bouvardia纠结了好久的后缀自动机……</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Overview"><span class="toc-text">Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Definition"><span class="toc-text">Definition</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Properties"><span class="toc-text">Properties</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Construction"><span class="toc-text">Construction</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Samples"><span class="toc-text">Samples</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Luogu-3804"><span class="toc-text">Luogu 3804</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Code"><span class="toc-text">Code</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Luogu-1368"><span class="toc-text">Luogu 1368</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Description-1"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution-1"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#BZOJ-4032"><span class="toc-text">BZOJ 4032</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Description-2"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Solution-2"><span class="toc-text">Solution</span></a></li></ol></li></ol></li></ol></li></ol>
+<h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p>后缀自动机确实是个挺玄的东西呐. 是解决许多字符串问题强有力的工具.</p>
+<p>顾名思义, 后缀自动机是能够识别一个字符串所有后缀的结构, 根据她的性质, 她同时可以识别一个字符串的所有字串.</p>
+<h2 id="Definition"><a href="#Definition" class="headerlink" title="Definition"></a>Definition</h2><p>定义超多的说…… Bouvardia也是翻来覆去研究了好久, 所以特意记在这里哦.</p>
+<p>$trans(St, c)$ : 在状态 $St$ 后加入字符 $c$ 到达的状态.</p>
+<p>$ST(str)$ : $trans(init, str)$, 从初始状态读入字符串 $str$ 后到达的状态.</p>
+<p>$Suf$ : 字符串 $S$ 的后缀集合</p>
+<p>$Fac$ : 字符串 $S$ 的连续字串集合</p>
+<p>$Right(\alpha)$ : 字符串 $\alpha$ 在字符串 $S$ 中出现位置右端点的集合.</p>
+<h2 id="Properties"><a href="#Properties" class="headerlink" title="Properties"></a>Properties</h2><p>可以发现, 如果得到了 $Right(\alpha)$, 又得到了一个 $len$ , 我们就可以唯一确定一个字串.</p>
+<p>那么我们不妨把<strong>所有</strong> $Right$ 集相等的子串压缩到一个状态下, 这时她的合法 $len$ 就有了一个区间 $[Min, Max]$, 当长度小于$Min$ 时, $Right$ 集可能会扩大, 这不符合定义, 相对地, 长度大于 $Max$ 时, 由这个 $Right$ 集和这个 $len$ 确定的字串就不相等, 相应地 $Right$ 集也不相等.</p>
+<p>所以一个状态的可行长度一定是一个连续区间.</p>
+<p>考虑两个状态 $\alpha, \beta$, 有$Right(\alpha), Right(\beta)$, 记作$R_a, R_b$, 若$R_a \cap R_b = \gamma \not= \varnothing$.</p>
+<p>由于$ST(\alpha) \not= ST(\beta)$根据定义, $str_a, str_b$ 没有交集. 由于 $ \gamma \not= \varnothing$ , 所以$[Min(\alpha), Max(\alpha)] \cap [Min(\beta), Max(\beta)] = \varnothing​$.</p>
+<p>不妨设 $Max(\alpha) &lt; Min(\beta)$, 那么状态$\alpha$表示的所有串都比$\beta$的短. 所以对于从 $\gamma$向前的所有可表出串,  $\alpha$ 都是 $\beta$ 的后缀, 又根据$Right$集合的定义, 会有所有$\alpha$ 中的元素跟随$\beta$作为后缀出现. 那么, 在每个 $p \in Right(\beta)$ 向前的串, $\alpha$ 都是 $\beta$ 的后缀, 即 $R_a \subset R_b$.</p>
+<p>所以, 我们有:</p>
+<p>$\begin{cases}R_u \subset R_v, &amp; \text{$u$ suffix $v$}\ R_u \cap R_v = \varnothing, &amp; \text{otherwise.}\end{cases}$</p>
+<p>由于$Right$ 集合只有包含和不交关系, 这种关系实际构成了一颗树.</p>
+<p>我们定义一颗$Parent$树, 则状态$s$在树上的直接父亲一定是满足$R_s \subset R_{fa}$中$| R | $最小的一个节点.</p>
+<p>根据上面对$Min$的说明, 当长度为$Min - 1$时, $R$集合一定进入了父亲的范围, 并且是首次进入, 所以我们有:</p>
+<p>$Max(fa) = Min(s) - 1$</p>
+<p>定义状态$NULL$ 为不存在 $trans(init, str)$ 到达 $ST(str)$. 反过来, 一个串$str$是$S$的字串当且仅当在 $SAM_S$ 中, $ST(str) \not= NULL$.</p>
+<p>而一个字串的出现次数就是她所在状态$Right$集合的大小.</p>
+<p>实际应用中我们通常不直接求出每个状态的$Right$ 集, 根据定义, 一定有:</p>
+<p>$Right_s = \bigcup_{y \in son(s)}{Right_y}$</p>
+<p>所以利用DFS序的子树连续区间性质可以解决一些子串位置问题.</p>
+<p>最后一个证明, 根据定义, 对于一个有限长度字符串$S$,  $SAM_S$ 可以识别的串一定是有限个, 也即对于任意一个状态$ST(str)$, 不存在一种$trans(ST(str), str’)$, 使得$trans(ST(str), str’) = ST(str),  | str’ | \not= 0$, 否则$| S | = \infty$, 与条件矛盾.</p>
+<p>那么, 将 $trans$ 视作边, 则SAM是一个DAG.</p>
+<h2 id="Construction"><a href="#Construction" class="headerlink" title="Construction"></a>Construction</h2><p>对于当前字符串 $T$, 新加入字符 $c$, 我们要</p>
+<p>$SAM_T$ $\rightarrow SAM_{Tc}$</p>
+<p>添加字符后, 我们得到了一些新的子串, 她们一定是$Tc$的后缀, 而这些后缀一定是在 $T$的后缀后面添加一个 $c$.</p>
+<p>定义$T$的右端点 $Q$, 考虑所有能表示$T$的后缀的节点 $v_1, v_2, v_3, \ldots$, 由于一定存在一个节点$P$, 使得$Right(P) = \{L\}$, 所以$v_1, v_2, v_3, \ldots$ 在 $Parent$ 树上一定是 $P$ 的祖先.</p>
+<p>插入字符后, 新建一个节点$nP = ST(Tc)$, 则$Right(nP) = \{Q + 1\}$. 不妨按照从后代到祖先的顺序定义: $v_1 = P, v2, \ldots, v_k = root$.</p>
+<p>对于每个$v$, 若$Right(v)$中除不考虑 $r_n = Q$ 外没有符合要求的元素, 则连一条边 $\begin{align}v \xrightarrow{c} nP \end{align}$, 这是这个状态首次可以转移到结尾为$c$的状态.</p>
+<p>再考虑 $v_p$为 $1 \ldots k$ 中第一个有标号为 $c$ 的边的状态. 不考虑$r_n$, 令$q = trans(v_p, c)$, 那么$Right(q) = \{r_i + 1| T_{r_i + 1} = c\}  $ , 但是我们不能直接在 $Right(q)$ 中添加一个元素 $Q + 1$.</p>
+<p>例如对于一个 $v_p$, 长度为 $Max(v_p)$的串:</p>
+<p>A<strong>AAAAA</strong>xA<strong>AAAAA</strong>AAA<strong>AAAAA</strong>xA<strong>AAAAA</strong>AAB<strong>AAAAA</strong>x</p>
+<p>而对于$q$, 长度为$Max(q)$的串:</p>
+<p><strong>AAAAAAx</strong>AAAAAAAA<strong>AAAAAAx</strong>AAAAAAAABAAAAAx</p>
+<p>如果在她的 $Right$ 集中插入 $Q + 1$, 则修改了$Max(q)$, 这是错误的.</p>
+<p>当然, 如果恰好有 $Max(q) = Max(v_p) + 1$, 即我们可以直接在一个字串后连接一个字符$c$来转移到q状态, 那么在整个$T$后连接一个当然也是合法转移. 所以直接令$Parent(nP) = q$ 即可.</p>
+<p>继续考虑当前状态. 我们可以新建一个节点 $nQ$, 使得$Right(nQ) = Right(q) \cup \{Q + 1\}$, 这个新节点是可以通过$v_p$直接连接一个$c$得到的, 所以$Max(nQ) = Max(v_p) + 1$.</p>
+<p>那么一定有 $Right(q) \subset Right(nQ)$, 故新的 $Parent(q) = nQ$, 同时因为 $nQ$ 是我们目前有的第一个包含了${Q + 1}$ 和其他元素的节点, 故$Parent(nP) = nQ$. 又因为 $Right(q) \subset Right(Parent(q)_{former}) $, 新的$nQ$节点能表示的串一定是$q$能表示的串的一个后缀,  不会越过范围表示其他的串, 所以她可以继承$q$的真子集特性, 那么$Parent(nQ)  = Parent(q)_{former}$. 同时后缀这个性质还可以帮助我们得出, $trans(nQ) = trans(q)$.</p>
+<p>最后, 我们处理原来转移到 $q$ 的一段$v$节点, 在添加新字符后, 她们实际可以转移到的状态较 $q$ 扩充了, 所以将 $q$ 替换为 $nQ$ 即可.</p>
+<p>至此, SAM的扩展操作就全部完成啦, 按顺序扩展就可以建出整个字符串的SAM！</p>
+<p>结合代码食用喵~</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SuffixAutomation</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">int</span> tr[maxn][<span class="number">26</span>], fa[maxn], mx[maxn];</span><br><span class="line">	<span class="keyword">int</span> lst, cnt;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">Insert</span><span class="params">(<span class="keyword">int</span> c)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">int</span> p = lst, np = ++cnt;</span><br><span class="line">		lst = np; mx[np] = mx[p] + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">for</span>(;p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;</span><br><span class="line">		<span class="keyword">if</span>(!p) fa[np] = <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">int</span> q = tr[p][c];</span><br><span class="line">			<span class="keyword">if</span>(mx[p] + <span class="number">1</span> == mx[q]) fa[np] = q;</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">int</span> nq = ++cnt;mx[nq] = mx[p] + <span class="number">1</span>;</span><br><span class="line">				<span class="built_in">memcpy</span>(t[nq].tr, t[q].tr, <span class="keyword">sizeof</span>(t[q].tr));</span><br><span class="line">				fa[nq] = fa[q]; fa[q] = fa[np] = nq;</span><br><span class="line">				<span class="keyword">for</span>(; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		siz[np] = <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Samples"><a href="#Samples" class="headerlink" title="Samples"></a>Samples</h2><h4 id="Luogu-3804"><a href="#Luogu-3804" class="headerlink" title="Luogu 3804"></a><a href="https://www.luogu.org/problemnew/show/P3804" target="_blank" rel="noopener">Luogu 3804</a></h4><h5 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h5><p>给定一个字符串，求其出现次数 × 长度的最大值。</p>
+<h5 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h5><p>根据Parent树的特性，按Right集大小做基数排序，倒序累加，一定可以保证儿子的贡献累加到父亲上。而在相同次数下，能产生贡献的一定是最长串，所以用$siz_x \times Max(x)$ 更新答案就好啦。</p>
+<h5 id="Code"><a href="#Code" class="headerlink" title="Code"></a>Code</h5><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//in struct SuffixAutoMation:	</span></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">build</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">"%s"</span>, str + <span class="number">1</span>); n = <span class="built_in">strlen</span>(str + <span class="number">1</span>);</span><br><span class="line">        lst = cnt = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">            Insert(str[i] - <span class="string">'a'</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">solve</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= cnt; ++i) bkt[mx[i]]++;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= cnt; ++i) bkt[i] += bkt[i - <span class="number">1</span>];</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= cnt; ++i) arr[bkt[mx[i]]--] = i;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = cnt; i; --i)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">int</span> cur = arr[i];</span><br><span class="line">            siz[fa[cur]] += siz[cur];</span><br><span class="line">            <span class="keyword">if</span>(siz[cur] &gt; <span class="number">1</span>) ans = max(ans, (ll)siz[cur] * (ll)mx[cur]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, ans);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Luogu-1368"><a href="#Luogu-1368" class="headerlink" title="Luogu 1368"></a><a href="https://www.luogu.org/problemnew/show/P1368" target="_blank" rel="noopener">Luogu 1368</a></h4><h5 id="Description-1"><a href="#Description-1" class="headerlink" title="Description"></a>Description</h5><p>求一个字符串循环同构串中字典序最小的串.</p>
+<h5 id="Solution-1"><a href="#Solution-1" class="headerlink" title="Solution"></a>Solution</h5><p>把字符串在SAM上插入两遍, 从根节点开始每次选最小的转移边转移, 直到转移n次.</p>
+<p>字符集比较大, 用map.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SuffixAutoMation</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="built_in">map</span>&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; tr[maxn];</span><br><span class="line">    <span class="keyword">int</span> fa[maxn], mx[maxn];</span><br><span class="line">    <span class="keyword">int</span> lst, cnt;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">Insert</span><span class="params">(<span class="keyword">int</span> c)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> p = lst, np = ++cnt;</span><br><span class="line">        lst = np; mx[np] = mx[p] + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span>(; p &amp;&amp; !tr[p].count(c); p = fa[p]) tr[p][c] = np;</span><br><span class="line">        <span class="keyword">if</span>(!p) fa[np] = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">int</span> q = tr[p][c];</span><br><span class="line">            <span class="keyword">if</span>(mx[p] + <span class="number">1</span> == mx[q]) fa[np] = q;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">int</span> nq = ++cnt; mx[nq] = mx[p] + <span class="number">1</span>;</span><br><span class="line">                tr[nq] = tr[q];</span><br><span class="line">                fa[nq] = fa[q]; fa[q] = fa[np] = nq;</span><br><span class="line">                <span class="keyword">for</span>(; tr[p][c] == q; p = fa[p]) tr[p][c] = nq; </span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">build</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">        lst = cnt = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">            str[i] = rd();</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) Insert(str[i]);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) Insert(str[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">solve</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> now = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"%d "</span>, tr[now].begin()-&gt;first);</span><br><span class="line">            now = tr[now].begin()-&gt;second;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;SAM;</span><br></pre></td></tr></table></figure>
+<h4 id="BZOJ-4032"><a href="#BZOJ-4032" class="headerlink" title="BZOJ 4032"></a><a href="https://www.lydsy.com/JudgeOnline/problem.php?id=4032" target="_blank" rel="noopener">BZOJ 4032</a></h4><h5 id="Description-2"><a href="#Description-2" class="headerlink" title="Description"></a>Description</h5><p>在虐各种最长公共子串、子序列的题虐的不耐烦了之后，你决定反其道而行之。</p>
+<p>一个串的“子串”指的是它的连续的一段，例如bcd是abcdef的子串，但bde不是。</p>
+<p>一个串的“子序列”指的是它的可以不连续的一段，例如bde是abcdef的子串，但bdd不是。</p>
+<p>下面，给两个小写字母串A，B，请你计算：</p>
+<p>(1) A的一个最短的子串，它不是B的子串</p>
+<p>(2) A的一个最短的子串，它不是B的子序列</p>
+<p>(3) A的一个最短的子序列，它不是B的子串</p>
+<p>(4) A的一个最短的子序列，它不是B的子序列</p>
+<h5 id="Solution-2"><a href="#Solution-2" class="headerlink" title="Solution"></a>Solution</h5><p>我们可以$O(n^2)$地建出一个<strong>序列自动机</strong>.</p>
+<p>好吧其实这就是暴力的说.</p>
+<p>也就是贪心地匹配子序列的转移.</p>
+<p>对于每个问题在相应的自动机上跑BFS就好啦.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;queue&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bitset&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">2005</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">char</span> a[maxn], b[maxn];</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SuffixAutomation</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">int</span> tr[maxn &lt;&lt; <span class="number">1</span>][<span class="number">26</span>], mx[maxn &lt;&lt; <span class="number">1</span>], fa[maxn &lt;&lt; <span class="number">1</span>];</span><br><span class="line">	<span class="keyword">int</span> lst, cnt;</span><br><span class="line">	SuffixAutomation()</span><br><span class="line">	&#123;</span><br><span class="line">		lst = cnt = <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">Insert</span><span class="params">(<span class="keyword">int</span> c)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">int</span> p = lst, np = ++cnt;</span><br><span class="line">		lst = np; mx[np] = mx[p] + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">for</span>(; p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;</span><br><span class="line">		<span class="keyword">if</span>(!p) fa[np] = <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">int</span> q = tr[p][c];</span><br><span class="line">			<span class="keyword">if</span>(mx[p] + <span class="number">1</span> == mx[q]) fa[np] = q;</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">int</span> nq = ++cnt; mx[nq] = mx[p] + <span class="number">1</span>;</span><br><span class="line">				<span class="built_in">memcpy</span>(tr[nq], tr[q], <span class="keyword">sizeof</span>(tr[q]));</span><br><span class="line">				fa[nq] = fa[q]; fa[q] = fa[np] = nq;</span><br><span class="line">				<span class="keyword">for</span>(; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;sama, samb;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SeqAutomation</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">int</span> tr[maxn][<span class="number">26</span>], lst[<span class="number">26</span>], pre[maxn];</span><br><span class="line">	<span class="keyword">int</span> cnt;</span><br><span class="line">	SeqAutomation()</span><br><span class="line">	&#123;</span><br><span class="line">		cnt = <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i) lst[i] = <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">Insert</span><span class="params">(<span class="keyword">int</span> c)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">int</span> np = ++cnt;</span><br><span class="line">		pre[np] = lst[c];</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">for</span>(<span class="keyword">int</span> j = lst[i]; j &amp;&amp; !tr[j][c]; j = pre[j])</span><br><span class="line">				tr[j][c] = np;</span><br><span class="line">		&#125;</span><br><span class="line">		lst[c] = np;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;seqa, seqb;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">node</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">int</span> a, b, len;</span><br><span class="line">	node(<span class="keyword">int</span> a_ = <span class="number">0</span>, <span class="keyword">int</span> b_ = <span class="number">0</span>, <span class="keyword">int</span> l = <span class="number">0</span>):</span><br><span class="line">		a(a_), b(b_), len(l)&#123;&#125;;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="built_in">bitset</span>&lt;maxn &lt;&lt; 1&gt; vis[maxn &lt;&lt; <span class="number">1</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">sam_sam</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">queue</span>&lt;node&gt; q;</span><br><span class="line">	q.push(node(<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>));</span><br><span class="line">	vis[<span class="number">1</span>][<span class="number">1</span>] = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(!q.empty())</span><br><span class="line">	&#123;</span><br><span class="line">		node u = q.front(); q.pop();</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">int</span> ya = sama.tr[u.a][i], yb = samb.tr[u.b][i];</span><br><span class="line">			<span class="keyword">if</span>(ya &amp;&amp; yb)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">if</span>(vis[ya][yb]) <span class="keyword">continue</span>;</span><br><span class="line">				q.push(node(ya, yb, u.len + <span class="number">1</span>));</span><br><span class="line">				vis[ya][yb] = <span class="number">1</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span>(ya &amp;&amp; !yb) &#123;<span class="built_in">printf</span>(<span class="string">"%d\n"</span>, u.len + <span class="number">1</span>); <span class="keyword">return</span>;&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">puts</span>(<span class="string">"-1"</span>);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">sam_seq</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">queue</span>&lt;node&gt; q;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (maxn &lt;&lt; <span class="number">1</span>); ++i) vis[i].reset();</span><br><span class="line">	q.push(node(<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>));</span><br><span class="line">	vis[<span class="number">1</span>][<span class="number">1</span>] = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(!q.empty())</span><br><span class="line">	&#123;</span><br><span class="line">		node u = q.front(); q.pop();</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">int</span> ya = sama.tr[u.a][i], yb = seqb.tr[u.b][i];</span><br><span class="line">			<span class="keyword">if</span>(ya &amp;&amp; yb)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">if</span>(vis[ya][yb]) <span class="keyword">continue</span>;</span><br><span class="line">				q.push(node(ya, yb, u.len + <span class="number">1</span>));</span><br><span class="line">				vis[ya][yb] = <span class="number">1</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span>(ya &amp;&amp; !yb) &#123;<span class="built_in">printf</span>(<span class="string">"%d\n"</span>, u.len + <span class="number">1</span>); <span class="keyword">return</span>;&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">puts</span>(<span class="string">"-1"</span>);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">seq_sam</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (maxn &lt;&lt; <span class="number">1</span>); ++i) vis[i].reset();</span><br><span class="line">	<span class="built_in">queue</span>&lt;node&gt; q;</span><br><span class="line">	q.push(node(<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>));</span><br><span class="line">	vis[<span class="number">1</span>][<span class="number">1</span>] = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(!q.empty())</span><br><span class="line">	&#123;</span><br><span class="line">		node u = q.front(); q.pop();</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">int</span> ya = seqa.tr[u.a][i], yb = samb.tr[u.b][i];</span><br><span class="line">			<span class="keyword">if</span>(ya &amp;&amp; yb)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">if</span>(vis[ya][yb]) <span class="keyword">continue</span>;</span><br><span class="line">				q.push(node(ya, yb, u.len + <span class="number">1</span>));</span><br><span class="line">				vis[ya][yb] = <span class="number">1</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span> <span class="keyword">if</span>(ya &amp;&amp; !yb) &#123;<span class="built_in">printf</span>(<span class="string">"%d\n"</span>, u.len + <span class="number">1</span>); <span class="keyword">return</span>;&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">puts</span>(<span class="string">"-1"</span>);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">seq_seq</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (maxn &lt;&lt; <span class="number">1</span>); ++i) </span><br><span class="line">		vis[i].reset();</span><br><span class="line">	<span class="built_in">queue</span>&lt;node&gt; q;</span><br><span class="line">	q.push(node(<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>));</span><br><span class="line">	vis[<span class="number">1</span>][<span class="number">1</span>] = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(!q.empty())</span><br><span class="line">	&#123;</span><br><span class="line">		node u = q.front(); q.pop();</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">int</span> ya = seqa.tr[u.a][i], yb = seqb.tr[u.b][i];</span><br><span class="line">			<span class="keyword">if</span>(ya &amp;&amp; yb)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">if</span>(vis[ya][yb]) <span class="keyword">continue</span>;</span><br><span class="line">				q.push(node(ya, yb, u.len + <span class="number">1</span>));</span><br><span class="line">				vis[ya][yb] = <span class="number">1</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span> <span class="keyword">if</span>(ya &amp;&amp; !yb) &#123;<span class="built_in">printf</span>(<span class="string">"%d\n"</span>, u.len + <span class="number">1</span>); <span class="keyword">return</span>;&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">puts</span>(<span class="string">"-1"</span>);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%s"</span>, a);</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%s"</span>, b);</span><br><span class="line">	<span class="keyword">int</span> la = <span class="built_in">strlen</span>(a), lb = <span class="built_in">strlen</span>(b);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; la; ++i) sama.Insert(a[i] - <span class="string">'a'</span>);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; lb; ++i) samb.Insert(b[i] - <span class="string">'a'</span>);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; la; ++i) seqa.Insert(a[i] - <span class="string">'a'</span>);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; lb; ++i) seqb.Insert(b[i] - <span class="string">'a'</span>);</span><br><span class="line">	sam_sam();</span><br><span class="line">	sam_seq();</span><br><span class="line">	seq_sam();</span><br><span class="line">	seq_seq();</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../19/JZOJ3363-ACAM/" data-tooltip="JZOJ3363 AC Automation!" aria-label="PREVIOUS: JZOJ3363 AC Automation!">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../JZOJ5822-Trie/" data-tooltip="JZOJ5822 Trie, Strings" aria-label="NEXT: JZOJ5822 Trie, Strings">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../19/JZOJ3363-ACAM/" data-tooltip="JZOJ3363 AC Automation!" aria-label="PREVIOUS: JZOJ3363 AC Automation!">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../JZOJ5822-Trie/" data-tooltip="JZOJ5822 Trie, Strings" aria-label="NEXT: JZOJ5822 Trie, Strings">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/08/16/SuffixAutoMation/';
+                 
+                    this.page.identifier = '2018/08/16/SuffixAutoMation/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

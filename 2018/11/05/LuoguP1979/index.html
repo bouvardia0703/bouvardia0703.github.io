@@ -1,0 +1,589 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Luogu P1979 华容道 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"预处理 + 图论。\n\n\n其实是个NOIP题，但是感觉一些优化的思路还是挺重要的。\nDescription一个$N \\times N$的棋盘上有一个空位和一些棋子, 以及一些固定位置, 现在有若干组询问, 给定空位, 起始位置和终止位置, 问最少移动步数.\nSolution我们首先可以暴力地确定$O(n^4)$的状态(空位和当前位置)，然后跑最短路，不过这样实际跑起来太慢了.\n注意到一个有效状态只是空位在棋子四周, 否则没有意义, 那我们就可以确定一种新的状态(当前位置和空位所在方向), 那么就只有两种转移, 和空位互换, 以及空位换方向.\n空位换方向可以一次预处理.\n需要注意的是一开始空位不一定在棋子边上, 可能需要做一次BFS把棋子移过来.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;vector&gt;#include &lt;queue&gt;using namespace std;const int maxn = 35;const int dx[4] = &#123;0, 1, 0, -1&#125;;const int dy[4] = &#123;1, 0, -1, 0&#125;;struct node&#123;  int x, y, d;  node(int _ = 0, int __ = 0, int ___ = 0):  x(_),y(__),d(___)&#123;&#125;&#125;;int n, m, t;int mtr[maxn][maxn], f[maxn][maxn][4][4];int dis[maxn][maxn][4], tmp[maxn][maxn];int vis[maxn][maxn], v_[maxn][maxn][4];int ex, ey, sx, sy, tx, ty;vector&lt;pair&lt;int, int&gt; &gt; v;queue&lt;node&gt; q;void bfs(int s1, int s2, int b1, int b2) &#123;  //printf(\"%d %d %d %d\\n\", s1, s2, b1, b2);  memset(tmp, 0x3f, sizeof tmp);  tmp[s1][s2] = 0;  queue&lt; pair&lt;int, int&gt; &gt;q;   q.push(make_pair(s1, s2)); vis[s1][s2] = 1;  while (!q.empty()) &#123;    pair&lt;int, int&gt; u = q.front(); q.pop();    int cx = u.first, cy = u.second;    for (int i = 0; i &lt; 4; ++i) &#123;      int ix = cx + dx[i], iy = cy + dy[i];      //if (s1 == ex &amp;&amp; s2 == ey) printf(\"%d %d\\n\", ix, iy);      if (ix &lt; 1 || ix &gt; n || iy &lt; 1 || iy &gt; m || !mtr[ix][iy]) continue;      if (tmp[ix][iy] &lt; 0x3f3f3f3f) continue;      if (ix == b1 &amp;&amp; iy == b2) continue;      tmp[ix][iy] = tmp[cx][cy] + 1;      //if(s1 == ex &amp;&amp; s2 == ey)printf(\"%d %d %d\\n\", ix, iy, tmp[ix][iy]);      q.push(make_pair(ix, iy));    &#125;  &#125;&#125;void PreprocessF() &#123;  for (int i = 1; i &lt;= n; ++i)    for (int j = 1; j &lt;= m; ++j)       for (int fr = 0; fr &lt; 4; ++fr) &#123;        int ax = i + dx[fr], ay = j + dy[fr];        if (ax &lt; 1 || ax &gt; n || ay &lt; 1 || ay &gt; m || !mtr[ax][ay]) continue;        for (int to = 0; to &lt; 4; ++to) &#123;          int ix = i + dx[to], iy = j + dy[to];          if (ix &lt; 1 || ix &gt; n || iy &lt; 1 || iy &gt; m || !mtr[ix][iy]) continue;          if (fr == to) f[i][j][fr][to] = 0;          else &#123;            bfs(ax, ay, i, j);            f[i][j][fr][to] = tmp[ix][iy];          &#125;        &#125;      &#125;&#125;void BeforeSolve() &#123;  //puts(\"b\");  bfs(ex, ey, sx, sy);&#125;void Spfa() &#123;  memset(dis, 0x3f, sizeof dis);  for (int i = 0; i &lt; 4; ++i) &#123;    int ix = sx + dx[i], iy = sy + dy[i];    if (ix &lt; 1 || ix &gt; n || iy &lt; 1 || iy &gt; m || !mtr[ix][iy]) continue;    if (ix == ex &amp;&amp; iy == ey)       dis[sx][sy][i] = 0, q.push(node(sx, sy, i)), v_[sx][sy][i] = 1;    else       dis[sx][sy][i] = tmp[ix][iy], q.push(node(sx, sy, i)), v_[sx][sy][i] = 1;    //printf(\"%d %d %d\\n\", sx, sy, i);  &#125;  while (!q.empty()) &#123;    node u = q.front(); q.pop();    v_[u.x][u.y][u.d] = 0;    //printf(\"%d %d %d\\n\", u.x, u.y, u.d);    //printf(\"%d\\n\", dis[u.x][u.y][u.d]);    //getchar();    //chg    int id;    if (u.d == 1 || u.d == 3) &#123;      id = ((u.d == 1) ? 3 : 1);    &#125; else &#123;      id = ((u.d == 2) ? 0 : 2);    &#125;        if (dis[u.x + dx[u.d]][u.y + dy[u.d]][id] &gt;           dis[u.x][u.y][u.d] + 1) &#123;        dis[u.x + dx[u.d]][u.y + dy[u.d]][id] =         dis[u.x][u.y][u.d] + 1;        //printf(\"expand %d %d %d\\n\", u.x + dx[u.d], u.y + dy[u.d], id);      if (!v_[u.x + dx[u.d]][u.y + dy[u.d]][id])        v_[u.x + dx[u.d]][u.y + dy[u.d]][id] = 1, q.push(node(u.x + dx[u.d], u.y + dy[u.d], id));    &#125;    for (int i = 0; i &lt; 4; ++i)       if (i != u.d) &#123;        int ix = u.x + dx[i], iy = u.y + dy[i];        if (ix &lt; 1 || ix &gt; n || iy &lt; 1 || iy &gt; m || !mtr[ix][iy]) continue;        //printf(\"%d %d %d\\n\", u.x, u.y, i);        //printf(\"%d %d\\n\", dis[u.x][u.y][i], dis[u.x][u.y][u.d] + f[u.x][u.y][u.d][i]);        if (dis[u.x][u.y][i] &gt; dis[u.x][u.y][u.d] + f[u.x][u.y][u.d][i]) &#123;          dis[u.x][u.y][i] = dis[u.x][u.y][u.d] + f[u.x][u.y][u.d][i];          if (!v_[u.x][u.y][i])            v_[u.x][u.y][i] = 1, q.push(node(u.x, u.y, i));//, printf(\"p %d %d %d\\n\", u.x, u.y, i);        &#125;      &#125;  &#125;&#125;int main() &#123;  scanf(\"%d%d%d\", &amp;n, &amp;m, &amp;t);  for (int i = 1; i &lt;= n; ++i) &#123;    for (int j = 1; j &lt;= m; ++j) &#123;      scanf(\"%d\", &amp;mtr[i][j]);    &#125;  &#125;  PreprocessF();  while (t--) &#123;    scanf(\"%d%d%d%d%d%d\",          &amp;ex, &amp;ey, &amp;sx, &amp;sy, &amp;tx, &amp;ty);    if (sx == tx &amp;&amp; sy == ty) &#123;      puts(\"0\");      continue;    &#125;    BeforeSolve();    //puts(\"bgn\");    Spfa();    int ans = 0x3f3f3f3f;    for (int i = 0; i &lt; 4; ++i)      ans = min(ans, dis[tx][ty][i]);    if (ans &lt; 0x3f3f3f3f) printf(\"%d\\n\", ans);    else puts(\"-1\");  &#125;  return 0;&#125;\n","dateCreated":"2018-11-05T15:23:05+08:00","dateModified":"2018-11-05T15:38:58+08:00","datePublished":"2018-11-05T15:23:05+08:00","description":"预处理 + 图论。","headline":"Luogu P1979 华容道","image":[null,"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181025141822.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/11/05/LuoguP1979/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/11/05/LuoguP1979/","keywords":"OI","thumbnailUrl":"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181025141822.jpg"}</script>
+    <meta name="description" content="预处理 + 图论。">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Luogu P1979 华容道">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/11/05/LuoguP1979/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="预处理 + 图论。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-11-05T07:38:58.664Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Luogu P1979 华容道">
+<meta name="twitter:description" content="预处理 + 图论。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+        <meta property="og:image" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181025141822.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181025141822.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181025141822.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Luogu P1979 华容道
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-11-05T15:23:05+08:00">
+	
+		    Nov 05, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>预处理 + 图论。</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol>
+<p>其实是个NOIP题，但是感觉一些优化的思路还是挺重要的。</p>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>一个$N \times N$的棋盘上有一个空位和一些棋子, 以及一些固定位置, 现在有若干组询问, 给定空位, 起始位置和终止位置, 问最少移动步数.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>我们首先可以暴力地确定$O(n^4)$的状态(空位和当前位置)，然后跑最短路，不过这样实际跑起来太慢了.</p>
+<p>注意到一个有效状态只是空位在棋子四周, 否则没有意义, 那我们就可以确定一种新的状态(当前位置和空位所在方向), 那么就只有两种转移, 和空位互换, 以及空位换方向.</p>
+<p>空位换方向可以一次预处理.</p>
+<p>需要注意的是一开始空位不一定在棋子边上, 可能需要做一次BFS把棋子移过来.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;queue&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">35</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> dx[<span class="number">4</span>] = &#123;<span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">-1</span>&#125;;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> dy[<span class="number">4</span>] = &#123;<span class="number">1</span>, <span class="number">0</span>, <span class="number">-1</span>, <span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">node</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="keyword">int</span> x, y, d;</span><br><span class="line">  node(<span class="keyword">int</span> _ = <span class="number">0</span>, <span class="keyword">int</span> __ = <span class="number">0</span>, <span class="keyword">int</span> ___ = <span class="number">0</span>):</span><br><span class="line">  x(_),y(__),d(___)&#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">int</span> n, m, t;</span><br><span class="line"><span class="keyword">int</span> mtr[maxn][maxn], f[maxn][maxn][<span class="number">4</span>][<span class="number">4</span>];</span><br><span class="line"><span class="keyword">int</span> dis[maxn][maxn][<span class="number">4</span>], tmp[maxn][maxn];</span><br><span class="line"><span class="keyword">int</span> vis[maxn][maxn], v_[maxn][maxn][<span class="number">4</span>];</span><br><span class="line"><span class="keyword">int</span> ex, ey, sx, sy, tx, ty;</span><br><span class="line"><span class="built_in">vector</span>&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; &gt; v;</span><br><span class="line"><span class="built_in">queue</span>&lt;node&gt; q;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">bfs</span><span class="params">(<span class="keyword">int</span> s1, <span class="keyword">int</span> s2, <span class="keyword">int</span> b1, <span class="keyword">int</span> b2)</span> </span>&#123;</span><br><span class="line">  <span class="comment">//printf("%d %d %d %d\n", s1, s2, b1, b2);</span></span><br><span class="line">  <span class="built_in">memset</span>(tmp, <span class="number">0x3f</span>, <span class="keyword">sizeof</span> tmp);</span><br><span class="line">  tmp[s1][s2] = <span class="number">0</span>;</span><br><span class="line">  <span class="built_in">queue</span>&lt; pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; &gt;q; </span><br><span class="line">  q.push(make_pair(s1, s2)); vis[s1][s2] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">while</span> (!q.empty()) &#123;</span><br><span class="line">    pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; u = q.front(); q.pop();</span><br><span class="line">    <span class="keyword">int</span> cx = u.first, cy = u.second;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; ++i) &#123;</span><br><span class="line">      <span class="keyword">int</span> ix = cx + dx[i], iy = cy + dy[i];</span><br><span class="line">      <span class="comment">//if (s1 == ex &amp;&amp; s2 == ey) printf("%d %d\n", ix, iy);</span></span><br><span class="line">      <span class="keyword">if</span> (ix &lt; <span class="number">1</span> || ix &gt; n || iy &lt; <span class="number">1</span> || iy &gt; m || !mtr[ix][iy]) <span class="keyword">continue</span>;</span><br><span class="line">      <span class="keyword">if</span> (tmp[ix][iy] &lt; <span class="number">0x3f3f3f3f</span>) <span class="keyword">continue</span>;</span><br><span class="line">      <span class="keyword">if</span> (ix == b1 &amp;&amp; iy == b2) <span class="keyword">continue</span>;</span><br><span class="line">      tmp[ix][iy] = tmp[cx][cy] + <span class="number">1</span>;</span><br><span class="line">      <span class="comment">//if(s1 == ex &amp;&amp; s2 == ey)printf("%d %d %d\n", ix, iy, tmp[ix][iy]);</span></span><br><span class="line">      q.push(make_pair(ix, iy));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">PreprocessF</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j) </span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> fr = <span class="number">0</span>; fr &lt; <span class="number">4</span>; ++fr) &#123;</span><br><span class="line">        <span class="keyword">int</span> ax = i + dx[fr], ay = j + dy[fr];</span><br><span class="line">        <span class="keyword">if</span> (ax &lt; <span class="number">1</span> || ax &gt; n || ay &lt; <span class="number">1</span> || ay &gt; m || !mtr[ax][ay]) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> to = <span class="number">0</span>; to &lt; <span class="number">4</span>; ++to) &#123;</span><br><span class="line">          <span class="keyword">int</span> ix = i + dx[to], iy = j + dy[to];</span><br><span class="line">          <span class="keyword">if</span> (ix &lt; <span class="number">1</span> || ix &gt; n || iy &lt; <span class="number">1</span> || iy &gt; m || !mtr[ix][iy]) <span class="keyword">continue</span>;</span><br><span class="line">          <span class="keyword">if</span> (fr == to) f[i][j][fr][to] = <span class="number">0</span>;</span><br><span class="line">          <span class="keyword">else</span> &#123;</span><br><span class="line">            bfs(ax, ay, i, j);</span><br><span class="line">            f[i][j][fr][to] = tmp[ix][iy];</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">BeforeSolve</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">//puts("b");</span></span><br><span class="line">  bfs(ex, ey, sx, sy);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Spfa</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">memset</span>(dis, <span class="number">0x3f</span>, <span class="keyword">sizeof</span> dis);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; ++i) &#123;</span><br><span class="line">    <span class="keyword">int</span> ix = sx + dx[i], iy = sy + dy[i];</span><br><span class="line">    <span class="keyword">if</span> (ix &lt; <span class="number">1</span> || ix &gt; n || iy &lt; <span class="number">1</span> || iy &gt; m || !mtr[ix][iy]) <span class="keyword">continue</span>;</span><br><span class="line">    <span class="keyword">if</span> (ix == ex &amp;&amp; iy == ey) </span><br><span class="line">      dis[sx][sy][i] = <span class="number">0</span>, q.push(node(sx, sy, i)), v_[sx][sy][i] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">else</span> </span><br><span class="line">      dis[sx][sy][i] = tmp[ix][iy], q.push(node(sx, sy, i)), v_[sx][sy][i] = <span class="number">1</span>;</span><br><span class="line">    <span class="comment">//printf("%d %d %d\n", sx, sy, i);</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">while</span> (!q.empty()) &#123;</span><br><span class="line">    node u = q.front(); q.pop();</span><br><span class="line">    v_[u.x][u.y][u.d] = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">//printf("%d %d %d\n", u.x, u.y, u.d);</span></span><br><span class="line">    <span class="comment">//printf("%d\n", dis[u.x][u.y][u.d]);</span></span><br><span class="line">    <span class="comment">//getchar();</span></span><br><span class="line">    <span class="comment">//chg</span></span><br><span class="line">    <span class="keyword">int</span> id;</span><br><span class="line">    <span class="keyword">if</span> (u.d == <span class="number">1</span> || u.d == <span class="number">3</span>) &#123;</span><br><span class="line">      id = ((u.d == <span class="number">1</span>) ? <span class="number">3</span> : <span class="number">1</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      id = ((u.d == <span class="number">2</span>) ? <span class="number">0</span> : <span class="number">2</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (dis[u.x + dx[u.d]][u.y + dy[u.d]][id] &gt; </span><br><span class="line">          dis[u.x][u.y][u.d] + <span class="number">1</span>) &#123;</span><br><span class="line">        dis[u.x + dx[u.d]][u.y + dy[u.d]][id] = </span><br><span class="line">        dis[u.x][u.y][u.d] + <span class="number">1</span>;</span><br><span class="line">        <span class="comment">//printf("expand %d %d %d\n", u.x + dx[u.d], u.y + dy[u.d], id);</span></span><br><span class="line">      <span class="keyword">if</span> (!v_[u.x + dx[u.d]][u.y + dy[u.d]][id])</span><br><span class="line">        v_[u.x + dx[u.d]][u.y + dy[u.d]][id] = <span class="number">1</span>, q.push(node(u.x + dx[u.d], u.y + dy[u.d], id));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; ++i) </span><br><span class="line">      <span class="keyword">if</span> (i != u.d) &#123;</span><br><span class="line">        <span class="keyword">int</span> ix = u.x + dx[i], iy = u.y + dy[i];</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ix &lt; <span class="number">1</span> || ix &gt; n || iy &lt; <span class="number">1</span> || iy &gt; m || !mtr[ix][iy]) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="comment">//printf("%d %d %d\n", u.x, u.y, i);</span></span><br><span class="line">        <span class="comment">//printf("%d %d\n", dis[u.x][u.y][i], dis[u.x][u.y][u.d] + f[u.x][u.y][u.d][i]);</span></span><br><span class="line">        <span class="keyword">if</span> (dis[u.x][u.y][i] &gt; dis[u.x][u.y][u.d] + f[u.x][u.y][u.d][i]) &#123;</span><br><span class="line">          dis[u.x][u.y][i] = dis[u.x][u.y][u.d] + f[u.x][u.y][u.d][i];</span><br><span class="line">          <span class="keyword">if</span> (!v_[u.x][u.y][i])</span><br><span class="line">            v_[u.x][u.y][i] = <span class="number">1</span>, q.push(node(u.x, u.y, i));<span class="comment">//, printf("p %d %d %d\n", u.x, u.y, i);</span></span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d%d%d"</span>, &amp;n, &amp;m, &amp;t);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j) &#123;</span><br><span class="line">      <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;mtr[i][j]);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  PreprocessF();</span><br><span class="line">  <span class="keyword">while</span> (t--) &#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d%d%d%d%d"</span>,</span><br><span class="line">          &amp;ex, &amp;ey, &amp;sx, &amp;sy, &amp;tx, &amp;ty);</span><br><span class="line">    <span class="keyword">if</span> (sx == tx &amp;&amp; sy == ty) &#123;</span><br><span class="line">      <span class="built_in">puts</span>(<span class="string">"0"</span>);</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    BeforeSolve();</span><br><span class="line">    <span class="comment">//puts("bgn");</span></span><br><span class="line">    Spfa();</span><br><span class="line">    <span class="keyword">int</span> ans = <span class="number">0x3f3f3f3f</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; ++i)</span><br><span class="line">      ans = min(ans, dis[tx][ty][i]);</span><br><span class="line">    <span class="keyword">if</span> (ans &lt; <span class="number">0x3f3f3f3f</span>) <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">    <span class="keyword">else</span> <span class="built_in">puts</span>(<span class="string">"-1"</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../POI2015-WYC/" data-tooltip="POI2015 Wycieczki" aria-label="PREVIOUS: POI2015 Wycieczki">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../01/BZOJ3167-4824/" data-tooltip="BZOJ3167-4824" aria-label="NEXT: BZOJ3167-4824">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../POI2015-WYC/" data-tooltip="POI2015 Wycieczki" aria-label="PREVIOUS: POI2015 Wycieczki">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../01/BZOJ3167-4824/" data-tooltip="BZOJ3167-4824" aria-label="NEXT: BZOJ3167-4824">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/05/LuoguP1979/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/05/LuoguP1979/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/05/LuoguP1979/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/05/LuoguP1979/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/05/LuoguP1979/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/05/LuoguP1979/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/11/05/LuoguP1979/';
+                 
+                    this.page.identifier = '2018/11/05/LuoguP1979/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

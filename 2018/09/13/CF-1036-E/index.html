@@ -1,0 +1,592 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Codeforces Edu Round 50 Div.2 E - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"几何与计数。\n\n\nIntroBouvardia昨天看了题还觉得很可做, 20分钟码过样例超开心!\n然后就调到了现在.\nDescription给若干条线段, 问总计覆盖了多少个整点, 重复的计一个.\nSolution11: 15 诶呀这不是讲过嘛!!! $gcd(|\\Delta x|,\\,|\\Delta y|) + 1$ 啦, 去个重把她切了啊!!! 还有45分钟12点啊!!!\n12:30 算了写博客去.\n总的来说这题很好想, 但是实现细节还是很多的. Bouvardia本来直接用了几何库但是写跪了. 因为判整除然后用整数存更稳一些, 浮点数还是多多少少会丢失信息的.\n来一份抄题解的深受CF评测姬毒害的STL大法.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cmath&gt;#include &lt;iostream&gt;#include &lt;vector&gt;#include &lt;set&gt;#include &lt;tuple&gt;using namespace std;typedef long long ll;typedef long double ldb;typedef double db;const int maxn = 1005;const ldb eps = 1e-7;int n, ans;ll gcd(ll a, ll b) &#123;return b ? gcd(b, a % b) : a;&#125;struct Vector&#123;\tll x, y;\tVector(ll x_ = 0, ll y_ = 0):x(x_),y(y_)&#123;&#125;\tVector(Vector a, Vector b)\t&#123;\t\tx = b.x - a.x;\t\ty = b.y - a.y;\t&#125;\tbool operator &lt; (const Vector &amp;rhs) const\t&#123;\t\tif(x == rhs.x) return y &lt; rhs.y;\t\treturn x &lt; rhs.x;\t&#125;&#125;;typedef Vector Point;struct Line&#123;\tll a, b, c;\tLine(Point p = Point(), Point v = Point())\t&#123;\t\tPoint V = Point(p, v);\t\ta = -V.y;\t\tb = V.x;\t\tc = -p.x * a - p.y * b;\t&#125;&#125;;inline ll cnt_points(tuple&lt;Point, Point&gt; tp)&#123;\tPoint x, y; tie(x, y) = tp;\treturn gcd(abs(x.x - y.x), abs(x.y - y.y)) + 1;&#125;inline bool legal(ll x1_, ll x2_, ll x)&#123;\tif(x1_ &gt; x2_) swap(x1_, x2_);\treturn x &gt;= x1_ &amp;&amp; x &lt;= x2_;&#125; inline bool on_seg(tuple&lt;Point, Point&gt; tp, Point crs)&#123;\tPoint a, b; tie(a, b) = tp;\treturn legal(a.x, b.x, crs.x) &amp;&amp; legal(a.y, b.y, crs.y);&#125;inline bool intersect(tuple&lt;Point, Point&gt; ta, tuple&lt;Point, Point&gt; tb, Point &amp;c)&#123;\tPoint pa, va, pb, vb;\ttie(pa, va) = ta; tie(pb, vb) = tb;\tLine la(pa, va), lb(pb, vb);\tll a1(la.a), b1(la.b), c1(la.c);\tll a2(lb.a), b2(lb.b), c2(lb.c);\tll d1 = c1*b2 - b1*c2;\tll d2 = a1*c2 - c1*a2;\tll d3 = a1*b2 - b1*a2;\tif(d3 == 0 || abs(d1) % abs(d3) || abs(d2) % abs(d3)) return false;\tc = Point(-d1 / d3, -d2 / d3);\treturn on_seg(ta, c) &amp;&amp; on_seg(tb, c);&#125;int main()&#123;\tios::sync_with_stdio(false);\tcin.tie(0); cout.tie(0);\tcin &gt;&gt; n; vector&lt;tuple&lt;Point, Point&gt; &gt; v;\tll xl, yl, xr, yr;\tfor(int i = 1; i &lt;= n; ++i)\t&#123;\t\tcin &gt;&gt; xl &gt;&gt; yl &gt;&gt; xr &gt;&gt; yr;\t\tv.push_back( make_tuple(Point(xl, yl), Point(xr, yr)) );\t&#125;\tfor(int i = 0; i &lt; n; ++i)\t&#123;\t\tans += cnt_points(v[i]);\t\tset&lt;Point&gt; all;\t\tfor(int j = i + 1; j &lt; n; ++j)\t\t&#123;\t\t\tPoint crs;\t\t\tif(intersect(v[i], v[j], crs))\t\t\t\tall.insert(crs);\t\t&#125;\t\tans -= all.size();\t&#125;\tcout &lt;&lt; ans &lt;&lt; endl;\treturn 0;&#125;","dateCreated":"2018-09-13T09:08:03+08:00","dateModified":"2018-09-13T16:30:50+08:00","datePublished":"2018-09-13T09:08:03+08:00","description":"几何与计数。","headline":"Codeforces Edu Round 50 Div.2 E","image":["https://i.loli.net/2018/09/13/5b99ba990bc19.jpg","https://i.loli.net/2018/09/13/5b99baa891aee.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/09/13/CF-1036-E/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/09/13/CF-1036-E/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/09/13/5b99ba990bc19.jpg"}</script>
+    <meta name="description" content="几何与计数。">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Codeforces Edu Round 50 Div.2 E">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/09/13/CF-1036-E/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="几何与计数。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-09-13T08:30:50.174Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Codeforces Edu Round 50 Div.2 E">
+<meta name="twitter:description" content="几何与计数。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/09/13/5b99ba990bc19.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/09/13/5b99ba990bc19.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/09/13/5b99baa891aee.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/09/13/5b99baa891aee.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/09/13/5b99baa891aee.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Codeforces Edu Round 50 Div.2 E
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-09-13T09:08:03+08:00">
+	
+		    Sep 13, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>几何与计数。</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Intro"><span class="toc-text">Intro</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol>
+<h2 id="Intro"><a href="#Intro" class="headerlink" title="Intro"></a>Intro</h2><p>Bouvardia昨天看了题还觉得很可做, 20分钟码过样例超开心!</p>
+<p>然后就调到了现在.</p>
+<h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>给若干条线段, 问总计覆盖了多少个整点, 重复的计一个.</p>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>11: 15 诶呀这不是讲过嘛!!! $gcd(|\Delta x|,\,|\Delta y|) + 1$ 啦, 去个重把她切了啊!!! 还有45分钟12点啊!!!</p>
+<p>12:30 算了写博客去.</p>
+<p>总的来说这题很好想, 但是实现细节还是很多的. Bouvardia本来直接用了几何库但是写跪了. 因为判整除然后用整数存更稳一些, 浮点数还是多多少少会丢失信息的.</p>
+<p>来一份<del>抄题解的</del>深受CF评测姬毒害的STL大法.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;set&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;tuple&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">double</span> ldb;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">double</span> db;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1005</span>;</span><br><span class="line"><span class="keyword">const</span> ldb eps = <span class="number">1e-7</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, ans;</span><br><span class="line"></span><br><span class="line"><span class="function">ll <span class="title">gcd</span><span class="params">(ll a, ll b)</span> </span>&#123;<span class="keyword">return</span> b ? gcd(b, a % b) : a;&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Vector</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	ll x, y;</span><br><span class="line">	Vector(ll x_ = <span class="number">0</span>, ll y_ = <span class="number">0</span>):x(x_),y(y_)&#123;&#125;</span><br><span class="line">	Vector(Vector a, Vector b)</span><br><span class="line">	&#123;</span><br><span class="line">		x = b.x - a.x;</span><br><span class="line">		y = b.y - a.y;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> Vector &amp;rhs) <span class="keyword">const</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>(x == rhs.x) <span class="keyword">return</span> y &lt; rhs.y;</span><br><span class="line">		<span class="keyword">return</span> x &lt; rhs.x;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">typedef</span> Vector Point;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Line</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	ll a, b, c;</span><br><span class="line">	Line(Point p = Point(), Point v = Point())</span><br><span class="line">	&#123;</span><br><span class="line">		Point V = Point(p, v);</span><br><span class="line">		a = -V.y;</span><br><span class="line">		b = V.x;</span><br><span class="line">		c = -p.x * a - p.y * b;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">inline</span> ll cnt_points</span><br><span class="line">(tuple&lt;Point, Point&gt; tp)</span><br><span class="line">&#123;</span><br><span class="line">	Point x, y; tie(x, y) = tp;</span><br><span class="line">	<span class="keyword">return</span> gcd(<span class="built_in">abs</span>(x.x - y.x), <span class="built_in">abs</span>(x.y - y.y)) + <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">bool</span> legal</span><br><span class="line">(ll x1_, ll x2_, ll x)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span>(x1_ &gt; x2_) swap(x1_, x2_);</span><br><span class="line">	<span class="keyword">return</span> x &gt;= x1_ &amp;&amp; x &lt;= x2_;</span><br><span class="line">&#125; </span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">bool</span> on_seg</span><br><span class="line">(tuple&lt;Point, Point&gt; tp, Point crs)</span><br><span class="line">&#123;</span><br><span class="line">	Point a, b; tie(a, b) = tp;</span><br><span class="line">	<span class="keyword">return</span> legal(a.x, b.x, crs.x) &amp;&amp; legal(a.y, b.y, crs.y);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">bool</span> intersect</span><br><span class="line">(tuple&lt;Point, Point&gt; ta, tuple&lt;Point, Point&gt; tb, Point &amp;c)</span><br><span class="line">&#123;</span><br><span class="line">	Point pa, va, pb, vb;</span><br><span class="line">	tie(pa, va) = ta; tie(pb, vb) = tb;</span><br><span class="line">	Line la(pa, va), lb(pb, vb);</span><br><span class="line">	ll a1(la.a), b1(la.b), c1(la.c);</span><br><span class="line">	ll a2(lb.a), b2(lb.b), c2(lb.c);</span><br><span class="line">	ll d1 = c1*b2 - b1*c2;</span><br><span class="line">	ll d2 = a1*c2 - c1*a2;</span><br><span class="line">	ll d3 = a1*b2 - b1*a2;</span><br><span class="line">	<span class="keyword">if</span>(d3 == <span class="number">0</span> || <span class="built_in">abs</span>(d1) % <span class="built_in">abs</span>(d3) || <span class="built_in">abs</span>(d2) % <span class="built_in">abs</span>(d3)) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	c = Point(-d1 / d3, -d2 / d3);</span><br><span class="line">	<span class="keyword">return</span> on_seg(ta, c) &amp;&amp; on_seg(tb, c);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ios::sync_with_stdio(<span class="literal">false</span>);</span><br><span class="line">	<span class="built_in">cin</span>.tie(<span class="number">0</span>); <span class="built_in">cout</span>.tie(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">cin</span> &gt;&gt; n; <span class="built_in">vector</span>&lt;tuple&lt;Point, Point&gt; &gt; v;</span><br><span class="line">	ll xl, yl, xr, yr;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">cin</span> &gt;&gt; xl &gt;&gt; yl &gt;&gt; xr &gt;&gt; yr;</span><br><span class="line">		v.push_back( make_tuple(Point(xl, yl), Point(xr, yr)) );</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		ans += cnt_points(v[i]);</span><br><span class="line">		<span class="built_in">set</span>&lt;Point&gt; all;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> j = i + <span class="number">1</span>; j &lt; n; ++j)</span><br><span class="line">		&#123;</span><br><span class="line">			Point crs;</span><br><span class="line">			<span class="keyword">if</span>(intersect(v[i], v[j], crs))</span><br><span class="line">				all.insert(crs);</span><br><span class="line">		&#125;</span><br><span class="line">		ans -= all.size();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; ans &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../XOR-art/" data-tooltip="Art of XOR" aria-label="PREVIOUS: Art of XOR">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../11/CFR-508/" data-tooltip="Codeforces Round 508 Div.2" aria-label="NEXT: Codeforces Round 508 Div.2">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../XOR-art/" data-tooltip="Art of XOR" aria-label="PREVIOUS: Art of XOR">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../11/CFR-508/" data-tooltip="Codeforces Round 508 Div.2" aria-label="NEXT: Codeforces Round 508 Div.2">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/13/CF-1036-E/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/13/CF-1036-E/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/13/CF-1036-E/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/13/CF-1036-E/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/13/CF-1036-E/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/13/CF-1036-E/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/09/13/CF-1036-E/';
+                 
+                    this.page.identifier = '2018/09/13/CF-1036-E/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

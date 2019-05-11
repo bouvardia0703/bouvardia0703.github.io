@@ -1,0 +1,585 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Minimum Product Spanning Tree - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"最小乘积生成树。\n\n感觉这个东西还是写一写记下来比较好.\n总是懒得写博客不是个好习惯啊, 容易忘东西, 就造成学了没有用, 这是很不应该的事.\nDescription给一条边两个权值 $A, B$, 使得$\\sum{A} \\times \\sum{B}$最小.\nSolution我们定义一个$K = X \\times Y$, 其中$X = \\sum{A}, Y = \\sum{B}$.\n那么就有 $Y = \\frac{K}{X}$, 这是一个反比例函数.\n要最小化$K$就意味着要让函数上所有的点尽可能靠近坐标轴, 这是很形象的.\n那么对于两个点确定的一个反比例函数, 我们希望找到一个相对于两点构成的直线更靠近坐标轴的点, 然后和某一个点确定一个新的反比例函数.\n最优的情况, 也就是点最靠近坐标轴的情况是:\n对于当前x最小的符合函数的解$P$, 和$y$最小的解$Q$, 我们希望找到一个点$R$, 使得:$\\overrightarrow{PQ} \\times \\overrightarrow{PR}$最小.\n也即最小化: $(Q.x - P.x) \\times (R.y - P.y) - (R.x - P.x) \\times (Q.y - P.y)$.\n那么就可以最小化: $R.y \\times (Q.x - P.x) - R.x \\times (Q.y - P.y)$, 因为其他项都是常数了.\n这样就可以做最小生成树来解决了.\n如果当前反比例函数找不到更优的函数了(不存在一个点使得叉积为负), 要退出过程.\n可以到BZOJ 2395提交.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182#include &lt;bits/stdc++.h&gt;using namespace std;const int maxn = 205;const int maxm = 10005;struct Vector &#123;  int x, y;  Vector(int x_ = 0.0, int y_ = 0.0) : x(x_), y(y_)&#123;&#125;  inline Vector operator + (Vector rhs) &#123;    return Vector(x + rhs.x, y + rhs.y);  &#125;   inline Vector operator - (Vector rhs) &#123;    return Vector(x - rhs.x, y - rhs.y);  &#125;  inline int operator ^ (Vector rhs) &#123;    return x * rhs.y - y * rhs.x;  &#125;  inline bool operator &lt; (const Vector &amp;rhs) const &#123;    return x * y == rhs.x * rhs.y ? x &lt; rhs.x : x * y &lt; rhs.x * rhs.y;  &#125;&#125;;struct edge &#123;  int frm, to, w, t, c;  inline bool operator &lt; (const edge &amp;rhs) const &#123;    return w &lt; rhs.w;  &#125;&#125;e[maxm];int n, m, f[maxn];Vector ans;int find(int x) &#123;  return (f[x] == x) ? x : f[x] = find(f[x]);&#125;inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;Vector kruskal() &#123;  Vector ret(0,0);  for (int i = 1; i &lt;= n; ++i) f[i] = i;  sort(e + 1, e + 1 + m);  for (int i = 1; i &lt;= m; ++i) &#123;    int fx = find(e[i].frm), fy = find(e[i].to);    if (fx != fy) &#123;      ret.x += e[i].c;      ret.y += e[i].t;      f[fx] = fy;    &#125;  &#125;  ans = min(ans, ret);  return ret;&#125;void solve(Vector L, Vector R) &#123;  for (int i = 1; i &lt;= m; ++i) &#123;    e[i].w = (R.x - L.x) * e[i].t - (R.y - L.y) * e[i].c;  &#125;  Vector ret = kruskal();  if (((R - L) ^ (ret - L)) &gt;= 0) return;  solve(L, ret); solve(ret, R);&#125;int main() &#123;  scanf(\"%d%d\", &amp;n, &amp;m);  for (int i = 1; i &lt;= m; ++i) &#123;    e[i].frm = rd() + 1;    e[i].to = rd() + 1;    e[i].c = rd();    e[i].t = rd();  &#125;  ans = Vector(0x3f3f3f3f, 1);  for (int i = 1; i &lt;= m; ++i) e[i].w = e[i].t;  Vector T = kruskal();  for (int i = 1; i &lt;= m; ++i) e[i].w = e[i].c;  Vector C = kruskal();  solve(C, T);  printf(\"%d %d\\n\", ans.x, ans.y);  return 0;&#125;\n","dateCreated":"2019-01-06T16:35:13+08:00","dateModified":"2019-01-06T16:50:26+08:00","datePublished":"2019-01-06T16:35:13+08:00","description":"最小乘积生成树。","headline":"Minimum Product Spanning Tree","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/","keywords":"OI"}</script>
+    <meta name="description" content="最小乘积生成树。">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Minimum Product Spanning Tree">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="最小乘积生成树。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-01-06T08:50:26.570Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Minimum Product Spanning Tree">
+<meta name="twitter:description" content="最小乘积生成树。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Minimum Product Spanning Tree
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-01-06T16:35:13+08:00">
+	
+		    Jan 06, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>最小乘积生成树。</p>
+<a id="more"></a>
+<p>感觉这个东西还是写一写记下来比较好.</p>
+<p>总是懒得写博客不是个好习惯啊, 容易忘东西, 就造成学了没有用, 这是很不应该的事.</p>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>给一条边两个权值 $A, B$, 使得$\sum{A} \times \sum{B}$最小.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>我们定义一个$K = X \times Y$, 其中$X = \sum{A}, Y = \sum{B}$.</p>
+<p>那么就有 $Y = \frac{K}{X}$, 这是一个反比例函数.</p>
+<p>要最小化$K$就意味着要让函数上所有的点尽可能靠近坐标轴, 这是很形象的.</p>
+<p>那么对于两个点确定的一个反比例函数, 我们希望找到一个相对于两点构成的直线更靠近坐标轴的点, 然后和某一个点确定一个新的反比例函数.</p>
+<p>最优的情况, 也就是点最靠近坐标轴的情况是:</p>
+<p>对于当前x最小的符合函数的解$P$, 和$y$最小的解$Q$, 我们希望找到一个点$R$, 使得:$\overrightarrow{PQ} \times \overrightarrow{PR}$最小.</p>
+<p>也即最小化: $(Q.x - P.x) \times (R.y - P.y) - (R.x - P.x) \times (Q.y - P.y)$.</p>
+<p>那么就可以最小化: $R.y \times (Q.x - P.x) - R.x \times (Q.y - P.y)$, 因为其他项都是常数了.</p>
+<p>这样就可以做最小生成树来解决了.</p>
+<p>如果当前反比例函数找不到更优的函数了(不存在一个点使得叉积为负), 要退出过程.</p>
+<p>可以到<a href="https://lydsy.com/JudgeOnline/problem.php?id=2395" target="_blank" rel="noopener">BZOJ 2395</a>提交.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">205</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxm = <span class="number">10005</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Vector</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> x, y;</span><br><span class="line">  Vector(<span class="keyword">int</span> x_ = <span class="number">0.0</span>, <span class="keyword">int</span> y_ = <span class="number">0.0</span>) : x(x_), y(y_)&#123;&#125;</span><br><span class="line">  <span class="keyword">inline</span> Vector <span class="keyword">operator</span> + (Vector rhs) &#123;</span><br><span class="line">    <span class="keyword">return</span> Vector(x + rhs.x, y + rhs.y);</span><br><span class="line">  &#125; </span><br><span class="line">  <span class="keyword">inline</span> Vector <span class="keyword">operator</span> - (Vector rhs) &#123;</span><br><span class="line">    <span class="keyword">return</span> Vector(x - rhs.x, y - rhs.y);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">int</span> <span class="keyword">operator</span> ^ (Vector rhs) &#123;</span><br><span class="line">    <span class="keyword">return</span> x * rhs.y - y * rhs.x;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> Vector &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> x * y == rhs.x * rhs.y ? x &lt; rhs.x : x * y &lt; rhs.x * rhs.y;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> frm, to, w, t, c;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> edge &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> w &lt; rhs.w;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;e[maxm];</span><br><span class="line"><span class="keyword">int</span> n, m, f[maxn];</span><br><span class="line">Vector ans;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">find</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (f[x] == x) ? x : f[x] = find(f[x]);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function">Vector <span class="title">kruskal</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="function">Vector <span class="title">ret</span><span class="params">(<span class="number">0</span>,<span class="number">0</span>)</span></span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) f[i] = i;</span><br><span class="line">  sort(e + <span class="number">1</span>, e + <span class="number">1</span> + m);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    <span class="keyword">int</span> fx = find(e[i].frm), fy = find(e[i].to);</span><br><span class="line">    <span class="keyword">if</span> (fx != fy) &#123;</span><br><span class="line">      ret.x += e[i].c;</span><br><span class="line">      ret.y += e[i].t;</span><br><span class="line">      f[fx] = fy;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ans = min(ans, ret);</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">solve</span><span class="params">(Vector L, Vector R)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    e[i].w = (R.x - L.x) * e[i].t - (R.y - L.y) * e[i].c;</span><br><span class="line">  &#125;</span><br><span class="line">  Vector ret = kruskal();</span><br><span class="line">  <span class="keyword">if</span> (((R - L) ^ (ret - L)) &gt;= <span class="number">0</span>) <span class="keyword">return</span>;</span><br><span class="line">  solve(L, ret); solve(ret, R);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;n, &amp;m);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    e[i].frm = rd() + <span class="number">1</span>;</span><br><span class="line">    e[i].to = rd() + <span class="number">1</span>;</span><br><span class="line">    e[i].c = rd();</span><br><span class="line">    e[i].t = rd();</span><br><span class="line">  &#125;</span><br><span class="line">  ans = Vector(<span class="number">0x3f3f3f3f</span>, <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) e[i].w = e[i].t;</span><br><span class="line">  Vector T = kruskal();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) e[i].w = e[i].c;</span><br><span class="line">  Vector C = kruskal();</span><br><span class="line">  solve(C, T);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%d %d\n"</span>, ans.x, ans.y);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../07/JZPTREE-FallingFactorial/" data-tooltip="JZPTREE Falling Factorial" aria-label="PREVIOUS: JZPTREE Falling Factorial">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../../2018/11/26/NOI2015-SA/" data-tooltip="NOI2015 SA" aria-label="NEXT: NOI2015 SA">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../07/JZPTREE-FallingFactorial/" data-tooltip="JZPTREE Falling Factorial" aria-label="PREVIOUS: JZPTREE Falling Factorial">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../../2018/11/26/NOI2015-SA/" data-tooltip="NOI2015 SA" aria-label="NEXT: NOI2015 SA">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/01/06/MinimumProductSpanningTree/';
+                 
+                    this.page.identifier = '2019/01/06/MinimumProductSpanningTree/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

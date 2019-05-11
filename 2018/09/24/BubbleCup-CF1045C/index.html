@@ -1,0 +1,580 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>BubbleCup - Codeforces 1045 C - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Heavy Light Decomposition &amp; Tarjan\n\n\nDescriptionGiven a simple connected graph.\nIt is guaranteed that any set of points in a simple cycle includes a complete subgraph.\nQuery Q times for the shortest path between two given points.\nSolutionEvery complete graph is a Biconnected Component of the graph.\nThus we can construct a block-cut tree of this graph and calculate the path between points. \nBecause of the extra distance between cut point and newly biconnected component point, we need to divide result by 2.\nUnfold for codes.\n\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155//maki#pragma GCC optimize(2)#include &lt;bits/stdc++.h&gt;using namespace std;int n, m, q;inline int rd()&#123;    register int x = 0; register char c = getchar();    while(!isdigit(c)) c = getchar();    while(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();    return x;&#125;namespace DCC&#123;    const int maxn = 1e+5 + 5;    const int maxm = 5e+5 + 5;    struct edge    &#123;        int to, nxt;    &#125;e[maxm &lt;&lt; 1];    struct cedge    &#123;    \tint to, nxt;         &#125;ce[maxn &lt;&lt; 2];    int dfn[maxn], low[maxn], cnt, ID;    int lnk[maxn], clnk[maxn &lt;&lt; 1], cptr, ptr;    stack&lt;int&gt; st;    void add(int bgn, int end)    &#123;        e[++ptr].to = end;        e[ptr].nxt = lnk[bgn];        lnk[bgn] = ptr;    &#125;    void cadd(int bgn, int end)    &#123;        ce[++cptr].to = end;        ce[cptr].nxt = clnk[bgn];        clnk[bgn] = cptr;    &#125;    void tarjan(int x, int inv)    &#123;        dfn[x] = low[x] = ++cnt;        st.push(x);        for(int p = lnk[x]; p; p = e[p].nxt)        &#123;            int y = e[p].to;            if(!dfn[y])            &#123;                tarjan(y, x);                low[x] = min(low[x], low[y]);                if(low[y] &gt;= dfn[x])&#123;                    ID++; int now;                    cadd(x, ID);                    do &#123;                        now = st.top(); st.pop();                        cadd(ID, now);                    &#125; while(now != y);                &#125;            &#125;            else if(y != inv) low[x] = min(low[x], dfn[y]);        &#125;    &#125;    void main()    &#123;        ID = n;        tarjan(1, 0);        //cerr &lt;&lt; \"tarjan\" &lt;&lt; endl;        return;    &#125;&#125;;namespace LHD&#123;    using namespace DCC;    const int maxp = 2e+5 + 5;    int DFN[maxp], siz[maxp], mxson[maxp], dep[maxp];    int f[maxp], top[maxp];    //int dis[maxp];    void dfs1(int x, int fa, int d)    &#123;        //cerr &lt;&lt; \"dfs1\" &lt;&lt; endl;        f[x] = fa;        siz[x] = 1;        dep[x] = d;        for(register int p = clnk[x]; p; p = ce[p].nxt)        &#123;            int y = ce[p].to;            if(y == fa) continue;            dfs1(y, x, d + 1);            siz[x] += siz[y];            if(siz[y] &gt; siz[mxson[x]]) mxson[x] = y;        &#125;    &#125;    void dfs2(int x, int init)    &#123;        //cerr &lt;&lt; \"dfs2\" &lt;&lt; endl;        top[x] = init;        if(!mxson[x]) return;        dfs2(mxson[x], init);        for(register int p = clnk[x]; p; p = ce[p].nxt)        &#123;            int y = ce[p].to;            if(y == f[x] || y == mxson[x]) continue;            dfs2(y, y);        &#125;    &#125;    int lca(int x, int y)    &#123;        while(top[x] != top[y])        &#123;            if(dep[top[x]] &lt; dep[top[y]]) swap(x, y);            x = f[top[x]];        &#125;        return (dep[x] &lt; dep[y]) ? x : y;    &#125;    void main()    &#123;        dfs1(1, 0, 1);        dfs2(1, 1);        //cerr &lt;&lt; \"dfs\" &lt;&lt; endl;        int x, y;        while(q--)        &#123;            //cin &gt;&gt; x &gt;&gt; y;            x = rd(); y = rd();            int LCA = lca(x, y);            int dis = dep[x] + dep[y] - 2 * dep[LCA];            cout &lt;&lt; (dis / 2) &lt;&lt; endl;        &#125;    &#125;&#125;;int main()&#123;        //cin &gt;&gt; n &gt;&gt; m &gt;&gt; q;    n = rd(); m = rd(); q = rd();    int u, v;    for(register int i = 1; i &lt;= m; ++i)    &#123;        //cin &gt;&gt; u &gt;&gt; v;        u = rd(); v = rd();        DCC::add(u, v); DCC::add(v, u);    &#125;    DCC::main();    LHD::main();    return 0;&#125;\n","dateCreated":"2018-09-24T10:59:07+08:00","dateModified":"2018-10-18T22:05:01+08:00","datePublished":"2018-09-24T10:59:07+08:00","description":"Heavy Light Decomposition &amp; Tarjan","headline":"BubbleCup - Codeforces 1045 C","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/","keywords":"OI, Codeforces"}</script>
+    <meta name="description" content="Heavy Light Decomposition &amp;amp; Tarjan">
+<meta name="keywords" content="OI,Codeforces">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="BubbleCup - Codeforces 1045 C">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Heavy Light Decomposition &amp;amp; Tarjan">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-10-18T14:05:01.546Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BubbleCup - Codeforces 1045 C">
+<meta name="twitter:description" content="Heavy Light Decomposition &amp;amp; Tarjan">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            BubbleCup - Codeforces 1045 C
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-09-24T10:59:07+08:00">
+	
+		    Sep 24, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Heavy Light Decomposition &amp; Tarjan</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol>
+<h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>Given a simple connected graph.</p>
+<p>It is guaranteed that any set of points in a simple cycle includes a complete subgraph.</p>
+<p>Query Q times for the shortest path between two given points.</p>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>Every complete graph is a Biconnected Component of the graph.</p>
+<p>Thus we can construct a block-cut tree of this graph and calculate the path between points. </p>
+<p>Because of the extra distance between cut point and newly biconnected component point, we need to divide result by 2.</p>
+<p>Unfold for codes.</p>
+<!-- more -->
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//maki</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC optimize(2)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m, q;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>; <span class="keyword">register</span> <span class="keyword">char</span> c = getchar();</span><br><span class="line">    <span class="keyword">while</span>(!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">    <span class="keyword">while</span>(<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> DCC</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> maxm = <span class="number">5e+5</span> + <span class="number">5</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">edge</span></span></span><br><span class="line"><span class="class">    &#123;</span></span><br><span class="line">        <span class="keyword">int</span> to, nxt;</span><br><span class="line">    &#125;e[maxm &lt;&lt; <span class="number">1</span>];</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">cedge</span></span></span><br><span class="line"><span class="class">    &#123;</span></span><br><span class="line">    	<span class="keyword">int</span> to, nxt;     </span><br><span class="line">    &#125;ce[maxn &lt;&lt; <span class="number">2</span>];</span><br><span class="line">    <span class="keyword">int</span> dfn[maxn], low[maxn], cnt, ID;</span><br><span class="line">    <span class="keyword">int</span> lnk[maxn], clnk[maxn &lt;&lt; <span class="number">1</span>], cptr, ptr;</span><br><span class="line">    <span class="built_in">stack</span>&lt;<span class="keyword">int</span>&gt; st;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> bgn, <span class="keyword">int</span> end)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        e[++ptr].to = end;</span><br><span class="line">        e[ptr].nxt = lnk[bgn];</span><br><span class="line">        lnk[bgn] = ptr;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">cadd</span><span class="params">(<span class="keyword">int</span> bgn, <span class="keyword">int</span> end)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        ce[++cptr].to = end;</span><br><span class="line">        ce[cptr].nxt = clnk[bgn];</span><br><span class="line">        clnk[bgn] = cptr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">tarjan</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> inv)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        dfn[x] = low[x] = ++cnt;</span><br><span class="line">        st.push(x);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">            <span class="keyword">if</span>(!dfn[y])</span><br><span class="line">            &#123;</span><br><span class="line">                tarjan(y, x);</span><br><span class="line">                low[x] = min(low[x], low[y]);</span><br><span class="line">                <span class="keyword">if</span>(low[y] &gt;= dfn[x])&#123;</span><br><span class="line">                    ID++; <span class="keyword">int</span> now;</span><br><span class="line">                    cadd(x, ID);</span><br><span class="line">                    <span class="keyword">do</span> &#123;</span><br><span class="line">                        now = st.top(); st.pop();</span><br><span class="line">                        cadd(ID, now);</span><br><span class="line">                    &#125; <span class="keyword">while</span>(now != y);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span>(y != inv) low[x] = min(low[x], dfn[y]);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        ID = n;</span><br><span class="line">        tarjan(<span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">        <span class="comment">//cerr &lt;&lt; "tarjan" &lt;&lt; endl;</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">namespace</span> LHD</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> <span class="keyword">namespace</span> DCC;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> maxp = <span class="number">2e+5</span> + <span class="number">5</span>;</span><br><span class="line">    <span class="keyword">int</span> DFN[maxp], siz[maxp], mxson[maxp], dep[maxp];</span><br><span class="line">    <span class="keyword">int</span> f[maxp], top[maxp];</span><br><span class="line">    <span class="comment">//int dis[maxp];</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">dfs1</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> fa, <span class="keyword">int</span> d)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">//cerr &lt;&lt; "dfs1" &lt;&lt; endl;</span></span><br><span class="line">        f[x] = fa;</span><br><span class="line">        siz[x] = <span class="number">1</span>;</span><br><span class="line">        dep[x] = d;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> p = clnk[x]; p; p = ce[p].nxt)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">int</span> y = ce[p].to;</span><br><span class="line">            <span class="keyword">if</span>(y == fa) <span class="keyword">continue</span>;</span><br><span class="line">            dfs1(y, x, d + <span class="number">1</span>);</span><br><span class="line">            siz[x] += siz[y];</span><br><span class="line">            <span class="keyword">if</span>(siz[y] &gt; siz[mxson[x]]) mxson[x] = y;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">dfs2</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> init)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="comment">//cerr &lt;&lt; "dfs2" &lt;&lt; endl;</span></span><br><span class="line">        top[x] = init;</span><br><span class="line">        <span class="keyword">if</span>(!mxson[x]) <span class="keyword">return</span>;</span><br><span class="line">        dfs2(mxson[x], init);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> p = clnk[x]; p; p = ce[p].nxt)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">int</span> y = ce[p].to;</span><br><span class="line">            <span class="keyword">if</span>(y == f[x] || y == mxson[x]) <span class="keyword">continue</span>;</span><br><span class="line">            dfs2(y, y);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">lca</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">while</span>(top[x] != top[y])</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span>(dep[top[x]] &lt; dep[top[y]]) swap(x, y);</span><br><span class="line">            x = f[top[x]];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> (dep[x] &lt; dep[y]) ? x : y;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        dfs1(<span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>);</span><br><span class="line">        dfs2(<span class="number">1</span>, <span class="number">1</span>);</span><br><span class="line">        <span class="comment">//cerr &lt;&lt; "dfs" &lt;&lt; endl;</span></span><br><span class="line">        <span class="keyword">int</span> x, y;</span><br><span class="line">        <span class="keyword">while</span>(q--)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">//cin &gt;&gt; x &gt;&gt; y;</span></span><br><span class="line">            x = rd(); y = rd();</span><br><span class="line">            <span class="keyword">int</span> LCA = lca(x, y);</span><br><span class="line">            <span class="keyword">int</span> dis = dep[x] + dep[y] - <span class="number">2</span> * dep[LCA];</span><br><span class="line">            <span class="built_in">cout</span> &lt;&lt; (dis / <span class="number">2</span>) &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//cin &gt;&gt; n &gt;&gt; m &gt;&gt; q;</span></span><br><span class="line">    n = rd(); m = rd(); q = rd();</span><br><span class="line">    <span class="keyword">int</span> u, v;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//cin &gt;&gt; u &gt;&gt; v;</span></span><br><span class="line">        u = rd(); v = rd();</span><br><span class="line">        DCC::add(u, v); DCC::add(v, u);</span><br><span class="line">    &#125;</span><br><span class="line">    DCC::main();</span><br><span class="line">    LHD::main();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/Codeforces/">Codeforces</a> <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../25/BZOJ3613/" data-tooltip="BZOJ3613 HEOI2014 南园满地堆轻絮" aria-label="PREVIOUS: BZOJ3613 HEOI2014 南园满地堆轻絮">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../CFER-51/" data-tooltip="Educational Codeforces Round 51 Div.2" aria-label="NEXT: Educational Codeforces Round 51 Div.2">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../25/BZOJ3613/" data-tooltip="BZOJ3613 HEOI2014 南园满地堆轻絮" aria-label="PREVIOUS: BZOJ3613 HEOI2014 南园满地堆轻絮">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../CFER-51/" data-tooltip="Educational Codeforces Round 51 Div.2" aria-label="NEXT: Educational Codeforces Round 51 Div.2">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/09/24/BubbleCup-CF1045C/';
+                 
+                    this.page.identifier = '2018/09/24/BubbleCup-CF1045C/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

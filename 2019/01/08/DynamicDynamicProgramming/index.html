@@ -1,0 +1,586 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>动态DP - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Dynamic Dynamic Programming 2333333.\n\nDescription一类带修改的树上DP问题。例如【模板】动态DP, NOIP2018 保卫王国.\nSolution以模板 - 树上最大权独立集为例.\n我们熟知的链上DP方程是:\n$f_{x,0} =  \\max(f_{s,0}, f_{s,1}), f_{x,1} = v_x + f_{s,0}$.\n如果每次修改都重做DP的话, 总的时间复杂度就是$O(nm)$, 我们要优化. 考虑这种加法和取max的操作能否对应成一种矩阵的运算. 如果定义矩阵运算 $\\oplus$, 有$A \\oplus B(i,j) = \\begin{align}\\max_{k=1}^{m}{\\{A(i,k) + B(k,j)\\}}\\end{align}$\n那么我们的转移矩阵就可以写成: $\\begin{bmatrix}0 &amp; 0 \\ V_x &amp; -\\infty\\end{bmatrix}$.\n然后考虑树的问题在哪, 一个节点会对应多个孩子, 也就是.\n$f_{x,0} = f_{x,0} + \\max(f_{s,0}, f_{s,1}), f_{x,1} = f_{x,1} + f_{s,0}$.\n如何维护矩阵呢？$\\begin{bmatrix}f_{x,0} &amp; f_{x,0} \\ f_{x,1} &amp; -\\infty\\end{bmatrix}$ .所以这个时候把转移矩阵和答案放一起就可以了, 取的时候直接取第一列.\n我们可以每次修改从当前点到根的一条链的转移矩阵, 线段树维护, 每次查询即可. 然而这样还是可以卡成$O(nm)$. 来考虑更高效的转移方式. 使用重链剖分.\n我们利用跳重链$\\log$次的性质来维护转移矩阵, 每次考虑节点所在重链顶对于父亲的影响. \n首先我们对每个构造一个只做了轻儿子DP的节点矩阵, 这样查询一条重链就做完了全部的DP. 先备份重链顶的矩阵. 每次修改完当前节点后, 重新查询重链顶, 就可以快速得到重链顶的状态, 这时就可以增量更新父亲的矩阵了(+= 新矩阵的结果 - 旧矩阵的结果). 接着跳上去, 对于父亲也是同样的过程. 增量更新是因为矩阵是所有轻儿子混在一起的, 无法提出一个单独的位置.\n然后就做完了. 答案就是查询重链顶$1$.\nNOIP2018的题类似, 有: 最小权覆盖 = 全集 - 最大独立集, 所以也是一样做的. 注意强制选/不选对应着在独立集中强制不选/选, 然后用$\\infty$ 和 $-\\infty$ 调整一下就行了.\n贴个模板代码吧.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151152153154155156157158159160161162163164165166167168169170171172173174#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long ll;const int maxn = 1e+5 + 5;const int inf = 0x3f3f3f3f;//------ GRAPH STARTS----------struct edge &#123;  int to, nxt;&#125;e[maxn &lt;&lt; 1];int n, m, lnk[maxn], ptr, siz[maxn], mxson[maxn];int rev[maxn], f[maxn], top[maxn], bot[maxn];int dfn[maxn], cnt;ll dp[maxn][2], v[maxn];inline void InitNewEdge(int bgn, int end) &#123;  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;  lnk[bgn] = ptr;&#125;inline int ReadInt() &#123;  register int x = 0, f = 0, c = getchar();  while (!isdigit(c)) &#123;    if (c == '-') f = 1;    c = getchar();  &#125;  while (isdigit(c)) &#123;    x = x * 10 + (c ^ 48);    c = getchar();  &#125;  return f ? -x : x;&#125;void dfs(int x, int fa) &#123;  siz[x] = 1;  f[x] = fa;  dp[x][1] = v[x];  for (int p = lnk[x]; p; p = e[p].nxt) &#123;    int y = e[p].to;    if (y == fa) continue;    dfs(y, x);    dp[x][1] += dp[y][0];    dp[x][0] += max(dp[y][1], dp[y][0]);    siz[x] += siz[y];    if (siz[y] &gt; siz[mxson[x]]) mxson[x] = y;  &#125;&#125;void dfs2(int x, int init) &#123;  top[x] = init;  dfn[x] = ++cnt; rev[cnt] = x;  if (!mxson[x]) &#123;    bot[x] = x;    return;  &#125;  dfs2(mxson[x], init); bot[x] = bot[mxson[x]];  for (int p = lnk[x]; p; p = e[p].nxt) &#123;    int y = e[p].to;    if (y == f[x] || y == mxson[x]) continue;    dfs2(y, y);  &#125;&#125;//-------GRAPH ENDS------------//-------MATRIX STARTS---------struct matrix &#123;  ll a[2][2];  matrix(const ll &amp;arg_1 = 0, const ll &amp;arg_2 = 0,         const ll &amp;arg_3 = 0, const ll &amp;arg_4 = 0) &#123;    a[0][0] = arg_1;    a[0][1] = arg_2;    a[1][0] = arg_3;    a[1][1] = arg_4;  &#125;  ll* operator[](int x) &#123;    return a[x];  &#125;  inline matrix operator*(matrix rhs) &#123;    matrix ret;    ret[0][0] = max(a[0][1] + rhs[1][0], a[0][0] + rhs[0][0]);    ret[0][1] = max(a[0][1] + rhs[1][1], a[0][0] + rhs[0][1]);    ret[1][0] = max(a[1][0] + rhs[0][0], a[1][1] + rhs[1][0]);    ret[1][1] = max(a[1][1] + rhs[1][1], a[1][0] + rhs[0][1]);    return ret;  &#125;&#125;;matrix node[maxn &lt;&lt; 2], pt[maxn];void build(int cur, int l, int r) &#123;  if (l == r) &#123;    int R = rev[l];    ll f0 = 0, f1 = v[R];    for (int p = lnk[R]; p; p = e[p].nxt) &#123;      int y = e[p].to;      if (y == f[R] || y == mxson[R]) continue;      f0 += max(dp[y][1], dp[y][0]);      f1 += dp[y][0];    &#125;    node[cur] = pt[l] = matrix(f0, f0, f1, -inf);    return;  &#125;  int mid = (l + r) &gt;&gt; 1;  build(cur &lt;&lt; 1, l, mid);  build(cur &lt;&lt; 1|1, mid + 1, r);  node[cur] = node[cur &lt;&lt; 1] * node[cur &lt;&lt; 1|1];&#125;void modify(int cur, int l, int r, int p) &#123;  if (l == r) &#123;    node[cur] = pt[l];    return;  &#125;  int mid = (l + r) &gt;&gt; 1;  if (p &lt;= mid) modify(cur &lt;&lt; 1, l, mid, p);  else modify(cur &lt;&lt; 1|1, mid + 1, r, p);  node[cur] = node[cur &lt;&lt; 1] * node[cur &lt;&lt; 1|1];&#125;matrix query(int cur, int l, int r, int L, int R) &#123;  if (L == l &amp;&amp; r &lt;= R) return node[cur];  int mid = (l + r) &gt;&gt; 1;  if (R &lt;= mid) return query(cur &lt;&lt; 1, l, mid, L, R);  else if (L &gt; mid) return query(cur &lt;&lt; 1|1, mid + 1, r, L, R);  else return query(cur &lt;&lt; 1, l, mid, L, mid) *               query(cur &lt;&lt; 1|1, mid + 1, r, mid + 1, R);&#125;//-------MATRIX ENDS-----------//------SOLUTION STARTS--------matrix GetChain(int x) &#123;  return query(1, 1, n, dfn[top[x]], dfn[bot[x]]);&#125;void modify(int x, int val) &#123;  pt[dfn[x]][1][0] += val - v[x];   v[x] = val;  while (x) &#123;    matrix Origin = GetChain(top[x]);    modify(1, 1, n, dfn[x]);    matrix New = GetChain(top[x]);    x = f[top[x]];    if (!x) break;    pt[dfn[x]][0][0] += max(New[0][0], New[1][0]) -                         max(Origin[0][0], Origin[1][0]);    pt[dfn[x]][0][1] = pt[dfn[x]][0][0];    pt[dfn[x]][1][0] += New[0][0] - Origin[0][0];  &#125;&#125;//--------SOLUTION ENDS--------#define VertexSum n#define OptionSum mint main(int argc, char const *argv[]) &#123;  VertexSum = ReadInt();   OptionSum = ReadInt();  for (int i = 1; i &lt;= VertexSum; ++i)     v[i] = ReadInt();  typedef int Vertex_t;  Vertex_t VertexFrom, VertexTo;  for (int i = 1; i &lt; VertexSum; ++i) &#123;    VertexFrom = ReadInt();    VertexTo = ReadInt();    InitNewEdge(VertexFrom, VertexTo);    InitNewEdge(VertexTo, VertexFrom);  &#125;  dfs(1, 0);  dfs2(1, 1);  build(1, 1, n);  int x, y;  while (m--) &#123;    x = ReadInt();    y = ReadInt();    modify(x, y);    matrix ans = GetChain(1);    printf(\"%lld\\n\", max(ans[0][0], ans[1][0]));  &#125;  return 0;&#125;\n","dateCreated":"2019-01-08T11:07:28+08:00","dateModified":"2019-01-08T12:06:06+08:00","datePublished":"2019-01-08T11:07:28+08:00","description":"Dynamic Dynamic Programming 2333333.","headline":"动态DP","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/","keywords":"OI"}</script>
+    <meta name="description" content="Dynamic Dynamic Programming 2333333.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="动态DP">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Dynamic Dynamic Programming 2333333.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-01-08T04:06:06.201Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="动态DP">
+<meta name="twitter:description" content="Dynamic Dynamic Programming 2333333.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            动态DP
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-01-08T11:07:28+08:00">
+	
+		    Jan 08, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Dynamic Dynamic Programming 2333333.</p>
+<a id="more"></a>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>一类带修改的树上DP问题。例如<a href="">【模板】动态DP</a>, <a href=""><del>NOIP2018 保卫王国</del></a>.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>以模板 - 树上最大权独立集为例.</p>
+<p>我们熟知的链上DP方程是:</p>
+<p>$f_{x,0} =  \max(f_{s,0}, f_{s,1}), f_{x,1} = v_x + f_{s,0}$.</p>
+<p>如果每次修改都重做DP的话, 总的时间复杂度就是$O(nm)$, 我们要优化. 考虑这种加法和取max的操作能否对应成一种矩阵的运算. 如果定义矩阵运算 $\oplus$, 有$A \oplus B(i,j) = \begin{align}\max_{k=1}^{m}{\{A(i,k) + B(k,j)\}}\end{align}$</p>
+<p>那么我们的转移矩阵就可以写成: $\begin{bmatrix}0 &amp; 0 \ V_x &amp; -\infty\end{bmatrix}$.</p>
+<p>然后考虑树的问题在哪, 一个节点会对应多个孩子, 也就是.</p>
+<p>$f_{x,0} = f_{x,0} + \max(f_{s,0}, f_{s,1}), f_{x,1} = f_{x,1} + f_{s,0}$.</p>
+<p>如何维护矩阵呢？$\begin{bmatrix}f_{x,0} &amp; f_{x,0} \ f_{x,1} &amp; -\infty\end{bmatrix}$ .所以这个时候把转移矩阵和答案放一起就可以了, 取的时候直接取第一列.</p>
+<p>我们可以每次修改从当前点到根的一条链的转移矩阵, 线段树维护, 每次查询即可. 然而这样还是可以卡成$O(nm)$. 来考虑更高效的转移方式. 使用重链剖分.</p>
+<p>我们利用跳重链$\log$次的性质来维护转移矩阵, 每次考虑节点所在重链顶对于父亲的影响. </p>
+<p>首先我们对每个构造一个只做了轻儿子DP的节点矩阵, 这样查询一条重链就做完了全部的DP. 先备份重链顶的矩阵. 每次修改完当前节点后, 重新查询重链顶, 就可以快速得到重链顶的状态, 这时就可以增量更新父亲的矩阵了(+= 新矩阵的结果 - 旧矩阵的结果). 接着跳上去, 对于父亲也是同样的过程. 增量更新是因为矩阵是所有轻儿子混在一起的, 无法提出一个单独的位置.</p>
+<p>然后就做完了. 答案就是查询重链顶$1$.</p>
+<p>NOIP2018的题类似, 有: 最小权覆盖 = 全集 - 最大独立集, 所以也是一样做的. 注意强制选/不选对应着在独立集中强制不选/选, 然后用$\infty$ 和 $-\infty$ 调整一下就行了.</p>
+<p>贴个模板代码吧.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> inf = <span class="number">0x3f3f3f3f</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//------ GRAPH STARTS----------</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> to, nxt;</span><br><span class="line">&#125;e[maxn &lt;&lt; <span class="number">1</span>];</span><br><span class="line"><span class="keyword">int</span> n, m, lnk[maxn], ptr, siz[maxn], mxson[maxn];</span><br><span class="line"><span class="keyword">int</span> rev[maxn], f[maxn], top[maxn], bot[maxn];</span><br><span class="line"><span class="keyword">int</span> dfn[maxn], cnt;</span><br><span class="line">ll dp[maxn][<span class="number">2</span>], v[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">InitNewEdge</span><span class="params">(<span class="keyword">int</span> bgn, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;</span><br><span class="line">  lnk[bgn] = ptr;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">ReadInt</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, f = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) &#123;</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="string">'-'</span>) f = <span class="number">1</span>;</span><br><span class="line">    c = getchar();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) &#123;</span><br><span class="line">    x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>);</span><br><span class="line">    c = getchar();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> f ? -x : x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> fa)</span> </span>&#123;</span><br><span class="line">  siz[x] = <span class="number">1</span>;</span><br><span class="line">  f[x] = fa;</span><br><span class="line">  dp[x][<span class="number">1</span>] = v[x];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt) &#123;</span><br><span class="line">    <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">    <span class="keyword">if</span> (y == fa) <span class="keyword">continue</span>;</span><br><span class="line">    dfs(y, x);</span><br><span class="line">    dp[x][<span class="number">1</span>] += dp[y][<span class="number">0</span>];</span><br><span class="line">    dp[x][<span class="number">0</span>] += max(dp[y][<span class="number">1</span>], dp[y][<span class="number">0</span>]);</span><br><span class="line">    siz[x] += siz[y];</span><br><span class="line">    <span class="keyword">if</span> (siz[y] &gt; siz[mxson[x]]) mxson[x] = y;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs2</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> init)</span> </span>&#123;</span><br><span class="line">  top[x] = init;</span><br><span class="line">  dfn[x] = ++cnt; rev[cnt] = x;</span><br><span class="line">  <span class="keyword">if</span> (!mxson[x]) &#123;</span><br><span class="line">    bot[x] = x;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  dfs2(mxson[x], init); bot[x] = bot[mxson[x]];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt) &#123;</span><br><span class="line">    <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">    <span class="keyword">if</span> (y == f[x] || y == mxson[x]) <span class="keyword">continue</span>;</span><br><span class="line">    dfs2(y, y);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//-------GRAPH ENDS------------</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//-------MATRIX STARTS---------</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">matrix</span> &#123;</span></span><br><span class="line">  ll a[<span class="number">2</span>][<span class="number">2</span>];</span><br><span class="line">  matrix(<span class="keyword">const</span> ll &amp;arg_1 = <span class="number">0</span>, <span class="keyword">const</span> ll &amp;arg_2 = <span class="number">0</span>,</span><br><span class="line">         <span class="keyword">const</span> ll &amp;arg_3 = <span class="number">0</span>, <span class="keyword">const</span> ll &amp;arg_4 = <span class="number">0</span>) &#123;</span><br><span class="line">    a[<span class="number">0</span>][<span class="number">0</span>] = arg_1;</span><br><span class="line">    a[<span class="number">0</span>][<span class="number">1</span>] = arg_2;</span><br><span class="line">    a[<span class="number">1</span>][<span class="number">0</span>] = arg_3;</span><br><span class="line">    a[<span class="number">1</span>][<span class="number">1</span>] = arg_4;</span><br><span class="line">  &#125;</span><br><span class="line">  ll* <span class="keyword">operator</span>[](<span class="keyword">int</span> x) &#123;</span><br><span class="line">    <span class="keyword">return</span> a[x];</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">inline</span> matrix <span class="keyword">operator</span>*(matrix rhs) &#123;</span><br><span class="line">    matrix ret;</span><br><span class="line">    ret[<span class="number">0</span>][<span class="number">0</span>] = max(a[<span class="number">0</span>][<span class="number">1</span>] + rhs[<span class="number">1</span>][<span class="number">0</span>], a[<span class="number">0</span>][<span class="number">0</span>] + rhs[<span class="number">0</span>][<span class="number">0</span>]);</span><br><span class="line">    ret[<span class="number">0</span>][<span class="number">1</span>] = max(a[<span class="number">0</span>][<span class="number">1</span>] + rhs[<span class="number">1</span>][<span class="number">1</span>], a[<span class="number">0</span>][<span class="number">0</span>] + rhs[<span class="number">0</span>][<span class="number">1</span>]);</span><br><span class="line">    ret[<span class="number">1</span>][<span class="number">0</span>] = max(a[<span class="number">1</span>][<span class="number">0</span>] + rhs[<span class="number">0</span>][<span class="number">0</span>], a[<span class="number">1</span>][<span class="number">1</span>] + rhs[<span class="number">1</span>][<span class="number">0</span>]);</span><br><span class="line">    ret[<span class="number">1</span>][<span class="number">1</span>] = max(a[<span class="number">1</span>][<span class="number">1</span>] + rhs[<span class="number">1</span>][<span class="number">1</span>], a[<span class="number">1</span>][<span class="number">0</span>] + rhs[<span class="number">0</span>][<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line">matrix node[maxn &lt;&lt; <span class="number">2</span>], pt[maxn];</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">build</span><span class="params">(<span class="keyword">int</span> cur, <span class="keyword">int</span> l, <span class="keyword">int</span> r)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (l == r) &#123;</span><br><span class="line">    <span class="keyword">int</span> R = rev[l];</span><br><span class="line">    ll f0 = <span class="number">0</span>, f1 = v[R];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[R]; p; p = e[p].nxt) &#123;</span><br><span class="line">      <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">      <span class="keyword">if</span> (y == f[R] || y == mxson[R]) <span class="keyword">continue</span>;</span><br><span class="line">      f0 += max(dp[y][<span class="number">1</span>], dp[y][<span class="number">0</span>]);</span><br><span class="line">      f1 += dp[y][<span class="number">0</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    node[cur] = pt[l] = matrix(f0, f0, f1, -inf);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">int</span> mid = (l + r) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">  build(cur &lt;&lt; <span class="number">1</span>, l, mid);</span><br><span class="line">  build(cur &lt;&lt; <span class="number">1</span>|<span class="number">1</span>, mid + <span class="number">1</span>, r);</span><br><span class="line">  node[cur] = node[cur &lt;&lt; <span class="number">1</span>] * node[cur &lt;&lt; <span class="number">1</span>|<span class="number">1</span>];</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">modify</span><span class="params">(<span class="keyword">int</span> cur, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> p)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (l == r) &#123;</span><br><span class="line">    node[cur] = pt[l];</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">int</span> mid = (l + r) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">if</span> (p &lt;= mid) modify(cur &lt;&lt; <span class="number">1</span>, l, mid, p);</span><br><span class="line">  <span class="keyword">else</span> modify(cur &lt;&lt; <span class="number">1</span>|<span class="number">1</span>, mid + <span class="number">1</span>, r, p);</span><br><span class="line">  node[cur] = node[cur &lt;&lt; <span class="number">1</span>] * node[cur &lt;&lt; <span class="number">1</span>|<span class="number">1</span>];</span><br><span class="line">&#125;</span><br><span class="line"><span class="function">matrix <span class="title">query</span><span class="params">(<span class="keyword">int</span> cur, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> L, <span class="keyword">int</span> R)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (L == l &amp;&amp; r &lt;= R) <span class="keyword">return</span> node[cur];</span><br><span class="line">  <span class="keyword">int</span> mid = (l + r) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">if</span> (R &lt;= mid) <span class="keyword">return</span> query(cur &lt;&lt; <span class="number">1</span>, l, mid, L, R);</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (L &gt; mid) <span class="keyword">return</span> query(cur &lt;&lt; <span class="number">1</span>|<span class="number">1</span>, mid + <span class="number">1</span>, r, L, R);</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">return</span> query(cur &lt;&lt; <span class="number">1</span>, l, mid, L, mid) * </span><br><span class="line">              query(cur &lt;&lt; <span class="number">1</span>|<span class="number">1</span>, mid + <span class="number">1</span>, r, mid + <span class="number">1</span>, R);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//-------MATRIX ENDS-----------</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//------SOLUTION STARTS--------</span></span><br><span class="line"><span class="function">matrix <span class="title">GetChain</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> query(<span class="number">1</span>, <span class="number">1</span>, n, dfn[top[x]], dfn[bot[x]]);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">modify</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> val)</span> </span>&#123;</span><br><span class="line">  pt[dfn[x]][<span class="number">1</span>][<span class="number">0</span>] += val - v[x]; </span><br><span class="line">  v[x] = val;</span><br><span class="line">  <span class="keyword">while</span> (x) &#123;</span><br><span class="line">    matrix Origin = GetChain(top[x]);</span><br><span class="line">    modify(<span class="number">1</span>, <span class="number">1</span>, n, dfn[x]);</span><br><span class="line">    matrix New = GetChain(top[x]);</span><br><span class="line">    x = f[top[x]];</span><br><span class="line">    <span class="keyword">if</span> (!x) <span class="keyword">break</span>;</span><br><span class="line">    pt[dfn[x]][<span class="number">0</span>][<span class="number">0</span>] += max(New[<span class="number">0</span>][<span class="number">0</span>], New[<span class="number">1</span>][<span class="number">0</span>]) - </span><br><span class="line">                        max(Origin[<span class="number">0</span>][<span class="number">0</span>], Origin[<span class="number">1</span>][<span class="number">0</span>]);</span><br><span class="line">    pt[dfn[x]][<span class="number">0</span>][<span class="number">1</span>] = pt[dfn[x]][<span class="number">0</span>][<span class="number">0</span>];</span><br><span class="line">    pt[dfn[x]][<span class="number">1</span>][<span class="number">0</span>] += New[<span class="number">0</span>][<span class="number">0</span>] - Origin[<span class="number">0</span>][<span class="number">0</span>];</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//--------SOLUTION ENDS--------</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> VertexSum n</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OptionSum m</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span> </span>&#123;</span><br><span class="line">  VertexSum = ReadInt(); </span><br><span class="line">  OptionSum = ReadInt();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= VertexSum; ++i) </span><br><span class="line">    v[i] = ReadInt();</span><br><span class="line">  <span class="keyword">typedef</span> <span class="keyword">int</span> Vertex_t;</span><br><span class="line">  Vertex_t VertexFrom, VertexTo;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; VertexSum; ++i) &#123;</span><br><span class="line">    VertexFrom = ReadInt();</span><br><span class="line">    VertexTo = ReadInt();</span><br><span class="line">    InitNewEdge(VertexFrom, VertexTo);</span><br><span class="line">    InitNewEdge(VertexTo, VertexFrom);</span><br><span class="line">  &#125;</span><br><span class="line">  dfs(<span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">  dfs2(<span class="number">1</span>, <span class="number">1</span>);</span><br><span class="line">  build(<span class="number">1</span>, <span class="number">1</span>, n);</span><br><span class="line">  <span class="keyword">int</span> x, y;</span><br><span class="line">  <span class="keyword">while</span> (m--) &#123;</span><br><span class="line">    x = ReadInt();</span><br><span class="line">    y = ReadInt();</span><br><span class="line">    modify(x, y);</span><br><span class="line">    matrix ans = GetChain(<span class="number">1</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, max(ans[<span class="number">0</span>][<span class="number">0</span>], ans[<span class="number">1</span>][<span class="number">0</span>]));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../02/20/TC-Problems-Selection-I/" data-tooltip="Topcoder Problems Selection I" aria-label="PREVIOUS: Topcoder Problems Selection I">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../07/JZPTREE-FallingFactorial/" data-tooltip="JZPTREE Falling Factorial" aria-label="NEXT: JZPTREE Falling Factorial">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../02/20/TC-Problems-Selection-I/" data-tooltip="Topcoder Problems Selection I" aria-label="PREVIOUS: Topcoder Problems Selection I">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../07/JZPTREE-FallingFactorial/" data-tooltip="JZPTREE Falling Factorial" aria-label="NEXT: JZPTREE Falling Factorial">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/01/08/DynamicDynamicProgramming/';
+                 
+                    this.page.identifier = '2019/01/08/DynamicDynamicProgramming/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

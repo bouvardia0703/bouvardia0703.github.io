@@ -1,0 +1,591 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>SPOJ-LCS,LCS2 SAM - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"SuffixAutomation - 重拾。\n\n\nLCS - Longest Common SubstringDescription给两个长度$\\le 250000$的小写字母串, 求最长公共子串.\nSolution子串就是SAM了. 对其中一个建出SAM, 另一个在上面跑, 如果可以转移, 就直接转移, 长度加一, 否则跳父亲到可以转移, 自然是取$max_{\\alpha}$了.\n如果都不行就回到根.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cctype&gt;using namespace std;const int maxn = 700005;int ans;char s1[maxn], s2[maxn];struct SuffixAutoMation&#123;  int tr[maxn][26], fa[maxn], mx[maxn];  int lst, cnt;  SuffixAutoMation() &#123;    lst = cnt = 1;  &#125;  void Insert(int c)  &#123;    int p = lst, np = ++cnt;    lst = np; mx[np] = mx[p] + 1;    for (; p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;    if (!p) fa[np] = 1;    else &#123;      int q = tr[p][c];      if (mx[p] + 1 == mx[q]) fa[np] = q;      else &#123;        int nq = ++cnt;        mx[nq] = mx[p] + 1;        for (int i = 0; i &lt; 26; ++i) tr[nq][i] = tr[q][i];        fa[nq] = fa[q]; fa[q] = fa[np] = nq;        for (; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;      &#125;    &#125;    //siz[np] = 1;  &#125;  void Build(int n) &#123;    for (int i = 1; i &lt;= n; ++i)      Insert(s1[i] - 'a');  &#125;  void Solve(int n) &#123;    int pos = 1, len = 0;    for (int i = 1; i &lt;= n; ++i) &#123;      int ch = s2[i] - 'a';      if (tr[pos][ch]) len++, pos = tr[pos][ch];      else &#123;        for (; pos &amp;&amp; !tr[pos][ch]; ) pos = fa[pos];        if (pos) len = mx[pos] + 1, pos = tr[pos][ch];        else pos = 1, len = 0;      &#125;      ans = max(ans, len);    &#125;  &#125;&#125;SAM;int main() &#123;  scanf(\"%s%s\", s1 + 1, s2 + 1);  int l1 = strlen(s1 + 1), l2 = strlen(s2 + 1);  SAM.Build(l1);  SAM.Solve(l2);  printf(\"%d\\n\", ans);  return 0;&#125;\nLCS2 - Longest Common SubstringDescription还是小写字符串$(\\le 100000)$, 不过增加到了$10$个.\nSolution建一个SAM, 其他的分别在上面跑, 求出$ans_{\\alpha}\\{2, 3, 4, \\ldots,n\\}$, 和$max_{\\alpha}$取个min.\n注意实现细节. \n由于跑了很多串, 可能出现匹配位置不同的情况, 注意parent树节点的儿子的答案可以拿来取max. 用$max$的拓扑性就好了.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868788899091#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cctype&gt;using namespace std;const int maxn = 3e+5 + 5;int n, ans;int a[maxn], b[maxn];char s[maxn];struct SuffixAutoMation&#123;  int tr[maxn][26], mx[maxn], sz[maxn], fa[maxn];  int lst, cnt;  int mxv[maxn], mnv[maxn];  SuffixAutoMation() &#123;    lst = cnt = 1;  &#125;  void Insert(int c) &#123;    int p = lst, np = ++cnt;    lst = np; mx[np] = mx[p] + 1;    for (; p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;    if (!p) fa[np] = 1;    else &#123;      int q = tr[p][c];      if (mx[p] + 1 == mx[q]) fa[np] = q;      else &#123;        int nq = ++cnt;        mx[nq] = mx[p] + 1;        for (int i = 0; i &lt; 26; ++i) tr[nq][i] = tr[q][i];        fa[nq] = fa[q]; fa[q] = fa[np] = nq;        for (; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;      &#125;    &#125;    sz[np] = 1;  &#125;  void RadixSort() &#123;    memset(b, 0, sizeof b);    for (int i = 1; i &lt;= cnt; ++i) b[mx[i]]++;    for (int i = 1; i &lt;= cnt; ++i) b[i] += b[i - 1];    for (int i = 1; i &lt;= cnt; ++i) a[b[mx[i]]--] = i;  &#125;  void Build(int n) &#123;    for (int i = 1; i &lt;= n; ++i) Insert(s[i] - 'a');    memset(mnv, 0x3f, sizeof mnv);  &#125;  void Work(int n) &#123;    int p = 1, len = 0;    //memset(mxv, 0, sizeof mxv);    for (int i = 1; i &lt;= n; ++i)  &#123;      int ch = s[i] - 'a';      if (tr[p][ch]) p = tr[p][ch], len++, mxv[p] = max(mxv[p], len);      else &#123;        for (; p &amp;&amp; !tr[p][ch]; ) p = fa[p];        if (p) len = mx[p] + 1, p = tr[p][ch], mxv[p] = max(mxv[p], len);        else p = 1, len = 0;      &#125;    &#125;    for (int i = cnt; i; --i) &#123;      int x = a[i], f = fa[x];      mxv[f] = max(mxv[f], min(mxv[x], mx[f]));      mnv[x] = min(mnv[x], mxv[x]);      mxv[x] = 0;    &#125;  &#125;  void CheckAns() &#123;    for (int i = 1; i &lt;= cnt; ++i) ans = max(ans, mnv[i]);  &#125;&#125;SAM;int main() &#123;  scanf(\"%s\", s + 1);  //memset(mnv, 0x3f, sizeof mnv);  int l = strlen(s + 1);  SAM.Build(l);  SAM.RadixSort();  while (scanf(\"%s\", s + 1) != EOF) &#123;        l = strlen(s + 1);    //if (!l) break;    ++n;    SAM.Work(l);  &#125;  SAM.CheckAns();  printf(\"%d\\n\", ans);  return 0;&#125;\n","dateCreated":"2018-11-21T21:16:52+08:00","dateModified":"2019-02-20T19:35:28+08:00","datePublished":"2018-11-21T21:16:52+08:00","description":"SuffixAutomation - 重拾。","headline":"SPOJ-LCS,LCS2 SAM","image":[null,"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075727.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/","keywords":"OI","thumbnailUrl":"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075727.jpg"}</script>
+    <meta name="description" content="SuffixAutomation - 重拾。">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="SPOJ-LCS,LCS2 SAM">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="SuffixAutomation - 重拾。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-02-20T11:35:28.154Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SPOJ-LCS,LCS2 SAM">
+<meta name="twitter:description" content="SuffixAutomation - 重拾。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+        <meta property="og:image" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075727.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075727.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075727.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            SPOJ-LCS,LCS2 SAM
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-11-21T21:16:52+08:00">
+	
+		    Nov 21, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>SuffixAutomation - 重拾。</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LCS-Longest-Common-Substring"><span class="toc-text">LCS - Longest Common Substring</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#LCS2-Longest-Common-Substring"><span class="toc-text">LCS2 - Longest Common Substring</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description-1"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution-1"><span class="toc-text">Solution</span></a></li></ol></li></ol>
+<h1 id="LCS-Longest-Common-Substring"><a href="#LCS-Longest-Common-Substring" class="headerlink" title="LCS - Longest Common Substring"></a>LCS - Longest Common Substring</h1><h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>给两个长度$\le 250000$的小写字母串, 求最长公共子串.</p>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>子串就是SAM了. 对其中一个建出SAM, 另一个在上面跑, 如果可以转移, 就直接转移, 长度加一, 否则跳父亲到可以转移, 自然是取$max_{\alpha}$了.</p>
+<p>如果都不行就回到根.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">700005</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> ans;</span><br><span class="line"><span class="keyword">char</span> s1[maxn], s2[maxn];</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SuffixAutoMation</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="keyword">int</span> tr[maxn][<span class="number">26</span>], fa[maxn], mx[maxn];</span><br><span class="line">  <span class="keyword">int</span> lst, cnt;</span><br><span class="line">  SuffixAutoMation() &#123;</span><br><span class="line">    lst = cnt = <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Insert</span><span class="params">(<span class="keyword">int</span> c)</span>  </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> p = lst, np = ++cnt;</span><br><span class="line">    lst = np; mx[np] = mx[p] + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (; p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;</span><br><span class="line">    <span class="keyword">if</span> (!p) fa[np] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">int</span> q = tr[p][c];</span><br><span class="line">      <span class="keyword">if</span> (mx[p] + <span class="number">1</span> == mx[q]) fa[np] = q;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">int</span> nq = ++cnt;</span><br><span class="line">        mx[nq] = mx[p] + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i) tr[nq][i] = tr[q][i];</span><br><span class="line">        fa[nq] = fa[q]; fa[q] = fa[np] = nq;</span><br><span class="line">        <span class="keyword">for</span> (; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//siz[np] = 1;</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Build</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">      Insert(s1[i] - <span class="string">'a'</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Solve</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> pos = <span class="number">1</span>, len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">      <span class="keyword">int</span> ch = s2[i] - <span class="string">'a'</span>;</span><br><span class="line">      <span class="keyword">if</span> (tr[pos][ch]) len++, pos = tr[pos][ch];</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (; pos &amp;&amp; !tr[pos][ch]; ) pos = fa[pos];</span><br><span class="line">        <span class="keyword">if</span> (pos) len = mx[pos] + <span class="number">1</span>, pos = tr[pos][ch];</span><br><span class="line">        <span class="keyword">else</span> pos = <span class="number">1</span>, len = <span class="number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      ans = max(ans, len);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;SAM;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%s%s"</span>, s1 + <span class="number">1</span>, s2 + <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">int</span> l1 = <span class="built_in">strlen</span>(s1 + <span class="number">1</span>), l2 = <span class="built_in">strlen</span>(s2 + <span class="number">1</span>);</span><br><span class="line">  SAM.Build(l1);</span><br><span class="line">  SAM.Solve(l2);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="LCS2-Longest-Common-Substring"><a href="#LCS2-Longest-Common-Substring" class="headerlink" title="LCS2 - Longest Common Substring"></a>LCS2 - Longest Common Substring</h1><h2 id="Description-1"><a href="#Description-1" class="headerlink" title="Description"></a>Description</h2><p>还是小写字符串$(\le 100000)$, 不过增加到了$10$个.</p>
+<h2 id="Solution-1"><a href="#Solution-1" class="headerlink" title="Solution"></a>Solution</h2><p>建一个SAM, 其他的分别在上面跑, 求出$ans_{\alpha}\{2, 3, 4, \ldots,n\}$, 和$max_{\alpha}$取个min.</p>
+<p>注意实现细节. </p>
+<p>由于跑了很多串, 可能出现匹配位置不同的情况, 注意parent树节点的儿子的答案可以拿来取max. 用$max$的拓扑性就好了.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">3e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, ans;</span><br><span class="line"><span class="keyword">int</span> a[maxn], b[maxn];</span><br><span class="line"><span class="keyword">char</span> s[maxn];</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SuffixAutoMation</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="keyword">int</span> tr[maxn][<span class="number">26</span>], mx[maxn], sz[maxn], fa[maxn];</span><br><span class="line">  <span class="keyword">int</span> lst, cnt;</span><br><span class="line">  <span class="keyword">int</span> mxv[maxn], mnv[maxn];</span><br><span class="line">  SuffixAutoMation() &#123;</span><br><span class="line">    lst = cnt = <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Insert</span><span class="params">(<span class="keyword">int</span> c)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> p = lst, np = ++cnt;</span><br><span class="line">    lst = np; mx[np] = mx[p] + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (; p &amp;&amp; !tr[p][c]; p = fa[p]) tr[p][c] = np;</span><br><span class="line">    <span class="keyword">if</span> (!p) fa[np] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">int</span> q = tr[p][c];</span><br><span class="line">      <span class="keyword">if</span> (mx[p] + <span class="number">1</span> == mx[q]) fa[np] = q;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">int</span> nq = ++cnt;</span><br><span class="line">        mx[nq] = mx[p] + <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">26</span>; ++i) tr[nq][i] = tr[q][i];</span><br><span class="line">        fa[nq] = fa[q]; fa[q] = fa[np] = nq;</span><br><span class="line">        <span class="keyword">for</span> (; tr[p][c] == q; p = fa[p]) tr[p][c] = nq;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    sz[np] = <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">RadixSort</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">memset</span>(b, <span class="number">0</span>, <span class="keyword">sizeof</span> b);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= cnt; ++i) b[mx[i]]++;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= cnt; ++i) b[i] += b[i - <span class="number">1</span>];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= cnt; ++i) a[b[mx[i]]--] = i;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Build</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) Insert(s[i] - <span class="string">'a'</span>);</span><br><span class="line">    <span class="built_in">memset</span>(mnv, <span class="number">0x3f</span>, <span class="keyword">sizeof</span> mnv);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Work</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> p = <span class="number">1</span>, len = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">//memset(mxv, 0, sizeof mxv);</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)  &#123;</span><br><span class="line">      <span class="keyword">int</span> ch = s[i] - <span class="string">'a'</span>;</span><br><span class="line">      <span class="keyword">if</span> (tr[p][ch]) p = tr[p][ch], len++, mxv[p] = max(mxv[p], len);</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (; p &amp;&amp; !tr[p][ch]; ) p = fa[p];</span><br><span class="line">        <span class="keyword">if</span> (p) len = mx[p] + <span class="number">1</span>, p = tr[p][ch], mxv[p] = max(mxv[p], len);</span><br><span class="line">        <span class="keyword">else</span> p = <span class="number">1</span>, len = <span class="number">0</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = cnt; i; --i) &#123;</span><br><span class="line">      <span class="keyword">int</span> x = a[i], f = fa[x];</span><br><span class="line">      mxv[f] = max(mxv[f], min(mxv[x], mx[f]));</span><br><span class="line">      mnv[x] = min(mnv[x], mxv[x]);</span><br><span class="line">      mxv[x] = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">CheckAns</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= cnt; ++i) ans = max(ans, mnv[i]);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;SAM;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">scanf</span>(<span class="string">"%s"</span>, s + <span class="number">1</span>);</span><br><span class="line">  <span class="comment">//memset(mnv, 0x3f, sizeof mnv);</span></span><br><span class="line">  <span class="keyword">int</span> l = <span class="built_in">strlen</span>(s + <span class="number">1</span>);</span><br><span class="line">  SAM.Build(l);</span><br><span class="line">  SAM.RadixSort();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">scanf</span>(<span class="string">"%s"</span>, s + <span class="number">1</span>) != EOF) &#123;</span><br><span class="line">    </span><br><span class="line">    l = <span class="built_in">strlen</span>(s + <span class="number">1</span>);</span><br><span class="line">    <span class="comment">//if (!l) break;</span></span><br><span class="line">    ++n;</span><br><span class="line">    SAM.Work(l);</span><br><span class="line">  &#125;</span><br><span class="line">  SAM.CheckAns();</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../22/BZOJ4889-BIT-SegTree/" data-tooltip="BZOJ4889 树套树" aria-label="PREVIOUS: BZOJ4889 树套树">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../AAATree-BZOJ3153/" data-tooltip="伪TopTree(AAA Tree) BZOJ3153" aria-label="NEXT: 伪TopTree(AAA Tree) BZOJ3153">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../22/BZOJ4889-BIT-SegTree/" data-tooltip="BZOJ4889 树套树" aria-label="PREVIOUS: BZOJ4889 树套树">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../AAATree-BZOJ3153/" data-tooltip="伪TopTree(AAA Tree) BZOJ3153" aria-label="NEXT: 伪TopTree(AAA Tree) BZOJ3153">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/11/21/LCS-LCS2-SAM-SPOJ/';
+                 
+                    this.page.identifier = '2018/11/21/LCS-LCS2-SAM-SPOJ/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

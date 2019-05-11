@@ -1,0 +1,594 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>BZOJ4889 树套树 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"树套树 + 卡空间.\n\n\nDescription给定一个长度为$n$序列, 每个位置上有一个编号$id_i$和一个权$v_i$, 对于一个逆序对(按编号和位置), 贡献是权的和.\n有$m$次交换操作, 计算每次操作后的总贡献.\n$n, m \\le 50000$.\nSolution也就是维护一个带权的逆序对.\n50000的数据范围可以跑$log^2$, 也就是树套树了.\n树状数组维护区间, 主席树维护两个和, 分别是权值和出现次数.\n对于每次交换操作$(x, y)$, 假设$x &lt; y$, 有:\n交换前$[x+1, y-1]$中大于$id_x$的位置将产生贡献, 小于的位置贡献将消失.\n$y$反之.\n最后考虑$x,y$是否会互相产生影响, 加入或去掉贡献, 思路还是很清晰的.\n最近写树套树经常遇到空间问题, 对于这种不会回滚的问题, 我们直接修改版本就好了, 没必要可持久化, 可以省下一个$log$.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980818283848586878889909192939495969798#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;using namespace std;const int maxn = 5e+4 + 5;const int maxp = maxn * 200;const int mod = 1e+9 + 7;int n, m;int lp[maxn], rp[maxn];int ls[maxp], rs[maxp], su[maxp], tu[maxp];int id[maxn], cnt;int val[maxn], a[maxn], tot;int ans;void update(int &amp;lst, int l, int r, int p, int v1, int v2) &#123;  if (!lst) lst = ++cnt;  tu[lst] = (tu[lst] + v1) % mod;  su[lst] = (su[lst] + v2) % mod;  if (l == r) return;  int mid = (l + r) &gt;&gt; 1;  if (p &lt;= mid) update(ls[lst], l, mid, p, v1, v2);  else update(rs[lst], mid + 1, r, p, v1, v2);&#125;void query(int cur, int l, int r, int L, int R, int &amp;ans1, int &amp;ans2) &#123;  if (!cur) return;  if (L &lt;= l &amp;&amp; r &lt;= R) &#123;    ans1 = (ans1 + tu[cur]) % mod;    ans2 = (ans2 + su[cur]) % mod;    return;  &#125;  int mid = (l + r) &gt;&gt; 1;  if (L &lt;= mid) query(ls[cur], l, mid, L, R, ans1, ans2);  if (R &gt; mid) query(rs[cur], mid + 1, r, L, R, ans1, ans2);&#125;void modify(int x, int v, int v1, int v2) &#123;  for (; x &lt;= n; x += (x &amp; -x)) update(id[x], 1, n, v, v1, v2);&#125;void getAns(int l, int r, int L, int R, int &amp;ans1, int &amp;ans2) &#123;  if (L &gt; R) return;  int ret1 = 0, ret2 = 0;  l = l - 1;  for (; l; l -= (l &amp; -l)) query(id[l], 1, n, L, R, ret1, ret2);  for (; r; r -= (r &amp; -r)) query(id[r], 1, n, L, R, ans1, ans2);  ans1 = (ans1 - ret1 + mod) % mod;  ans2 = (ans2 - ret2 + mod) % mod;&#125;inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;int main() &#123;  n = rd(); m = rd();  for (int i = 1; i &lt;= n; ++i) &#123;    int valSum = 0, timSum = 0;    a[i] = rd(); val[i] = rd();    modify(i, a[i], val[i], 1);    getAns(1, i - 1, a[i] + 1, n, valSum, timSum);    ans = (ans + valSum) % mod;    ans = (ans + 1ll * timSum * val[i] % mod) % mod;  &#125;  while (m--) &#123;    int x = rd(), y = rd();    int valSum = 0, timSum = 0, valMinus = 0, timMinus = 0;    if (x &gt; y) swap(x, y);    int idx = a[x], idy = a[y];    // x:    getAns(x + 1, y - 1, idx + 1, n, valSum, timSum);    getAns(x + 1, y - 1, 1, idx - 1, valMinus, timMinus);    valSum = (valSum - valMinus + mod) % mod;    timSum = (timSum - timMinus + mod) % mod;    ans = (ans + valSum) % mod;    ans = (ans + 1ll * timSum * val[x]) % mod;    // y:     valSum = timSum = valMinus = timMinus = 0;    getAns(x + 1, y - 1, 1, idy - 1, valSum, timSum);    getAns(x + 1, y - 1, idy + 1, n, valMinus, timMinus);    valSum = (valSum - valMinus + mod) % mod;    timSum = (timSum - timMinus + mod) % mod;    ans = (ans + valSum) % mod;    ans = (ans + 1ll * timSum * val[y]) % mod;    if (idx &lt; idy) ans = (ans + val[x] + val[y]) % mod;    else if (idx &gt; idy) ans = (ans - (val[x] + val[y]) + mod) % mod;    modify(x, idx, mod - val[x], mod - 1);    modify(y, idx, val[x], 1);    modify(y, idy, mod - val[y], mod - 1);    modify(x, idy, val[y], 1);    swap(a[x], a[y]); swap(val[x], val[y]);    printf(\"%d\\n\", ans);  &#125;  return 0;&#125;\n","dateCreated":"2018-11-22T11:14:00+08:00","dateModified":"2018-11-22T11:26:25+08:00","datePublished":"2018-11-22T11:14:00+08:00","description":"树套树 + 卡空间.","headline":"BZOJ4889 树套树","image":[null,"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075731.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/","keywords":"OI","thumbnailUrl":"https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075731.jpg"}</script>
+    <meta name="description" content="树套树 + 卡空间.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="BZOJ4889 树套树">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="树套树 + 卡空间.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-11-22T03:26:25.453Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BZOJ4889 树套树">
+<meta name="twitter:description" content="树套树 + 卡空间.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+        <meta property="og:image" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075731.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075731.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://bouvardia73.github.io/Past201809/TIM%E5%9B%BE%E7%89%8720181030075731.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            BZOJ4889 树套树
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-11-22T11:14:00+08:00">
+	
+		    Nov 22, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>树套树 + <strong>卡空间</strong>.</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>给定一个长度为$n$序列, 每个位置上有一个编号$id_i$和一个权$v_i$, 对于一个逆序对(按编号和位置), 贡献是权的和.</p>
+<p>有$m$次交换操作, 计算每次操作后的总贡献.</p>
+<p>$n, m \le 50000$.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>也就是维护一个带权的逆序对.</p>
+<p>50000的数据范围可以跑$log^2$, 也就是树套树了.</p>
+<p>树状数组维护区间, 主席树维护两个和, 分别是权值和出现次数.</p>
+<p>对于每次交换操作$(x, y)$, 假设$x &lt; y$, 有:</p>
+<p>交换前$[x+1, y-1]$中大于$id_x$的位置将产生贡献, 小于的位置贡献将消失.</p>
+<p>$y$反之.</p>
+<p>最后考虑$x,y$是否会互相产生影响, 加入或去掉贡献, 思路还是很清晰的.</p>
+<p>最近写树套树经常遇到空间问题, 对于这种不会回滚的问题, 我们直接修改版本就好了, 没必要可持久化, 可以省下一个$log$.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">5e+4</span> + <span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxp = maxn * <span class="number">200</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> mod = <span class="number">1e+9</span> + <span class="number">7</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line"><span class="keyword">int</span> lp[maxn], rp[maxn];</span><br><span class="line"><span class="keyword">int</span> ls[maxp], rs[maxp], su[maxp], tu[maxp];</span><br><span class="line"><span class="keyword">int</span> id[maxn], cnt;</span><br><span class="line"><span class="keyword">int</span> val[maxn], a[maxn], tot;</span><br><span class="line"><span class="keyword">int</span> ans;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">update</span><span class="params">(<span class="keyword">int</span> &amp;lst, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> p, <span class="keyword">int</span> v1, <span class="keyword">int</span> v2)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!lst) lst = ++cnt;</span><br><span class="line">  tu[lst] = (tu[lst] + v1) % mod;</span><br><span class="line">  su[lst] = (su[lst] + v2) % mod;</span><br><span class="line">  <span class="keyword">if</span> (l == r) <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">int</span> mid = (l + r) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">if</span> (p &lt;= mid) update(ls[lst], l, mid, p, v1, v2);</span><br><span class="line">  <span class="keyword">else</span> update(rs[lst], mid + <span class="number">1</span>, r, p, v1, v2);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">query</span><span class="params">(<span class="keyword">int</span> cur, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> L, <span class="keyword">int</span> R, <span class="keyword">int</span> &amp;ans1, <span class="keyword">int</span> &amp;ans2)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!cur) <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">if</span> (L &lt;= l &amp;&amp; r &lt;= R) &#123;</span><br><span class="line">    ans1 = (ans1 + tu[cur]) % mod;</span><br><span class="line">    ans2 = (ans2 + su[cur]) % mod;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">int</span> mid = (l + r) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">if</span> (L &lt;= mid) query(ls[cur], l, mid, L, R, ans1, ans2);</span><br><span class="line">  <span class="keyword">if</span> (R &gt; mid) query(rs[cur], mid + <span class="number">1</span>, r, L, R, ans1, ans2);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">modify</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> v, <span class="keyword">int</span> v1, <span class="keyword">int</span> v2)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (; x &lt;= n; x += (x &amp; -x)) update(id[x], <span class="number">1</span>, n, v, v1, v2);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">getAns</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> L, <span class="keyword">int</span> R, <span class="keyword">int</span> &amp;ans1, <span class="keyword">int</span> &amp;ans2)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (L &gt; R) <span class="keyword">return</span>;</span><br><span class="line">  <span class="keyword">int</span> ret1 = <span class="number">0</span>, ret2 = <span class="number">0</span>;</span><br><span class="line">  l = l - <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (; l; l -= (l &amp; -l)) query(id[l], <span class="number">1</span>, n, L, R, ret1, ret2);</span><br><span class="line">  <span class="keyword">for</span> (; r; r -= (r &amp; -r)) query(id[r], <span class="number">1</span>, n, L, R, ans1, ans2);</span><br><span class="line">  ans1 = (ans1 - ret1 + mod) % mod;</span><br><span class="line">  ans2 = (ans2 - ret2 + mod) % mod;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd(); m = rd();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    <span class="keyword">int</span> valSum = <span class="number">0</span>, timSum = <span class="number">0</span>;</span><br><span class="line">    a[i] = rd(); val[i] = rd();</span><br><span class="line">    modify(i, a[i], val[i], <span class="number">1</span>);</span><br><span class="line">    getAns(<span class="number">1</span>, i - <span class="number">1</span>, a[i] + <span class="number">1</span>, n, valSum, timSum);</span><br><span class="line">    ans = (ans + valSum) % mod;</span><br><span class="line">    ans = (ans + <span class="number">1l</span>l * timSum * val[i] % mod) % mod;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">while</span> (m--) &#123;</span><br><span class="line">    <span class="keyword">int</span> x = rd(), y = rd();</span><br><span class="line">    <span class="keyword">int</span> valSum = <span class="number">0</span>, timSum = <span class="number">0</span>, valMinus = <span class="number">0</span>, timMinus = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (x &gt; y) swap(x, y);</span><br><span class="line">    <span class="keyword">int</span> idx = a[x], idy = a[y];</span><br><span class="line">    <span class="comment">// x:</span></span><br><span class="line">    getAns(x + <span class="number">1</span>, y - <span class="number">1</span>, idx + <span class="number">1</span>, n, valSum, timSum);</span><br><span class="line">    getAns(x + <span class="number">1</span>, y - <span class="number">1</span>, <span class="number">1</span>, idx - <span class="number">1</span>, valMinus, timMinus);</span><br><span class="line">    valSum = (valSum - valMinus + mod) % mod;</span><br><span class="line">    timSum = (timSum - timMinus + mod) % mod;</span><br><span class="line">    ans = (ans + valSum) % mod;</span><br><span class="line">    ans = (ans + <span class="number">1l</span>l * timSum * val[x]) % mod;</span><br><span class="line">    <span class="comment">// y: </span></span><br><span class="line">    valSum = timSum = valMinus = timMinus = <span class="number">0</span>;</span><br><span class="line">    getAns(x + <span class="number">1</span>, y - <span class="number">1</span>, <span class="number">1</span>, idy - <span class="number">1</span>, valSum, timSum);</span><br><span class="line">    getAns(x + <span class="number">1</span>, y - <span class="number">1</span>, idy + <span class="number">1</span>, n, valMinus, timMinus);</span><br><span class="line">    valSum = (valSum - valMinus + mod) % mod;</span><br><span class="line">    timSum = (timSum - timMinus + mod) % mod;</span><br><span class="line">    ans = (ans + valSum) % mod;</span><br><span class="line">    ans = (ans + <span class="number">1l</span>l * timSum * val[y]) % mod;</span><br><span class="line">    <span class="keyword">if</span> (idx &lt; idy) ans = (ans + val[x] + val[y]) % mod;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (idx &gt; idy) ans = (ans - (val[x] + val[y]) + mod) % mod;</span><br><span class="line">    modify(x, idx, mod - val[x], mod - <span class="number">1</span>);</span><br><span class="line">    modify(y, idx, val[x], <span class="number">1</span>);</span><br><span class="line">    modify(y, idy, mod - val[y], mod - <span class="number">1</span>);</span><br><span class="line">    modify(x, idy, val[y], <span class="number">1</span>);</span><br><span class="line">    swap(a[x], a[y]); swap(val[x], val[y]);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../23/BZOJ-3052-MoAlgo/" data-tooltip="BZOJ 3052 树上带修莫队" aria-label="PREVIOUS: BZOJ 3052 树上带修莫队">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../21/LCS-LCS2-SAM-SPOJ/" data-tooltip="SPOJ-LCS,LCS2 SAM" aria-label="NEXT: SPOJ-LCS,LCS2 SAM">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../23/BZOJ-3052-MoAlgo/" data-tooltip="BZOJ 3052 树上带修莫队" aria-label="PREVIOUS: BZOJ 3052 树上带修莫队">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../21/LCS-LCS2-SAM-SPOJ/" data-tooltip="SPOJ-LCS,LCS2 SAM" aria-label="NEXT: SPOJ-LCS,LCS2 SAM">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/11/22/BZOJ4889-BIT-SegTree/';
+                 
+                    this.page.identifier = '2018/11/22/BZOJ4889-BIT-SegTree/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

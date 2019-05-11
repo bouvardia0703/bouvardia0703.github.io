@@ -1,0 +1,575 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>BZOJ3992 数论,生成函数,NTT - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"综合考察???.\n\nDescription给一个集合, 要生成一个长为$n$的序列, 每个位置都从集合里选数, 要求各数之积被$m$整除, 求方案数.\nSolution个数之积不像和那样可以随便卷. 但是我们有一个东西叫指标, 也就是离散对数, 这玩意是可以把乘积视为质数上的相加的.\n因为保证给的数是个质数, 所以可以求原根和指标, 暴力就行. \n然后要实现NTT循环卷积. 也要快速幂.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140141142143144145146147148149150151#include &lt;bits/stdc++.h&gt;#define mod 1004535809llusing namespace std;typedef long long ll;inline ll quick_power(ll base, ll index) &#123;  ll ret = 1;  while (index) &#123;    if (index &amp; 1) ret = ret * base % mod;    index &gt;&gt;= 1;    base = base * base % mod;  &#125;  return ret;&#125;inline ll quick_power(ll base, ll index, ll p) &#123;  ll ret = 1;  while (index) &#123;    if (index &amp; 1) ret = (base * ret) % p;    index &gt;&gt;= 1;    base = base * base % p;  &#125;  return ret;&#125;namespace math &#123;  static const int maxm = 100010;  int npr[maxm], pr[maxm &gt;&gt; 1], cnt;  int mindiv[maxm], ind[maxm], G, m;  void euler() &#123;    for (int i = 2; i &lt;= m; ++i) &#123;      if (!npr[i]) &#123;        pr[++cnt] = i;        mindiv[i] = i;      &#125;      for (int j = 1; j &lt;= cnt &amp;&amp; i * pr[j] &lt;= m; ++j) &#123;        npr[i * pr[j]] = 1;        mindiv[i * pr[j]] = pr[j];        if (!(i % pr[j])) break;      &#125;    &#125;  &#125;  inline bool check(int g, int ori) &#123;    int tmp = 1;    for (int i = 1; i &lt; ori; ++i) &#123;      tmp = (tmp * g) % m;      if (tmp == 1) return 0;    &#125;    // printf(\"%d\\n\", g);    return 1;  &#125;  int getG() &#123;    int g = 2;    for (; g &lt; m; ++g) &#123;      if (check(g, m - 1)) break;    &#125;    return g;  &#125;  void getI() &#123;    for (int k = 0, w = 1; k &lt; m; w = (w * G) % m, k++)      ind[w] = k;//, printf(\"%d = %d\\n\", w, k);  &#125;&#125;namespace NTT &#123;  using math::maxm;  static const ll G = 3;  int rev[maxm];  ll A[maxm], B[maxm], C[maxm];  int N, L;  int n, m, x, s;  void init() &#123;    for (int i = 0; i &lt; N; ++i) &#123;      rev[i] = (rev[i &gt;&gt; 1] &gt;&gt; 1) | ((i &amp; 1) &lt;&lt; (L - 1));    &#125;  &#125;  void DFT(ll *a, int typ) &#123;    for (int i = 0; i &lt; N; ++i)       if (i &gt; rev[i]) swap(a[i], a[rev[i]]);    for (int i = 2; i &lt;= N; i &lt;&lt;= 1) &#123;      int m = (i &gt;&gt; 1);      ll e = quick_power(G, (mod - 1) / i);      //if (typ == -1) e = quick_power(e, mod - 2);      for (int j = 0; j &lt; N; j += i) &#123;        ll w = 1;        for (int k = 0; k &lt; m; ++k) &#123;          ll t = w * a[j + m + k] % mod;          a[m + j + k] = (a[j + k] - t + mod) % mod;          a[j + k] = (a[j + k] + t) % mod;          w = w * e % mod;        &#125;      &#125;    &#125;    if (typ == 1) return;    reverse(a + 1, a + N); ll inv = quick_power(N, mod - 2);    for (int i = 0; i &lt; N; ++i) a[i] = a[i] * inv % mod;    for (int i = m; i &lt; N; ++i) &#123;      int x = ((i % (m - 1)) ? (i % (m - 1)) : (m - 1));      a[x] = (a[i] + a[x]) % mod;      a[i] = 0;    &#125;  &#125;  void NTTpow(ll *a, int index) &#123;    for (int i = 0; i &lt; N; ++i) B[i] = a[i];    index--;    while (index) &#123;      DFT(a, 1);      if (index &amp; 1) &#123;        DFT(B, 1);        for (int i = 0; i &lt; N; ++i) B[i] = B[i] * a[i] % mod;        DFT(B, -1);      &#125;      for (int i = 0; i &lt; N; ++i) a[i] = a[i] * a[i] % mod;      index &gt;&gt;= 1;      DFT(a, -1);    &#125;    for (int i = 0; i &lt; N; ++i) a[i] = B[i];  &#125;  void solve() &#123;    scanf(\"%d%d%d%d\", &amp;n, &amp;m, &amp;x, &amp;s);    math::m = m;    // math::euler();    math::G = math::getG();    // printf(\"%d\\n\", math::G);    math::getI();    int u;    for (int i = 1; i &lt;= s; ++i) &#123;      scanf(\"%d\", &amp;u);      // printf(\"%d\\n\", math::ind[u]);      C[math::ind[u]]++;    &#125;    N = 1; L = 0;    while (N &lt;= (m &lt;&lt; 1)) N &lt;&lt;= 1, L++;    init();    // for (int i = 0; i &lt; N; ++i) printf(\"%lld\\n\", C[i]);    // puts(\"\");    A[math::ind[1]] = 1;    NTTpow(C, n);     // for (int i = 0; i &lt; N; ++i) printf(\"%lld\\n\", C[i]);    // puts(\"\");    DFT(A, 1); DFT(C, 1);    for (int i = 0; i &lt; N; ++i)      A[i] = A[i] * C[i] % mod;    DFT(A, -1);    printf(\"%lld\\n\", A[math::ind[x]]);  &#125;&#125;int main() &#123;  NTT::solve();  return 0;&#125;\n","dateCreated":"2019-03-03T20:57:39+08:00","dateModified":"2019-03-03T21:53:14+08:00","datePublished":"2019-03-03T20:57:39+08:00","description":"综合考察???.","headline":"BZOJ3992 数论,生成函数,NTT","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/","keywords":"OI"}</script>
+    <meta name="description" content="综合考察???.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="BZOJ3992 数论,生成函数,NTT">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="综合考察???.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-03-03T13:53:14.834Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BZOJ3992 数论,生成函数,NTT">
+<meta name="twitter:description" content="综合考察???.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            BZOJ3992 数论,生成函数,NTT
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-03-03T20:57:39+08:00">
+	
+		    Mar 03, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>综合考察<del>???</del>.</p>
+<a id="more"></a>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>给一个集合, 要生成一个长为$n$的序列, 每个位置都从集合里选数, 要求各数之积被$m$整除, 求方案数.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>个数之积不像和那样可以随便卷. 但是我们有一个东西叫指标, 也就是离散对数, 这玩意是可以把乘积视为质数上的相加的.</p>
+<p>因为保证给的数是个质数, 所以可以求原根和指标, 暴力就行. </p>
+<p>然后要实现NTT循环卷积. 也要快速幂.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> mod 1004535809ll</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">quick_power</span><span class="params">(ll base, ll index)</span> </span>&#123;</span><br><span class="line">  ll ret = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">while</span> (index) &#123;</span><br><span class="line">    <span class="keyword">if</span> (index &amp; <span class="number">1</span>) ret = ret * base % mod;</span><br><span class="line">    index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">    base = base * base % mod;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">quick_power</span><span class="params">(ll base, ll index, ll p)</span> </span>&#123;</span><br><span class="line">  ll ret = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">while</span> (index) &#123;</span><br><span class="line">    <span class="keyword">if</span> (index &amp; <span class="number">1</span>) ret = (base * ret) % p;</span><br><span class="line">    index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">    base = base * base % p;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> math &#123;</span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">int</span> maxm = <span class="number">100010</span>;</span><br><span class="line">  <span class="keyword">int</span> npr[maxm], pr[maxm &gt;&gt; <span class="number">1</span>], cnt;</span><br><span class="line">  <span class="keyword">int</span> mindiv[maxm], ind[maxm], G, m;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">euler</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!npr[i]) &#123;</span><br><span class="line">        pr[++cnt] = i;</span><br><span class="line">        mindiv[i] = i;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= cnt &amp;&amp; i * pr[j] &lt;= m; ++j) &#123;</span><br><span class="line">        npr[i * pr[j]] = <span class="number">1</span>;</span><br><span class="line">        mindiv[i * pr[j]] = pr[j];</span><br><span class="line">        <span class="keyword">if</span> (!(i % pr[j])) <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">check</span><span class="params">(<span class="keyword">int</span> g, <span class="keyword">int</span> ori)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> tmp = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; ori; ++i) &#123;</span><br><span class="line">      tmp = (tmp * g) % m;</span><br><span class="line">      <span class="keyword">if</span> (tmp == <span class="number">1</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// printf("%d\n", g);</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">int</span> <span class="title">getG</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> g = <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">for</span> (; g &lt; m; ++g) &#123;</span><br><span class="line">      <span class="keyword">if</span> (check(g, m - <span class="number">1</span>)) <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> g;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">getI</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>, w = <span class="number">1</span>; k &lt; m; w = (w * G) % m, k++)</span><br><span class="line">      ind[w] = k;<span class="comment">//, printf("%d = %d\n", w, k);</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">namespace</span> NTT &#123;</span><br><span class="line">  <span class="keyword">using</span> math::maxm;</span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">const</span> ll G = <span class="number">3</span>;</span><br><span class="line">  <span class="keyword">int</span> rev[maxm];</span><br><span class="line">  ll A[maxm], B[maxm], C[maxm];</span><br><span class="line">  <span class="keyword">int</span> N, L;</span><br><span class="line">  <span class="keyword">int</span> n, m, x, s;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) &#123;</span><br><span class="line">      rev[i] = (rev[i &gt;&gt; <span class="number">1</span>] &gt;&gt; <span class="number">1</span>) | ((i &amp; <span class="number">1</span>) &lt;&lt; (L - <span class="number">1</span>));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">DFT</span><span class="params">(ll *a, <span class="keyword">int</span> typ)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) </span><br><span class="line">      <span class="keyword">if</span> (i &gt; rev[i]) swap(a[i], a[rev[i]]);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= N; i &lt;&lt;= <span class="number">1</span>) &#123;</span><br><span class="line">      <span class="keyword">int</span> m = (i &gt;&gt; <span class="number">1</span>);</span><br><span class="line">      ll e = quick_power(G, (mod - <span class="number">1</span>) / i);</span><br><span class="line">      <span class="comment">//if (typ == -1) e = quick_power(e, mod - 2);</span></span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; N; j += i) &#123;</span><br><span class="line">        ll w = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; m; ++k) &#123;</span><br><span class="line">          ll t = w * a[j + m + k] % mod;</span><br><span class="line">          a[m + j + k] = (a[j + k] - t + mod) % mod;</span><br><span class="line">          a[j + k] = (a[j + k] + t) % mod;</span><br><span class="line">          w = w * e % mod;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (typ == <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line">    reverse(a + <span class="number">1</span>, a + N); ll inv = quick_power(N, mod - <span class="number">2</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) a[i] = a[i] * inv % mod;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = m; i &lt; N; ++i) &#123;</span><br><span class="line">      <span class="keyword">int</span> x = ((i % (m - <span class="number">1</span>)) ? (i % (m - <span class="number">1</span>)) : (m - <span class="number">1</span>));</span><br><span class="line">      a[x] = (a[i] + a[x]) % mod;</span><br><span class="line">      a[i] = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">NTTpow</span><span class="params">(ll *a, <span class="keyword">int</span> index)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) B[i] = a[i];</span><br><span class="line">    index--;</span><br><span class="line">    <span class="keyword">while</span> (index) &#123;</span><br><span class="line">      DFT(a, <span class="number">1</span>);</span><br><span class="line">      <span class="keyword">if</span> (index &amp; <span class="number">1</span>) &#123;</span><br><span class="line">        DFT(B, <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) B[i] = B[i] * a[i] % mod;</span><br><span class="line">        DFT(B, <span class="number">-1</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) a[i] = a[i] * a[i] % mod;</span><br><span class="line">      index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">      DFT(a, <span class="number">-1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) a[i] = B[i];</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">solve</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d%d%d"</span>, &amp;n, &amp;m, &amp;x, &amp;s);</span><br><span class="line">    math::m = m;</span><br><span class="line">    <span class="comment">// math::euler();</span></span><br><span class="line">    math::G = math::getG();</span><br><span class="line">    <span class="comment">// printf("%d\n", math::G);</span></span><br><span class="line">    math::getI();</span><br><span class="line">    <span class="keyword">int</span> u;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= s; ++i) &#123;</span><br><span class="line">      <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;u);</span><br><span class="line">      <span class="comment">// printf("%d\n", math::ind[u]);</span></span><br><span class="line">      C[math::ind[u]]++;</span><br><span class="line">    &#125;</span><br><span class="line">    N = <span class="number">1</span>; L = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (N &lt;= (m &lt;&lt; <span class="number">1</span>)) N &lt;&lt;= <span class="number">1</span>, L++;</span><br><span class="line">    init();</span><br><span class="line">    <span class="comment">// for (int i = 0; i &lt; N; ++i) printf("%lld\n", C[i]);</span></span><br><span class="line">    <span class="comment">// puts("");</span></span><br><span class="line">    A[math::ind[<span class="number">1</span>]] = <span class="number">1</span>;</span><br><span class="line">    NTTpow(C, n); </span><br><span class="line">    <span class="comment">// for (int i = 0; i &lt; N; ++i) printf("%lld\n", C[i]);</span></span><br><span class="line">    <span class="comment">// puts("");</span></span><br><span class="line">    DFT(A, <span class="number">1</span>); DFT(C, <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i)</span><br><span class="line">      A[i] = A[i] * C[i] % mod;</span><br><span class="line">    DFT(A, <span class="number">-1</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, A[math::ind[x]]);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  NTT::solve();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../06/march-contest-1/" data-tooltip="March Training Contest 1" aria-label="PREVIOUS: March Training Contest 1">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../burnside-combinatorics-color/" data-tooltip="COLOR Burnside引理,组合数学" aria-label="NEXT: COLOR Burnside引理,组合数学">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../06/march-contest-1/" data-tooltip="March Training Contest 1" aria-label="PREVIOUS: March Training Contest 1">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../burnside-combinatorics-color/" data-tooltip="COLOR Burnside引理,组合数学" aria-label="NEXT: COLOR Burnside引理,组合数学">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/03/03/bzoj3992-ogf-ntt/';
+                 
+                    this.page.identifier = '2019/03/03/bzoj3992-ogf-ntt/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

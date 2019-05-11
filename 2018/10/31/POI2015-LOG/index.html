@@ -1,0 +1,599 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>POI2015 Logistyka - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"树状数组。\n\n\nDescription维护一个长度为$n$的序列，一开始都是0，支持以下两种操作：\n$U k a$ 将序列中第$k$个数修改为$a$。\n$Z c s$ 在这个序列上，每次选出$c$个正数，并将它们都减去$1$，询问能否进行$s$次操作。\n每次询问独立，即每次询问不会对序列进行修改。\nSolution记录一个 $C = \\sum_{a_i \\ge s}{1}$, $S = \\sum_{a_i &lt; s}{a_i}$.\n那么可行的充要条件就是：$S \\ge (c - C) \\times s$.\n我们来证明一下.\n如果大于等于$s$的数字有超过$c$个, 那么我们直接取就可以了.\n如果不够$c$个, 也就是我们需要选择$c - C$个较小的数字, 我们将$a_i$视为她最多被选中的次数, 由于$S \\ge (c - C) \\times s$, 所以$\\frac{S}{s} \\ge c - C$, 也就是说, 总有多于我们需要的数字备选. 当我们选择一次后, 不等式变为 $\\frac{S - s}{s - 1} \\ge c - C$, 这时我们有证明：\n设常量$a = c - C$, \n则$\\frac{S - s}{s} = \\frac{S}{s} - 1 \\ge  a - 1$,\n由于$\\frac{S - s}{s - 1} &gt; \\frac{S - s}{s}$,\n所以$\\frac{S-s}{s-1} &gt; a - 1 \\ge a$.\nQ.E.D.\n若不满足上不等式,可证无法选出足够的数字.\n所以用两个树状数组分别维护个数和权值和就可以了.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cctype&gt;using namespace std;typedef long long ll;const int max_n = int(1e+6 + 5);struct Option &#123;  int x, y, typ;&#125;q[max_n];int n, m, a[max_n];int cpy[max_n], tot, sum, rk[max_n];int val[max_n];ll bs[max_n], bv[max_n];inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;inline void add(int x, int c, ll *b) &#123;  for (; x &lt;= sum + 1; x += (x &amp; -x))    b[x] += (ll)c;&#125;inline ll query(int x, ll *b) &#123;  ll ret = 0;  for (; x; x -= (x &amp; -x)) ret += b[x];  return ret;&#125;int main() &#123;  n = rd(); m = rd();  char *line = new char[5];  for (int i = 1; i &lt;= m; ++i) &#123;    scanf(\"%s%d%d\", line, &amp;q[i].x, &amp;q[i].y);    if (line[0] == 'U') &#123;      q[i].typ = ++tot;      cpy[tot] = rk[tot] = q[i].y;    &#125; else &#123;      q[i].typ = -1;    &#125;  &#125;  sort(cpy + 1, cpy + 1 + tot);  sum = int(unique(cpy + 1, cpy + 1 + tot) - (cpy + 1));  for (int i = 1; i &lt;= tot; ++i)    rk[i] = int(lower_bound(cpy + 1, cpy + 1 + sum, rk[i]) - cpy);  for (int i = 1; i &lt;= m; ++i)     if (~q[i].typ)       q[i].y = rk[q[i].typ];  for (int i = 1; i &lt;= m; ++i) &#123;    if (~q[i].typ) &#123;      if (val[q[i].x] &gt; 0) &#123;        int rkk = lower_bound(cpy + 1, cpy + 1 + sum, val[q[i].x]) - cpy;        add(rkk + 1, -1, bs);        add(rkk + 1, -val[q[i].x], bv);      &#125;      val[q[i].x] = cpy[q[i].y];      if (val[q[i].x] &gt; 0) &#123;        add(q[i].y + 1, 1, bs);        add(q[i].y + 1, cpy[q[i].y], bv);      &#125;    &#125; else &#123;      int rkk = upper_bound(cpy + 1, cpy + 1 + sum, q[i].y) - cpy - 1;      ll cnt = query(sum + 1, bs) - query(rkk + 1, bs);      ll lower_sum = query(rkk + 1, bv);      if (lower_sum &gt;= (q[i].x - cnt) * (ll)q[i].y) puts(\"TAK\");      else puts(\"NIE\");    &#125;  &#125;  return 0;&#125;\n","dateCreated":"2018-10-31T11:01:33+08:00","dateModified":"2018-10-31T11:44:42+08:00","datePublished":"2018-10-31T11:01:33+08:00","description":"树状数组。","headline":"POI2015 Logistyka","image":[null,"https://i.loli.net/2018/10/18/5bc88b7cdc79a.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/10/31/POI2015-LOG/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/10/31/POI2015-LOG/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/10/18/5bc88b7cdc79a.jpg"}</script>
+    <meta name="description" content="树状数组。">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="POI2015 Logistyka">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/10/31/POI2015-LOG/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="树状数组。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-10-31T03:44:42.726Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="POI2015 Logistyka">
+<meta name="twitter:description" content="树状数组。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/10/18/5bc88b7cdc79a.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/10/18/5bc88b7cdc79a.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/10/18/5bc88b7cdc79a.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            POI2015 Logistyka
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-10-31T11:01:33+08:00">
+	
+		    Oct 31, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>树状数组。</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>维护一个长度为$n$的序列，一开始都是0，支持以下两种操作：</p>
+<p>$U k a$ 将序列中第$k$个数修改为$a$。</p>
+<p>$Z c s$ 在这个序列上，每次选出$c$个正数，并将它们都减去$1$，询问能否进行$s$次操作。</p>
+<p>每次询问独立，即每次询问不会对序列进行修改。</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>记录一个 $C = \sum_{a_i \ge s}{1}$, $S = \sum_{a_i &lt; s}{a_i}$.</p>
+<p>那么可行的充要条件就是：$S \ge (c - C) \times s$.</p>
+<p>我们来证明一下.</p>
+<p>如果大于等于$s$的数字有超过$c$个, 那么我们直接取就可以了.</p>
+<p>如果不够$c$个, 也就是我们需要选择$c - C$个较小的数字, 我们将$a_i$视为她最多被选中的次数, 由于$S \ge (c - C) \times s$, 所以$\frac{S}{s} \ge c - C$, 也就是说, 总有多于我们需要的数字备选. 当我们选择一次后, 不等式变为 $\frac{S - s}{s - 1} \ge c - C$, 这时我们有证明：</p>
+<p>设常量$a = c - C$, </p>
+<p>则$\frac{S - s}{s} = \frac{S}{s} - 1 \ge  a - 1$,</p>
+<p>由于$\frac{S - s}{s - 1} &gt; \frac{S - s}{s}$,</p>
+<p>所以$\frac{S-s}{s-1} &gt; a - 1 \ge a$.</p>
+<p>Q.E.D.</p>
+<p>若不满足上不等式,可证无法选出足够的数字.</p>
+<p>所以用两个树状数组分别维护个数和权值和就可以了.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> max_n = <span class="keyword">int</span>(<span class="number">1e+6</span> + <span class="number">5</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Option</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> x, y, typ;</span><br><span class="line">&#125;q[max_n];</span><br><span class="line"><span class="keyword">int</span> n, m, a[max_n];</span><br><span class="line"><span class="keyword">int</span> cpy[max_n], tot, sum, rk[max_n];</span><br><span class="line"><span class="keyword">int</span> val[max_n];</span><br><span class="line">ll bs[max_n], bv[max_n];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> c, ll *b)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (; x &lt;= sum + <span class="number">1</span>; x += (x &amp; -x))</span><br><span class="line">    b[x] += (ll)c;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">query</span><span class="params">(<span class="keyword">int</span> x, ll *b)</span> </span>&#123;</span><br><span class="line">  ll ret = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (; x; x -= (x &amp; -x)) ret += b[x];</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd(); m = rd();</span><br><span class="line">  <span class="keyword">char</span> *line = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="number">5</span>];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%s%d%d"</span>, line, &amp;q[i].x, &amp;q[i].y);</span><br><span class="line">    <span class="keyword">if</span> (line[<span class="number">0</span>] == <span class="string">'U'</span>) &#123;</span><br><span class="line">      q[i].typ = ++tot;</span><br><span class="line">      cpy[tot] = rk[tot] = q[i].y;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      q[i].typ = <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  sort(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + tot);</span><br><span class="line">  sum = <span class="keyword">int</span>(unique(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + tot) - (cpy + <span class="number">1</span>));</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= tot; ++i)</span><br><span class="line">    rk[i] = <span class="keyword">int</span>(lower_bound(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + sum, rk[i]) - cpy);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) </span><br><span class="line">    <span class="keyword">if</span> (~q[i].typ) </span><br><span class="line">      q[i].y = rk[q[i].typ];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (~q[i].typ) &#123;</span><br><span class="line">      <span class="keyword">if</span> (val[q[i].x] &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> rkk = lower_bound(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + sum, val[q[i].x]) - cpy;</span><br><span class="line">        add(rkk + <span class="number">1</span>, <span class="number">-1</span>, bs);</span><br><span class="line">        add(rkk + <span class="number">1</span>, -val[q[i].x], bv);</span><br><span class="line">      &#125;</span><br><span class="line">      val[q[i].x] = cpy[q[i].y];</span><br><span class="line">      <span class="keyword">if</span> (val[q[i].x] &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        add(q[i].y + <span class="number">1</span>, <span class="number">1</span>, bs);</span><br><span class="line">        add(q[i].y + <span class="number">1</span>, cpy[q[i].y], bv);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">int</span> rkk = upper_bound(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + sum, q[i].y) - cpy - <span class="number">1</span>;</span><br><span class="line">      ll cnt = query(sum + <span class="number">1</span>, bs) - query(rkk + <span class="number">1</span>, bs);</span><br><span class="line">      ll lower_sum = query(rkk + <span class="number">1</span>, bv);</span><br><span class="line">      <span class="keyword">if</span> (lower_sum &gt;= (q[i].x - cnt) * (ll)q[i].y) <span class="built_in">puts</span>(<span class="string">"TAK"</span>);</span><br><span class="line">      <span class="keyword">else</span> <span class="built_in">puts</span>(<span class="string">"NIE"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../POI2015-KUR/" data-tooltip="POI2015 Kurs szybkiego czytania" aria-label="PREVIOUS: POI2015 Kurs szybkiego czytania">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../27/APIO-2008-BZOJ-3624/" data-tooltip="BZOJ 3624 APIO2008-免费道路" aria-label="NEXT: BZOJ 3624 APIO2008-免费道路">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../POI2015-KUR/" data-tooltip="POI2015 Kurs szybkiego czytania" aria-label="PREVIOUS: POI2015 Kurs szybkiego czytania">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../27/APIO-2008-BZOJ-3624/" data-tooltip="BZOJ 3624 APIO2008-免费道路" aria-label="NEXT: BZOJ 3624 APIO2008-免费道路">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/10/31/POI2015-LOG/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/10/31/POI2015-LOG/';
+                 
+                    this.page.identifier = '2018/10/31/POI2015-LOG/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

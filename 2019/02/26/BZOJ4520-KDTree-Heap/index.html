@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>K远点对-BZOJ4520 KD树,堆 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"学习套路.\n\n题意同标题.\nSolution取前$k$大的无序对, 就是取前$2k$大的有序对. 我们枚举每个点, 用KD树加速找最大值的过程.\n然后维护一个大小为$2k$的小根堆, 初始里面都是$0$, 每次找到一个距离, 如果比堆顶大, 就换掉堆顶. 这样是对的, 一开始一定比堆顶大, 后来如果堆里占满了$2k$个值, 加入求得的距离还要比堆顶小, 那至少也在$2k$以外了, 反之堆顶一定在$2k$以外了. KD树的作用实际只在于加速找当前点与各点较大距离的过程.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long LL;const int maxn = 1e+5 + 5;int n, k, typ, ptr;struct point &#123;  int x, y;  point(int x_ = 0, int y_ = 0) : x(x_), y(y_) &#123;&#125;  inline bool operator &lt; (const point &amp;rhs) const &#123;    if (typ) return (x == rhs.x) ? (y &lt; rhs.y) : (x &lt; rhs.x);    else return (y == rhs.y) ? (x &lt; rhs.x) : (y &lt; rhs.y);  &#125;&#125;parr[maxn], ask;struct KDn &#123;  int ch[2];  point p, l, r;  KDn(point P = point()) : p(P), l(P), r(P)&#123;    ch[0] = ch[1] = 0;  &#125;&#125;t[maxn];struct ll &#123;  long long a;  ll() &#123;a = 0;&#125;  inline ll operator=(long long rhs) &#123;    ll ret; ret.a = rhs;    return ret;  &#125;  inline bool operator&lt;(const ll &amp;rhs) const &#123;    return a &gt; rhs.a;  &#125;&#125;;int tot;priority_queue&lt;ll&gt; q;inline LL getdis(const point &amp;l, const point &amp;r) &#123;  return 1ll * (l.x - r.x) * (l.x - r.x) + 1ll * (l.y - r.y) * (l.y - r.y);&#125;inline LL sq(const LL &amp;x) &#123;  return x * x;&#125;inline LL approx(const int &amp;lhs, const int &amp;rhs) &#123;  return max(sq(t[lhs].p.x - t[rhs].l.x), sq(t[lhs].p.x - t[rhs].r.x)) +          max(sq(t[lhs].p.y - t[rhs].l.y), sq(t[lhs].p.y - t[rhs].r.y));&#125;#define ls t[cur].ch[0]#define rs t[cur].ch[1]inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;inline void pushup(const int &amp;cur, const int &amp;son) &#123;  t[cur].l.x = min(t[cur].l.x, t[son].l.x);  t[cur].l.y = min(t[cur].l.y, t[son].l.y);  t[cur].r.x = max(t[cur].r.x, t[son].r.x);  t[cur].r.y = max(t[cur].r.y, t[son].r.y);&#125;int build(const int &amp;l, const int &amp;r, const int &amp;dim) &#123;  int cur = ++ptr, mid = (l + r) &gt;&gt; 1;  typ = dim;  nth_element(parr + l, parr + mid, parr + r);  t[cur] = KDn(*(parr + mid));  if (l &lt; mid) ls = build(l, mid - 1, dim ^ 1), pushup(cur, ls);  if (r &gt; mid) rs = build(mid + 1, r, dim ^ 1), pushup(cur, rs);  return cur;&#125;void query(int cur) &#123;  LL dx = getdis(ask, t[cur].p);  if (dx &gt; q.top().a) &#123;    ll p; p.a = dx;    q.pop(); q.push(p);  &#125;  LL disl = 0, disr = 0;  if (ls) disl = approx(0, ls);  if (rs) disr = approx(0, rs);  ll tmp = q.top();  if (disl &gt; disr) &#123;    if (disl &gt; tmp.a) query(ls);     tmp = q.top();    if (disr &gt; tmp.a) query(rs);  &#125; else &#123;    if (disr &gt; tmp.a) query(rs);     tmp = q.top();    if (disl &gt; tmp.a) query(ls);  &#125;&#125;#undef ls#undef rsint main() &#123;  n = rd(); k = rd();  for (int i = 1; i &lt;= n; ++i) &#123;    parr[i].x = rd(); parr[i].y = rd();  &#125;  build(1, n, 1);  ll tp; for (int i = 1; i &lt;= 2 * k; ++i) q.push(tp);  for (int i = 1; i &lt;= n; ++i) &#123;    ask = parr[i]; t[0] = KDn(parr[i]);    query(1);  &#125;  printf(\"%lld\\n\", q.top().a);  return 0;&#125;\n","dateCreated":"2019-02-26T16:35:35+08:00","dateModified":"2019-02-26T18:45:40+08:00","datePublished":"2019-02-26T16:35:35+08:00","description":"学习套路.","headline":"K远点对-BZOJ4520 KD树,堆","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/","keywords":"OI"}</script>
+    <meta name="description" content="学习套路.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="K远点对-BZOJ4520 KD树,堆">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="学习套路.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-02-26T10:45:40.055Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="K远点对-BZOJ4520 KD树,堆">
+<meta name="twitter:description" content="学习套路.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            K远点对-BZOJ4520 KD树,堆
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-02-26T16:35:35+08:00">
+	
+		    Feb 26, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>学习套路.</p>
+<a id="more"></a>
+<p>题意同标题.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>取前$k$大的无序对, 就是取前$2k$大的有序对. 我们枚举每个点, 用KD树加速找最大值的过程.</p>
+<p>然后维护一个大小为$2k$的小根堆, 初始里面都是$0$, 每次找到一个距离, 如果比堆顶大, 就换掉堆顶. 这样是对的, 一开始一定比堆顶大, 后来如果堆里占满了$2k$个值, 加入求得的距离还要比堆顶小, 那至少也在$2k$以外了, 反之堆顶一定在$2k$以外了. KD树的作用实际只在于加速找当前点与各点较大距离的过程.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> LL;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, k, typ, ptr;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">point</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> x, y;</span><br><span class="line">  point(<span class="keyword">int</span> x_ = <span class="number">0</span>, <span class="keyword">int</span> y_ = <span class="number">0</span>) : x(x_), y(y_) &#123;&#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> point &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (typ) <span class="keyword">return</span> (x == rhs.x) ? (y &lt; rhs.y) : (x &lt; rhs.x);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">return</span> (y == rhs.y) ? (x &lt; rhs.x) : (y &lt; rhs.y);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;parr[maxn], ask;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">KDn</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> ch[<span class="number">2</span>];</span><br><span class="line">  point p, l, r;</span><br><span class="line"></span><br><span class="line">  KDn(point P = point()) : p(P), l(P), r(P)&#123;</span><br><span class="line">    ch[<span class="number">0</span>] = ch[<span class="number">1</span>] = <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;t[maxn];</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ll</span> &#123;</span></span><br><span class="line">  <span class="keyword">long</span> <span class="keyword">long</span> a;</span><br><span class="line">  ll() &#123;a = <span class="number">0</span>;&#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">inline</span> ll <span class="keyword">operator</span>=(<span class="keyword">long</span> <span class="keyword">long</span> rhs) &#123;</span><br><span class="line">    ll ret; ret.a = rhs;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="keyword">operator</span>&lt;(<span class="keyword">const</span> ll &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> a &gt; rhs.a;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">int</span> tot;</span><br><span class="line">priority_queue&lt;ll&gt; q;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> LL <span class="title">getdis</span><span class="params">(<span class="keyword">const</span> point &amp;l, <span class="keyword">const</span> point &amp;r)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">1l</span>l * (l.x - r.x) * (l.x - r.x) + <span class="number">1l</span>l * (l.y - r.y) * (l.y - r.y);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> LL <span class="title">sq</span><span class="params">(<span class="keyword">const</span> LL &amp;x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> x * x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> LL <span class="title">approx</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;lhs, <span class="keyword">const</span> <span class="keyword">int</span> &amp;rhs)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> max(sq(t[lhs].p.x - t[rhs].l.x), sq(t[lhs].p.x - t[rhs].r.x)) + </span><br><span class="line">         max(sq(t[lhs].p.y - t[rhs].l.y), sq(t[lhs].p.y - t[rhs].r.y));</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ls t[cur].ch[0]</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> rs t[cur].ch[1]</span></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">pushup</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;cur, <span class="keyword">const</span> <span class="keyword">int</span> &amp;son)</span> </span>&#123;</span><br><span class="line">  t[cur].l.x = min(t[cur].l.x, t[son].l.x);</span><br><span class="line">  t[cur].l.y = min(t[cur].l.y, t[son].l.y);</span><br><span class="line">  t[cur].r.x = max(t[cur].r.x, t[son].r.x);</span><br><span class="line">  t[cur].r.y = max(t[cur].r.y, t[son].r.y);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">build</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;l, <span class="keyword">const</span> <span class="keyword">int</span> &amp;r, <span class="keyword">const</span> <span class="keyword">int</span> &amp;dim)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> cur = ++ptr, mid = (l + r) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">  typ = dim;</span><br><span class="line">  nth_element(parr + l, parr + mid, parr + r);</span><br><span class="line">  t[cur] = KDn(*(parr + mid));</span><br><span class="line">  <span class="keyword">if</span> (l &lt; mid) ls = build(l, mid - <span class="number">1</span>, dim ^ <span class="number">1</span>), pushup(cur, ls);</span><br><span class="line">  <span class="keyword">if</span> (r &gt; mid) rs = build(mid + <span class="number">1</span>, r, dim ^ <span class="number">1</span>), pushup(cur, rs);</span><br><span class="line">  <span class="keyword">return</span> cur;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">query</span><span class="params">(<span class="keyword">int</span> cur)</span> </span>&#123;</span><br><span class="line">  LL dx = getdis(ask, t[cur].p);</span><br><span class="line">  <span class="keyword">if</span> (dx &gt; q.top().a) &#123;</span><br><span class="line">    ll p; p.a = dx;</span><br><span class="line">    q.pop(); q.push(p);</span><br><span class="line">  &#125;</span><br><span class="line">  LL disl = <span class="number">0</span>, disr = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">if</span> (ls) disl = approx(<span class="number">0</span>, ls);</span><br><span class="line">  <span class="keyword">if</span> (rs) disr = approx(<span class="number">0</span>, rs);</span><br><span class="line">  ll tmp = q.top();</span><br><span class="line">  <span class="keyword">if</span> (disl &gt; disr) &#123;</span><br><span class="line">    <span class="keyword">if</span> (disl &gt; tmp.a) query(ls); </span><br><span class="line">    tmp = q.top();</span><br><span class="line">    <span class="keyword">if</span> (disr &gt; tmp.a) query(rs);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (disr &gt; tmp.a) query(rs); </span><br><span class="line">    tmp = q.top();</span><br><span class="line">    <span class="keyword">if</span> (disl &gt; tmp.a) query(ls);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">undef</span> ls</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">undef</span> rs</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd(); k = rd();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    parr[i].x = rd(); parr[i].y = rd();</span><br><span class="line">  &#125;</span><br><span class="line">  build(<span class="number">1</span>, n, <span class="number">1</span>);</span><br><span class="line">  ll tp; <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">2</span> * k; ++i) q.push(tp);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    ask = parr[i]; t[<span class="number">0</span>] = KDn(parr[i]);</span><br><span class="line">    query(<span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, q.top().a);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ4523-Trie-Offline/" data-tooltip="BZOJ4523 Trie树模拟" aria-label="PREVIOUS: BZOJ4523 Trie树模拟">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../2019-feb-short-break/" data-tooltip="记二月突然的一次短假" aria-label="NEXT: 记二月突然的一次短假">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ4523-Trie-Offline/" data-tooltip="BZOJ4523 Trie树模拟" aria-label="PREVIOUS: BZOJ4523 Trie树模拟">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../2019-feb-short-break/" data-tooltip="记二月突然的一次短假" aria-label="NEXT: 记二月突然的一次短假">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/02/26/BZOJ4520-KDTree-Heap/';
+                 
+                    this.page.identifier = '2019/02/26/BZOJ4520-KDTree-Heap/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

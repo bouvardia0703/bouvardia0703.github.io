@@ -1,0 +1,691 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Diary - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"有了新博客本小姐终于可以随便写点什么了的说, 偶尔换一换风格什么的也不会有事的吧?\n说好了是写一些日常想法的, 结果又放了好多OI的东西, Bouvardia自己也不知道这些东西最后落定成什么样子呢.\n\n\n8.11大概算是把博客的调试什么的都弄好了吧……\n以后就可以写写写了。\nBouvardia觉得还是先调完今天的题会比较好。\n18:03 随手一写\n回去的事，Bouvardia也很拿不定呢，但似乎就这么留下来了？有人没争取到，究竟哪里更好呢？\n希望以后，Bouvardia不会为这件事后悔吧。\n20:13\nBouvardia超不开心的说.\n果然Bouvardia还是太弱了,吗. 努力也没有成效, 眼看着大家一个个都超过了自己却无能为力.\nBouvardia, 也不知道该做什么了.\n22:19\n反正也快走了, 就总结一下今天吧.\nBouvardia上午去听课了, 云里雾里, 所以直接听的题解.\nDiv.B:\nT1: 这个应该在T3的. 对于每个人, 按高度排序加入, 考虑空位个数, 这些空位都是留给比她高的人的. 所以在朝前或朝后中取一个较小的就好, 这样就保证字典序最小. 进一步考虑把她安放在哪里, 还是要字典序最小, 所以要尽可能地往左插入, 取到第一个能插的位置. 线段树上二分.\nBouvardia觉得, 这是个很涨经验的问题呢. 考虑到排名和位置的转化, 还有利用线段树来二分贪心什么的.\nT2: 好裸啊. 打标记算前缀和.\nT3: 做过原题了. 考场上要注意, 选更大的模数或者双hash, 不保证随机的情况下不用自然溢出.\nDiv.A:\nT1: \n居然是暴搜? Bouvardia可怜兮兮地没想到的说. 不过还是有trick的啦. 复杂度太高了, 考虑能不能折半再验证, 发现可以! 但是验证个数枚举太慢了…… 排序后二分, 取下界即可.\n这道题Bouvardia有点话说. \n\n搜索不行 > 高阶搜索\n排序是个好想法, 无论是统计还是验证. 因为她自带相同元素相邻和上下界可二分的性质, 虽然都很显然, Bouvardia却总是想不到用呢.\n\nT2:\n 对于方案问题, 要么就是DP, 要么就是计数了.\n\n考试期间, 除了数学题, 其他的题目都应该很快地尝试多种思路, 例如多个条件的验证, 多种出解方式等等. Bouvardia总是有点一条路走到黑的感觉的说.\n\n 第一印象还以为是DP之类的, 当时也感觉DP不是很显然, 怎么计数呢?\n计数就意味着有可选择的东西啦. 然后或者组合数, 或者指数, 或者乘法原理咯. 有时会用到容斥, 那是在有特定不合法/合法转换的情况.\n这题可以发现可能会有一些最后也没有被定向的边, 而这些边会连接若干个已经定向的块.  所以最后的答案就是2^(并查集个数)啦.\n怎么维护块呢? 每次连一条路径, 我们其实是有两种选择, 但实际操作中并不需要, 并查集维护的关系只有同向和不同向两种关系. 就是带偏移量啦.\n维护做比较再验证即可.\nT3:\n因为没有交叉,只有包含, 所以set维护上下界, 建出一颗关系树, 树剖维护每次染色就可以啦.\nBouvardia还是对自己很没信心.\n8.12Bouvardia突然想起一些事觉得很有必要写一写呢， 关于旅行。\n13:50\n上午没有考好， 天又灰蒙蒙的，所以状态并不是很好，一边总结一边吐吐槽什么的吧。\nT1:\nBouvardia并没有想到DP, DP其实很简单(也不是很简单). 但是Bouvardia觉得DP很不好想, 就一直在啃组合数学, 所以Bouvardia是个很容易走极端的人呢. 也没有想到互补的做法, 估计考场上也处理不了负数前缀和的情况吧.\n因为正反括号可以一一对应, 所以取相反数也是正确的方案, 而且这样还可以防止左括号过多的情况或者空出没有匹配的左括号的情况, 因为反向了, 而且是倒着理解, 所以意义就正确了.\n这是一个很好的做法,Bouvardia想到了正反意义相同, 却相当惊讶于倒序保证合法的做法呢.\nT2: \n是一道期望DP, 如果能发现性质并设计出状态, 就很容易解决啦, 当然代码不太好写就是了o_o ….\nBouvardia考场上只写了搜索.\n我们可以发现, 如果能够产生贡献, 一定是从最低位开始连续的0. 再考虑操作结果的范围, 都放在状态里是不行的, 我们要压缩一下, 使得既在问题范围下不会丢失信息, 又能很好的转移. 因为操作只有200次, 所以+1操作相应地不会超过八个二进制位, 那么我们就压八个二进制位, 第九位以后的只保留连续的0/1个数就好了, 因为我们不关心其他信息, 至于数字本身, 就只能丢掉啦.\n然后就是惨绝人寰的转移和统计答案!\nT3:\n原来大家是手玩出来的. \n奇环是不符合条件的. 所以第一步是判定二分图.\n然后就是最大化链长, 显而易见地合并环的两侧, 也就是在二分图上到一个点距离相同的两个点. 合并它们不会影响答案, 那么答案就是从任意一点出发最短路的最大值(这里Bouvardia没能抽象出来).\nBouvardia眼看着别人都在进步, 思维越来越快, 自己却始终没有长进, 还是没有巧思. 虽然上午的题也确实很难, 但Bouvardia这样子也很伤心的说.\n就算Bouvardia把T2骗了, 把T3手玩了, 也还是填不满整整一个T1的差距吧.\n每次Bouvardia觉得下一次就可以了, 就又跌了回去, 这个时候, 就只能承认自己的无能了吧. Bouvardia正好就把自己犯过的错也写在日记里好了.\n上午w神想的是一个经典思路， 所以Bouvardia见题太少了吗？但是又不能拿这个安慰自己啊. Bouvardia在路上又被老师Diss了的说, 大家其实都不看好Bouvardia的吧.\n反正就是, 最近bouvardia思路都很打不开就是了, 大概是之前太懒的结果, 所以很少受锻炼, 还有两个月, 要怎么快速训练思维呢?\n另外今天吃到千夜酱啦(这样说会很困扰), 意外的口味还不错, 看看以后能不能再买一些.\n很显然的背包, 很显然的DP, Bouvardia每每想到这些, 心里就很不舒服呢.\n8.13忙了一整天, 所以没有写日记.\n8.14昨天晚上Bouvardia和妈妈通了电话. 妈妈说她和爸爸都很支持我, 就算失败了也没有关系, 因为Bouvardia是因为喜欢才会走到这里的啊. 真的是这样吗? 总之Bouvardia将信将疑地收下了, 也安心了些.\n然后夜里和Bouvardia的Goddess在聊天, 她也说不会嫌弃Bouvardia呢.\n所以今天的考试也考的好了些. 虽然数论还是惨不忍睹, 但是那道树上期望题也看出了思路呢(虽然是有旁边的人大叫了另一题的做法, 提醒了Bouvardia). 不过也在慢慢的尝试着找感觉呢. 可能高兴了状态就会好一些吧.\n然后Bouvardia做了两项大工程, 就是写了半平面交(Half-Plane Intersection)和旋转卡壳(Rotating Calipers)!\nBouvardia很容易得点小便宜就开心呢, 可不要得意忘形了.\nT1:\n做过类似的题, 差分统计一下答案. \n至于方案, 再考虑差分的过程, 每差1, 差分值就会增加1, 这就意味着有一个从当前位置开始的操作, 到哪里停止呢? 到有一个需要-1的地方. 做完了.\nT2:\n不会, 所有人都写的搜索.\nT3:\n考虑到树上路径, 那么一定和LCA有关了, 套路是 $u$ -> $LCA(u, v)$ -> $v$, 所以考虑分别计算向上的期望和向下的期望. 分情况讨论.\n对于向上走到父亲的情况(注意这种情况我们不会从比父亲高的地方落下来, 这是保证合法的), 我们可以走一步直接走到父亲, 也可以走回儿子再走回父亲. 也就是:\n$\\begin{align}up[i] = \\frac{1}{dgr_i} + \\sum_{y \\in son(i)}{\\frac{up[y] + up[i] + 1}{dgr_i}}\\end{align}$\n整理可得:\n$\\begin{align} up[i] = dgr_i + \\sum_{y \\in son(i)}{up[y]}\\end{align}$\n$dn[i]$的情况类似, 分为直接走下来, 走一步到父亲的父亲再走下来, 走到 $i$ 的兄弟再走下来. 就不写啦.\n8.16T1:\n大膜拟。\nT2：\nset维护区间\nT3：\nTrie树合并\n8.17Div.B Only\nT1: \n多重背包二进制拆分. 但是要想到正反两边.\nT2: \n考虑博弈策略, 多次排序即可.\nT3: \nKMP跑出后DP, 能够覆盖上一次覆盖点到当前点就更新.\n8.18T1:\n线段树上开桶, 统计一下.\nT2:\nBFS优化成类似一个SPFA一样的东西.\nT3:\n数位DP, 但是要按不同进制压进来. 涨姿势了.\n9.10今天联考了，结果考得也不是很好。比赛总结会放到记录里面的。\n下午突然遇到了加试，勉勉强强做了70分，也没有调试就交了。得分恐怕不高，但思路应该是极限了。\n晚上还发生了一点不愉快，虽然Bouvardia也有责任。Bouvardia以后要记得及时清理，不要给别人造成麻烦。\n但是Bouvardia一想到那个人那样的眼神，就觉得很不爽。即便知道了事情的原委却依然摆出一副厌弃嘴脸的人，只是单纯的和Bouvardia有过节吧。批评，肯定是要挨过来的吧。错误也难免会犯呢，一定要少犯错误了。但是，这样以后，或许就能看出来，谁是真心在为你的错误感到惋惜，谁只是戾气冲天，看人不爽了吧？\nBouvardia才发现，这样的心情，已经积攒了好多天了吧？Bouvardia其实也不太对，也应该大度一点的吧。只是，只是Bouvardia实在也，看不下去那样的做派……该怎么办啊……\nBouvardia真想活得轻松一点，却总是不由自主地把自己缠在里面。\n","dateCreated":"2018-08-11T12:36:03+08:00","dateModified":"2019-02-27T15:11:19+08:00","datePublished":"2018-08-11T12:36:03+08:00","description":"有了新博客本小姐终于可以随便写点什么了的说, 偶尔换一换风格什么的也不会有事的吧?\n说好了是写一些日常想法的, 结果又放了好多OI的东西, Bouvardia自己也不知道这些东西最后落定成什么样子呢.","headline":"Diary","image":["https://i.loli.net/2018/08/11/5b6e6832c174c.jpg","https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/08/11/Diary/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/08/11/Diary/","keywords":"minds","thumbnailUrl":"https://i.loli.net/2018/08/11/5b6e6832c174c.jpg"}</script>
+    <meta name="description" content="有了新博客本小姐终于可以随便写点什么了的说, 偶尔换一换风格什么的也不会有事的吧? 说好了是写一些日常想法的, 结果又放了好多OI的东西, Bouvardia自己也不知道这些东西最后落定成什么样子呢.">
+<meta name="keywords" content="minds">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Diary">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/08/11/Diary/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="有了新博客本小姐终于可以随便写点什么了的说, 偶尔换一换风格什么的也不会有事的吧? 说好了是写一些日常想法的, 结果又放了好多OI的东西, Bouvardia自己也不知道这些东西最后落定成什么样子呢.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-02-27T07:11:19.333Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Diary">
+<meta name="twitter:description" content="有了新博客本小姐终于可以随便写点什么了的说, 偶尔换一换风格什么的也不会有事的吧? 说好了是写一些日常想法的, 结果又放了好多OI的东西, Bouvardia自己也不知道这些东西最后落定成什么样子呢.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/11/5b6e6832c174c.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/11/5b6e6832c174c.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Diary
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-08-11T12:36:03+08:00">
+	
+		    Aug 11, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>有了新博客本小姐终于可以随便写点什么了的说, 偶尔换一换风格什么的也不会有事的吧?</p>
+<p>说好了是写一些日常想法的, 结果又放了好多OI的东西, Bouvardia自己也不知道这些东西最后落定成什么样子呢.</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#8-11"><span class="toc-text">8.11</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-12"><span class="toc-text">8.12</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-13"><span class="toc-text">8.13</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-14"><span class="toc-text">8.14</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-16"><span class="toc-text">8.16</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-17"><span class="toc-text">8.17</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-18"><span class="toc-text">8.18</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-10"><span class="toc-text">9.10</span></a></li></ol>
+<h2 id="8-11"><a href="#8-11" class="headerlink" title="8.11"></a>8.11</h2><p>大概算是把博客的调试什么的都弄好了吧……</p>
+<p>以后就可以写写写了。</p>
+<p>Bouvardia觉得还是先调完今天的题会比较好。</p>
+<p>18:03 随手一写</p>
+<p>回去的事，Bouvardia也很拿不定呢，但似乎就这么留下来了？有人没争取到，究竟哪里更好呢？</p>
+<p>希望以后，Bouvardia不会为这件事后悔吧。</p>
+<p>20:13</p>
+<p>Bouvardia超不开心的说.</p>
+<p>果然Bouvardia还是太弱了,吗. 努力也没有成效, 眼看着大家一个个都超过了自己却无能为力.</p>
+<p>Bouvardia, 也不知道该做什么了.</p>
+<p>22:19</p>
+<p>反正也快走了, 就总结一下今天吧.</p>
+<p>Bouvardia上午去听课了, 云里雾里, 所以直接听的题解.</p>
+<p>Div.B:</p>
+<p>T1: 这个应该在T3的. 对于每个人, 按高度排序加入, 考虑空位个数, 这些空位都是留给比她高的人的. 所以在朝前或朝后中取一个较小的就好, 这样就保证字典序最小. 进一步考虑把她安放在哪里, 还是要字典序最小, 所以要尽可能地往左插入, 取到第一个能插的位置. 线段树上二分.</p>
+<p>Bouvardia觉得, 这是个很涨经验的问题呢. 考虑到排名和位置的转化, 还有利用线段树来二分贪心什么的.</p>
+<p>T2: 好裸啊. 打标记算前缀和.</p>
+<p>T3: 做过原题了. 考场上要注意, 选更大的模数或者双hash, 不保证随机的情况下不用自然溢出.</p>
+<p>Div.A:</p>
+<p>T1: </p>
+<p>居然是暴搜? Bouvardia可怜兮兮地没想到的说. 不过还是有trick的啦. 复杂度太高了, 考虑能不能折半再验证, 发现可以! 但是验证个数枚举太慢了…… 排序后二分, 取下界即可.</p>
+<p>这道题Bouvardia有点话说. </p>
+<ol>
+<li>搜索不行 > 高阶搜索</li>
+<li>排序是个好想法, 无论是统计还是验证. 因为她自带<strong>相同元素相邻</strong>和<strong>上下界可二分</strong>的性质, 虽然都很显然, Bouvardia却总是想不到用呢.</li>
+</ol>
+<p>T2:</p>
+<p> 对于方案问题, 要么就是DP, 要么就是计数了.</p>
+<blockquote>
+<p>考试期间, 除了数学题, 其他的题目都应该很快地尝试多种思路, 例如多个条件的验证, 多种出解方式等等. Bouvardia总是有点一条路走到黑的感觉的说.</p>
+</blockquote>
+<p> 第一印象还以为是DP之类的, 当时也感觉DP不是很显然, 怎么计数呢?</p>
+<p>计数就意味着有可选择的东西啦. 然后或者组合数, 或者指数, 或者乘法原理咯. 有时会用到容斥, 那是在有特定不合法/合法转换的情况.</p>
+<p>这题可以发现可能会有一些最后也没有被定向的边, 而这些边会连接若干个已经定向的块.  所以最后的答案就是2^(并查集个数)啦.</p>
+<p>怎么维护块呢? 每次连一条路径, 我们其实是有两种选择, 但实际操作中并不需要, 并查集维护的关系只有同向和不同向两种关系. 就是带偏移量啦.</p>
+<p>维护做比较再验证即可.</p>
+<p>T3:</p>
+<p>因为没有交叉,只有包含, 所以set维护上下界, 建出一颗关系树, 树剖维护每次染色就可以啦.</p>
+<p>Bouvardia还是对自己很没信心.</p>
+<h2 id="8-12"><a href="#8-12" class="headerlink" title="8.12"></a>8.12</h2><p>Bouvardia突然想起一些事觉得很有必要写一写呢， 关于旅行。</p>
+<p>13:50</p>
+<p>上午没有考好， 天又灰蒙蒙的，所以状态并不是很好，一边总结一边吐吐槽什么的吧。</p>
+<p>T1:</p>
+<p>Bouvardia并没有想到DP, DP其实很简单(也不是很简单). 但是Bouvardia觉得DP很不好想, 就一直在啃组合数学, 所以Bouvardia是个很容易走极端的人呢. 也没有想到互补的做法, 估计考场上也处理不了负数前缀和的情况吧.</p>
+<p>因为正反括号可以一一对应, 所以取相反数也是正确的方案, 而且这样还可以防止左括号过多的情况或者空出没有匹配的左括号的情况, 因为反向了, 而且是倒着理解, 所以意义就正确了.</p>
+<p>这是一个很好的做法,Bouvardia想到了正反意义相同, 却相当惊讶于倒序保证合法的做法呢.</p>
+<p>T2: </p>
+<p>是一道期望DP, 如果能发现性质并设计出状态, 就很容易解决啦, 当然代码不太好写就是了o_o ….</p>
+<p>Bouvardia考场上只写了搜索.</p>
+<p>我们可以发现, 如果能够产生贡献, 一定是从最低位开始连续的0. 再考虑操作结果的范围, 都放在状态里是不行的, 我们要压缩一下, 使得既在问题范围下不会丢失信息, 又能很好的转移. 因为操作只有200次, 所以+1操作相应地不会超过八个二进制位, 那么我们就压八个二进制位, 第九位以后的只保留连续的0/1个数就好了, 因为我们不关心其他信息, 至于数字本身, 就只能丢掉啦.</p>
+<p>然后就是惨绝人寰的转移和统计答案!</p>
+<p>T3:</p>
+<p>原来大家是手玩出来的. </p>
+<p>奇环是不符合条件的. 所以第一步是判定二分图.</p>
+<p>然后就是最大化链长, 显而易见地合并环的两侧, 也就是在二分图上到一个点距离相同的两个点. 合并它们不会影响答案, 那么答案就是从任意一点出发<strong>最短路的最大值</strong>(这里Bouvardia没能抽象出来).</p>
+<p>Bouvardia眼看着别人都在进步, 思维越来越快, 自己却始终没有长进, 还是没有巧思. 虽然上午的题也确实很难, 但Bouvardia这样子也很伤心的说.</p>
+<p>就算Bouvardia把T2骗了, 把T3手玩了, 也还是填不满整整一个T1的差距吧.</p>
+<p>每次Bouvardia觉得下一次就可以了, 就又跌了回去, 这个时候, 就只能承认自己的无能了吧. Bouvardia正好就把自己犯过的错也写在日记里好了.</p>
+<p>上午w神想的是一个经典思路， 所以Bouvardia见题太少了吗？但是又不能拿这个安慰自己啊. Bouvardia在路上又被老师Diss了的说, 大家其实都不看好Bouvardia的吧.</p>
+<p>反正就是, 最近bouvardia思路都很打不开就是了, 大概是之前太懒的结果, 所以很少受锻炼, 还有两个月, 要怎么快速训练思维呢?</p>
+<p>另外今天吃到千夜酱啦(这样说会很困扰), 意外的口味还不错, 看看以后能不能再买一些.</p>
+<p>很显然的背包, 很显然的DP, Bouvardia每每想到这些, 心里就很不舒服呢.</p>
+<h2 id="8-13"><a href="#8-13" class="headerlink" title="8.13"></a>8.13</h2><p>忙了一整天, 所以没有写日记.</p>
+<h2 id="8-14"><a href="#8-14" class="headerlink" title="8.14"></a>8.14</h2><p>昨天晚上Bouvardia和妈妈通了电话. 妈妈说她和爸爸都很支持我, 就算失败了也没有关系, 因为Bouvardia是因为喜欢才会走到这里的啊. 真的是这样吗? 总之Bouvardia将信将疑地收下了, 也安心了些.</p>
+<p>然后夜里和Bouvardia的Goddess在聊天, 她也说不会嫌弃Bouvardia呢.</p>
+<p>所以今天的考试也考的好了些. 虽然数论还是惨不忍睹, 但是那道树上期望题也看出了思路呢(虽然是有旁边的人大叫了另一题的做法, 提醒了Bouvardia). 不过也在慢慢的尝试着找感觉呢. 可能高兴了状态就会好一些吧.</p>
+<p>然后Bouvardia做了两项大工程, 就是写了半平面交(Half-Plane Intersection)和旋转卡壳(Rotating Calipers)!</p>
+<p>Bouvardia很容易得点小便宜就开心呢, 可不要得意忘形了.</p>
+<p>T1:</p>
+<p>做过类似的题, 差分统计一下答案. </p>
+<p>至于方案, 再考虑差分的过程, 每差1, 差分值就会增加1, 这就意味着有一个从当前位置开始的操作, 到哪里停止呢? 到有一个需要-1的地方. 做完了.</p>
+<p>T2:</p>
+<p>不会, 所有人都写的搜索.</p>
+<p>T3:</p>
+<p>考虑到树上路径, 那么一定和LCA有关了, 套路是 $u$ -> $LCA(u, v)$ -> $v$, 所以考虑分别计算向上的期望和向下的期望. 分情况讨论.</p>
+<p>对于向上走到父亲的情况(注意这种情况我们不会从比父亲高的地方落下来, 这是保证合法的), 我们可以走一步直接走到父亲, 也可以走回儿子再走回父亲. 也就是:</p>
+<p>$\begin{align}up[i] = \frac{1}{dgr_i} + \sum_{y \in son(i)}{\frac{up[y] + up[i] + 1}{dgr_i}}\end{align}$</p>
+<p>整理可得:</p>
+<p>$\begin{align} up[i] = dgr_i + \sum_{y \in son(i)}{up[y]}\end{align}$</p>
+<p>$dn[i]$的情况类似, 分为直接走下来, 走一步到父亲的父亲再走下来, 走到 $i$ 的兄弟再走下来. 就不写啦.</p>
+<h2 id="8-16"><a href="#8-16" class="headerlink" title="8.16"></a>8.16</h2><p>T1:</p>
+<p>大膜拟。</p>
+<p>T2：</p>
+<p>set维护区间</p>
+<p>T3：</p>
+<p>Trie树合并</p>
+<h2 id="8-17"><a href="#8-17" class="headerlink" title="8.17"></a>8.17</h2><p>Div.B Only</p>
+<p>T1: </p>
+<p>多重背包二进制拆分. 但是要想到正反两边.</p>
+<p>T2: </p>
+<p>考虑博弈策略, 多次排序即可.</p>
+<p>T3: </p>
+<p>KMP跑出后DP, 能够覆盖上一次覆盖点到当前点就更新.</p>
+<h2 id="8-18"><a href="#8-18" class="headerlink" title="8.18"></a>8.18</h2><p>T1:</p>
+<p>线段树上开桶, 统计一下.</p>
+<p>T2:</p>
+<p>BFS优化成类似一个SPFA一样的东西.</p>
+<p>T3:</p>
+<p>数位DP, 但是要按不同进制压进来. 涨姿势了.</p>
+<h2 id="9-10"><a href="#9-10" class="headerlink" title="9.10"></a>9.10</h2><p>今天联考了，结果考得也不是很好。比赛总结会放到记录里面的。</p>
+<p>下午突然遇到了加试，勉勉强强做了70分，也没有调试就交了。得分恐怕不高，但思路应该是极限了。</p>
+<p>晚上还发生了一点不愉快，虽然Bouvardia也有责任。Bouvardia以后要记得及时清理，不要给别人造成麻烦。</p>
+<p>但是Bouvardia一想到那个人那样的眼神，就觉得很不爽。即便知道了事情的原委却依然摆出一副厌弃嘴脸的人，只是单纯的和Bouvardia有过节吧。批评，肯定是要挨过来的吧。错误也难免会犯呢，一定要少犯错误了。但是，这样以后，或许就能看出来，谁是真心在为你的错误感到惋惜，谁只是戾气冲天，看人不爽了吧？</p>
+<p>Bouvardia才发现，这样的心情，已经积攒了好多天了吧？Bouvardia其实也不太对，也应该大度一点的吧。只是，只是Bouvardia实在也，看不下去那样的做派……该怎么办啊……</p>
+<p>Bouvardia真想活得轻松一点，却总是不由自主地把自己缠在里面。</p>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/minds/">minds</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../13/ComputationalGeometry/" data-tooltip="Computational Geometry" aria-label="PREVIOUS: Computational Geometry">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../10/Astar/" data-tooltip="A*搜索 初探" aria-label="NEXT: A*搜索 初探">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../13/ComputationalGeometry/" data-tooltip="Computational Geometry" aria-label="PREVIOUS: Computational Geometry">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../10/Astar/" data-tooltip="A*搜索 初探" aria-label="NEXT: A*搜索 初探">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/11/Diary/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/11/Diary/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/11/Diary/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/11/Diary/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/11/Diary/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/11/Diary/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/08/11/Diary/';
+                 
+                    this.page.identifier = '2018/08/11/Diary/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

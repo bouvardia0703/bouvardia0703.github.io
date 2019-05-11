@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>BZOJ 4940 Mo&#39;s Algorithm &amp; Tech of Tree - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"No Abstracts.\nI can still not type Chinese now. sad.\n\nDes.Giving  you a tree and $Q$ operations, they might be change the root of the  tree or query the number of pairs with the same value in two subtrees.\nSol.Tree Tech:  We’ve known that changing the root of a tree doesn’t destroy the  structure of the tree, and a subtree will be divided into at most 2  parts, so the questions are still for intervals.\nBut how to deal the questions on intervals? It have a prerequisite problem BZOJ 5016,  according from it we can convert interval problem to a prefix problem,  as: $P(r_1, r_2) - P(l_1 - 1, r_2) - P(r_1, l_2 - 1) + P(l_1 - 1, l_2 -  1)$, where P is the answer of 2 prefixes. And a prefix problem can be  update in $O(1)$ time, so itcan be solved with Mo’s Algorithm.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long ll;const int maxn = 1e+5 + 5;const int maxm = 5e+5 + 5;int bel[maxn];struct Q &#123;  int l, r, tg, id;  inline bool operator&lt;(const Q &amp;rhs) const &#123;    return bel[l] == bel[rhs.l] ? r &lt; rhs.r : bel[l] &lt; bel[rhs.l];  &#125;&#125;q[maxm * 9];struct edge &#123;  int to, nxt;&#125;e[maxn &lt;&lt; 1];int n, m;int a[maxn], ptr, lnk[maxn], dfn[maxn], rev[maxn], idx;int cpy[maxn], cnt, out[maxn], dep[maxn], lo2[maxn];int F[20][maxn], rt, qs, blo;int qu[4], qv[4], typu[4], typv[4];ll cur, ans[maxm], bkta[maxn], bktb[maxn];inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;inline void add(const int &amp;bgn, const int &amp;end) &#123;  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;  lnk[bgn] = ptr;&#125;void dfs(int x, int fa) &#123;  dep[x] = dep[fa] + 1;  F[0][x] = fa;  dfn[x] = ++idx;  rev[idx] = a[x];  for (int i = 1; i &lt;= 17; ++i)    F[i][x] = F[i - 1][F[i - 1][x]];  for (int p = lnk[x]; p; p = e[p].nxt) &#123;     int y = e[p].to;    if (y == fa) continue;    dfs(y, x);  &#125;  out[x] = idx;&#125;inline int jmp(int x, int y) &#123;  for (int i = lo2[dep[y] - dep[x]]; ~i; --i) &#123;    if (dep[y] - dep[x] &gt; (1 &lt;&lt; i)) y = F[i][y];  &#125;  return y;&#125;int main() &#123;  n = rd(); m = rd();  for (int i = 1; i &lt;= n; ++i)    cpy[i] = a[i] = rd();  lo2[1] = 0;  for (int i = 2; i &lt;= n; ++i)    lo2[i] = lo2[i &gt;&gt; 1] + 1;  sort(cpy + 1, cpy + 1 + n);  cnt = unique(cpy + 1, cpy + 1 + n) - (cpy + 1);  for (int i = 1; i &lt;= n; ++i)    a[i] = lower_bound(cpy + 1, cpy + 1 + cnt, a[i]) - cpy;  int u, v;  for (int i = 1; i &lt; n; ++i) &#123;    u = rd(); v = rd();    add(u, v);    add(v, u);  &#125;  dfs(1, 0);  rt = 1;  int opt, M = 0;  while (m--) &#123;    opt = rd();    if (opt == 1) &#123;      rt = rd();    &#125; else &#123;      ++M;      u = rd(); v = rd();      //DEAL U      int ptru = 0, t;      if (u == rt) typu[ptru] = 1, qu[ptru++] = n;      else if (dfn[rt] &lt; dfn[u] || dfn[rt] &gt; out[u])         typu[ptru] = 1, qu[ptru++] = out[u], typu[ptru] = -1, qu[ptru++] = dfn[u] - 1;      else &#123;        t = jmp(u, rt);        typu[ptru] = 1, qu[ptru++] = n;        typu[ptru] = -1, qu[ptru++] = out[t];        typu[ptru] = 1, qu[ptru++] = dfn[t] - 1;      &#125;      //DEAL V      int ptrv = 0;      if (v == rt) typv[ptrv] = 1, qv[ptrv++] = n;      else if (dfn[rt] &lt; dfn[v] || dfn[rt] &gt; out[v]) &#123;        typv[ptrv] = 1, qv[ptrv++] = out[v];        typv[ptrv] = -1, qv[ptrv++] = dfn[v] - 1;      &#125; else &#123;        t = jmp(v, rt);        typv[ptrv] = 1, qv[ptrv++] = n;        typv[ptrv] = -1, qv[ptrv++] = out[t];        typv[ptrv] = 1, qv[ptrv++] = dfn[t] - 1;      &#125;      //GENERATING QUERYS      for (int i = 0; i &lt; ptru; ++i)        for (int j = 0; j &lt; ptrv; ++j)           if (qu[i] &amp;&amp; qv[j])            q[++qs] = (Q)&#123;qu[i], qv[j], typu[i] * typv[j], M&#125;;    &#125;  &#125;  blo = sqrt(n);  for (int i = 1; i &lt;= n; ++i)    bel[i] = (i - 1) / blo + 1;  sort(q + 1, q + 1 + qs);  int L = 0, R = 0;  for (int i = 1; i &lt;= qs; ++i) &#123;    while (L &lt; q[i].l) cur += bktb[rev[++L]], bkta[rev[L]]++;    while (R &lt; q[i].r) cur += bkta[rev[++R]], bktb[rev[R]]++;    while (L &gt; q[i].l) cur -= bktb[rev[L]], bkta[rev[L--]]--;    while (R &gt; q[i].r) cur -= bkta[rev[R]], bktb[rev[R--]]--;    ans[q[i].id] += q[i].tg * cur;  &#125;  for (int i = 1; i &lt;= M; ++i)    printf(\"%lld\\n\", ans[i]);  return 0;&#125;","dateCreated":"2019-05-11T19:42:12+08:00","dateModified":"2019-05-11T19:45:07+08:00","datePublished":"2019-05-11T19:42:12+08:00","description":"No Abstracts.\nI can still not type Chinese now. sad.","headline":"BZOJ 4940 Mo's Algorithm & Tech of Tree","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/","keywords":"OI"}</script>
+    <meta name="description" content="No Abstracts. I can still not type Chinese now. sad.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="BZOJ 4940 Mo&#39;s Algorithm &amp; Tech of Tree">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="No Abstracts. I can still not type Chinese now. sad.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-05-11T11:45:07.511Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BZOJ 4940 Mo&#39;s Algorithm &amp; Tech of Tree">
+<meta name="twitter:description" content="No Abstracts. I can still not type Chinese now. sad.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            BZOJ 4940 Mo&#39;s Algorithm &amp; Tech of Tree
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-05-11T19:42:12+08:00">
+	
+		    May 11, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>No Abstracts.</p>
+<p>I can still not type Chinese now. sad.</p>
+<a id="more"></a>
+<h1 id="Des"><a href="#Des" class="headerlink" title="Des."></a>Des.</h1><p>Giving  you a tree and $Q$ operations, they might be change the root of the  tree or query the number of pairs with the same value in two subtrees.</p>
+<h1 id="Sol"><a href="#Sol" class="headerlink" title="Sol."></a>Sol.</h1><p><strong>Tree Tech:</strong>  We’ve known that changing the root of a tree doesn’t destroy the  structure of the tree, and a subtree will be divided into at most 2  parts, so the questions are still for intervals.</p>
+<p>But how to deal the questions on intervals? It have a prerequisite problem <a href="https://lydsy.com/JudgeOnline/problem.php?id=5016" target="_blank" rel="noopener">BZOJ 5016</a>,  according from it we can convert interval problem to a prefix problem,  as: $P(r_1, r_2) - P(l_1 - 1, r_2) - P(r_1, l_2 - 1) + P(l_1 - 1, l_2 -  1)$, where P is the answer of 2 prefixes. And a prefix problem can be  update in $O(1)$ time, so itcan be solved with Mo’s Algorithm.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxm = <span class="number">5e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> bel[maxn];</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Q</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> l, r, tg, id;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">bool</span> <span class="keyword">operator</span>&lt;(<span class="keyword">const</span> Q &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> bel[l] == bel[rhs.l] ? r &lt; rhs.r : bel[l] &lt; bel[rhs.l];</span><br><span class="line">  &#125;</span><br><span class="line">&#125;q[maxm * <span class="number">9</span>];</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> to, nxt;</span><br><span class="line">&#125;e[maxn &lt;&lt; <span class="number">1</span>];</span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line"><span class="keyword">int</span> a[maxn], ptr, lnk[maxn], dfn[maxn], rev[maxn], idx;</span><br><span class="line"><span class="keyword">int</span> cpy[maxn], cnt, out[maxn], dep[maxn], lo2[maxn];</span><br><span class="line"><span class="keyword">int</span> F[<span class="number">20</span>][maxn], rt, qs, blo;</span><br><span class="line"><span class="keyword">int</span> qu[<span class="number">4</span>], qv[<span class="number">4</span>], typu[<span class="number">4</span>], typv[<span class="number">4</span>];</span><br><span class="line">ll cur, ans[maxm], bkta[maxn], bktb[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;bgn, <span class="keyword">const</span> <span class="keyword">int</span> &amp;end)</span> </span>&#123;</span><br><span class="line">  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;</span><br><span class="line">  lnk[bgn] = ptr;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> fa)</span> </span>&#123;</span><br><span class="line">  dep[x] = dep[fa] + <span class="number">1</span>;</span><br><span class="line">  F[<span class="number">0</span>][x] = fa;</span><br><span class="line">  dfn[x] = ++idx;</span><br><span class="line">  rev[idx] = a[x];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">17</span>; ++i)</span><br><span class="line">    F[i][x] = F[i - <span class="number">1</span>][F[i - <span class="number">1</span>][x]];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt) &#123; </span><br><span class="line">    <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">    <span class="keyword">if</span> (y == fa) <span class="keyword">continue</span>;</span><br><span class="line">    dfs(y, x);</span><br><span class="line">  &#125;</span><br><span class="line">  out[x] = idx;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">jmp</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = lo2[dep[y] - dep[x]]; ~i; --i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (dep[y] - dep[x] &gt; (<span class="number">1</span> &lt;&lt; i)) y = F[i][y];</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> y;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd(); m = rd();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">    cpy[i] = a[i] = rd();</span><br><span class="line">  lo2[<span class="number">1</span>] = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i)</span><br><span class="line">    lo2[i] = lo2[i &gt;&gt; <span class="number">1</span>] + <span class="number">1</span>;</span><br><span class="line">  sort(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + n);</span><br><span class="line">  cnt = unique(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + n) - (cpy + <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">    a[i] = lower_bound(cpy + <span class="number">1</span>, cpy + <span class="number">1</span> + cnt, a[i]) - cpy;</span><br><span class="line">  <span class="keyword">int</span> u, v;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i) &#123;</span><br><span class="line">    u = rd(); v = rd();</span><br><span class="line">    add(u, v);</span><br><span class="line">    add(v, u);</span><br><span class="line">  &#125;</span><br><span class="line">  dfs(<span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">  rt = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">int</span> opt, M = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> (m--) &#123;</span><br><span class="line">    opt = rd();</span><br><span class="line">    <span class="keyword">if</span> (opt == <span class="number">1</span>) &#123;</span><br><span class="line">      rt = rd();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      ++M;</span><br><span class="line">      u = rd(); v = rd();</span><br><span class="line">      <span class="comment">//DEAL U</span></span><br><span class="line">      <span class="keyword">int</span> ptru = <span class="number">0</span>, t;</span><br><span class="line">      <span class="keyword">if</span> (u == rt) typu[ptru] = <span class="number">1</span>, qu[ptru++] = n;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> (dfn[rt] &lt; dfn[u] || dfn[rt] &gt; out[u]) </span><br><span class="line">        typu[ptru] = <span class="number">1</span>, qu[ptru++] = out[u], typu[ptru] = <span class="number">-1</span>, qu[ptru++] = dfn[u] - <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">else</span> &#123;</span><br><span class="line">        t = jmp(u, rt);</span><br><span class="line">        typu[ptru] = <span class="number">1</span>, qu[ptru++] = n;</span><br><span class="line">        typu[ptru] = <span class="number">-1</span>, qu[ptru++] = out[t];</span><br><span class="line">        typu[ptru] = <span class="number">1</span>, qu[ptru++] = dfn[t] - <span class="number">1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">//DEAL V</span></span><br><span class="line">      <span class="keyword">int</span> ptrv = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">if</span> (v == rt) typv[ptrv] = <span class="number">1</span>, qv[ptrv++] = n;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> (dfn[rt] &lt; dfn[v] || dfn[rt] &gt; out[v]) &#123;</span><br><span class="line">        typv[ptrv] = <span class="number">1</span>, qv[ptrv++] = out[v];</span><br><span class="line">        typv[ptrv] = <span class="number">-1</span>, qv[ptrv++] = dfn[v] - <span class="number">1</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        t = jmp(v, rt);</span><br><span class="line">        typv[ptrv] = <span class="number">1</span>, qv[ptrv++] = n;</span><br><span class="line">        typv[ptrv] = <span class="number">-1</span>, qv[ptrv++] = out[t];</span><br><span class="line">        typv[ptrv] = <span class="number">1</span>, qv[ptrv++] = dfn[t] - <span class="number">1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">//GENERATING QUERYS</span></span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; ptru; ++i)</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; ptrv; ++j) </span><br><span class="line">          <span class="keyword">if</span> (qu[i] &amp;&amp; qv[j])</span><br><span class="line">            q[++qs] = (Q)&#123;qu[i], qv[j], typu[i] * typv[j], M&#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  blo = <span class="built_in">sqrt</span>(n);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">    bel[i] = (i - <span class="number">1</span>) / blo + <span class="number">1</span>;</span><br><span class="line">  sort(q + <span class="number">1</span>, q + <span class="number">1</span> + qs);</span><br><span class="line">  <span class="keyword">int</span> L = <span class="number">0</span>, R = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= qs; ++i) &#123;</span><br><span class="line">    <span class="keyword">while</span> (L &lt; q[i].l) cur += bktb[rev[++L]], bkta[rev[L]]++;</span><br><span class="line">    <span class="keyword">while</span> (R &lt; q[i].r) cur += bkta[rev[++R]], bktb[rev[R]]++;</span><br><span class="line">    <span class="keyword">while</span> (L &gt; q[i].l) cur -= bktb[rev[L]], bkta[rev[L--]]--;</span><br><span class="line">    <span class="keyword">while</span> (R &gt; q[i].r) cur -= bkta[rev[R]], bktb[rev[R--]]--;</span><br><span class="line">    ans[q[i].id] += q[i].tg * cur;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= M; ++i)</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, ans[i]);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj3451-fft-divideandconquer/" data-tooltip="BZOJ 3451 FFT, Divide and Conquer" aria-label="PREVIOUS: BZOJ 3451 FFT, Divide and Conquer">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj4662-segtree-ufs/" data-tooltip="BZOJ 4662 Snow - SegmentTree, UFS" aria-label="NEXT: BZOJ 4662 Snow - SegmentTree, UFS">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj3451-fft-divideandconquer/" data-tooltip="BZOJ 3451 FFT, Divide and Conquer" aria-label="PREVIOUS: BZOJ 3451 FFT, Divide and Conquer">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../bzoj4662-segtree-ufs/" data-tooltip="BZOJ 4662 Snow - SegmentTree, UFS" aria-label="NEXT: BZOJ 4662 Snow - SegmentTree, UFS">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/05/11/bzoj4940-moalgo-tree-tech/';
+                 
+                    this.page.identifier = '2019/05/11/bzoj4940-moalgo-tree-tech/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

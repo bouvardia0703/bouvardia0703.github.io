@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>BZOJ 2821 SqrtBlock - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Sqrt Algorithm.\n\nDescriptionGiven an array of $N$ numbers. For $M$ querys $[l,r]$, calculate how many numbers have even advent times.\nSolutionSqrt.\nPreprocess answer from block $i(i=1,\\ldots,\\sqrt{N})$, and for each type of number, construct a prefix sum. for every query, eunmerate numbers not in whole blocks, and check if it appears even times.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125#pragma GCC optimize(3)#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cctype&gt;#include &lt;cmath&gt;using namespace std;const int maxn = 1e+5 + 5;struct node&#123;  int pos, val;  bool operator &lt; (const node &amp;rhs) const &#123;    return (val == rhs.val) ? (pos &lt; rhs.pos) : (val &lt; rhs.val);  &#125;&#125;ar[maxn];int n, c, m, a[maxn], bkt[maxn], tot, sum;int blo, bel[maxn], f[2000][2000];int stk[maxn], top;int l[2000], r[2000];int fir[maxn], lst[maxn], vis[maxn];inline int rd() &#123;  register int x = 0, c = getchar();  while (!isdigit(c)) c = getchar();  while (isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();  return x;&#125;void init() &#123;  for (int i = 1; i &lt;= tot; ++i) &#123;    sum = 0;    for (int j = l[i]; j &lt;= n; ++j) bkt[a[j]] = 0;    for (int j = l[i]; j &lt;= n; ++j) &#123;      if (!(bkt[a[j]] &amp; 1) &amp;&amp; bkt[a[j]]) sum--;      bkt[a[j]]++;      if (!(bkt[a[j]] &amp; 1)) sum++;      f[i][bel[j]] = sum;    &#125;  &#125;  for (int i = 1; i &lt;= n; ++i) ar[i] = (node)&#123;i, a[i]&#125;;  sort(ar + 1, ar + 1 + n);  for (int i = 1; i &lt;= n; ++i) &#123;    if (!fir[ar[i].val]) fir[ar[i].val] = i;    lst[ar[i].val] = i;  &#125;&#125;int rbound(int up, int v) &#123;  int L = fir[v], R = lst[v], ans = 0;  while (L &lt;= R) &#123;    int mid = (L + R) &gt;&gt; 1;    if (ar[mid].pos &lt;= up) ans = mid, L = mid + 1;    else R = mid - 1;  &#125;  return ans;&#125;int lbound(int dn, int v) &#123;  int L = fir[v], R = lst[v], ans = 0x3f3f3f3f;  while (L &lt;= R) &#123;    int mid = (L + R) &gt;&gt; 1;    if (dn &lt;= ar[mid].pos) ans = mid, R = mid - 1;    else L = mid + 1;  &#125;  return ans;&#125;int find(int L, int R, int v) &#123;  return max(rbound(R, v) - lbound(L, v) + 1, 0);&#125;int solve(int L, int R) &#123;  int ans = 0, bl = bel[L], br = bel[R];  if (bl == br || bl + 1 == br) &#123;    for (int i = L; i &lt;= R; ++i) &#123;      if (vis[a[i]]) continue;      int t = find(L, R, a[i]);      if (!(t &amp; 1)) ans++;      vis[a[i]] = 1;    &#125;    for (int i = L; i &lt;= R; ++i) vis[a[i]] = 0;    return ans;  &#125; else &#123;    int lb = l[bl + 1], rb = r[br - 1];    ans = f[bl + 1][br - 1];    for (int i = L; i &lt; lb; ++i) &#123;      if (vis[a[i]]) continue;      int extn = find(L, R, a[i]), intn = find(lb, rb, a[i]);      if (!(extn &amp; 1)) &#123;        if ((intn &amp; 1) || !intn) ans++;      &#125; else if (!(intn &amp; 1) &amp;&amp; intn) ans--;      vis[a[i]] = 1;    &#125;    for (int i = rb + 1; i &lt;= R; ++i) &#123;      if (vis[a[i]]) continue;      int extn = find(L, R, a[i]), intn = find(lb, rb, a[i]);      if (!(extn &amp; 1)) &#123;        if ((intn &amp; 1) || !intn) ans++;      &#125; else if (!(intn &amp; 1) &amp;&amp; intn) ans--;      vis[a[i]] = 1;    &#125;    for (int i = L; i &lt; lb; ++i) vis[a[i]] = 0;    for (int i = rb + 1; i &lt;= R; ++i) vis[a[i]] = 0;    return ans;  &#125;&#125;int main() &#123;  n = rd(); c = rd(); m = rd();  for (int i = 1; i &lt;= n; ++i) a[i] = rd();  blo = sqrt((double)n / log2(n));  for (int i = 1; i &lt;= n; ++i) bel[i] = (i - 1) / blo + 1;  tot = (n % blo) ? (n / blo + 1) : (n / blo);  for (int i = 1; i &lt; tot; ++i) l[i] = (i - 1) * blo + 1, r[i] = i * blo;  l[tot] = r[tot - 1] + 1; r[tot] = n;  init();  int ql, qr, lstans = 0;  while (m--) &#123;    ql = (rd() + lstans) % n + 1;     qr = (rd() + lstans) % n + 1;    if (ql &gt; qr) swap(ql, qr);    lstans = solve(ql, qr);    printf(\"%d\\n\", lstans);  &#125;  return 0;&#125;\n","dateCreated":"2018-11-23T21:57:22+08:00","dateModified":"2018-12-25T13:17:35+08:00","datePublished":"2018-11-23T21:57:22+08:00","description":"Sqrt Algorithm.","headline":"BZOJ 2821 SqrtBlock","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/","keywords":"OI"}</script>
+    <meta name="description" content="Sqrt Algorithm.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="BZOJ 2821 SqrtBlock">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Sqrt Algorithm.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-12-25T05:17:35.379Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="BZOJ 2821 SqrtBlock">
+<meta name="twitter:description" content="Sqrt Algorithm.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            BZOJ 2821 SqrtBlock
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-11-23T21:57:22+08:00">
+	
+		    Nov 23, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Sqrt Algorithm.</p>
+<a id="more"></a>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>Given an array of $N$ numbers. For $M$ querys $[l,r]$, calculate how many numbers have even advent times.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>Sqrt.</p>
+<p>Preprocess answer from block $i(i=1,\ldots,\sqrt{N})$, and for each type of number, construct a prefix sum. for every query, eunmerate numbers not in whole blocks, and check if it appears even times.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC optimize(3)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">node</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="keyword">int</span> pos, val;</span><br><span class="line">  <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> node &amp;rhs) <span class="keyword">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (val == rhs.val) ? (pos &lt; rhs.pos) : (val &lt; rhs.val);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;ar[maxn];</span><br><span class="line"><span class="keyword">int</span> n, c, m, a[maxn], bkt[maxn], tot, sum;</span><br><span class="line"><span class="keyword">int</span> blo, bel[maxn], f[<span class="number">2000</span>][<span class="number">2000</span>];</span><br><span class="line"><span class="keyword">int</span> stk[maxn], top;</span><br><span class="line"><span class="keyword">int</span> l[<span class="number">2000</span>], r[<span class="number">2000</span>];</span><br><span class="line"><span class="keyword">int</span> fir[maxn], lst[maxn], vis[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">  <span class="keyword">while</span> (<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">  <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= tot; ++i) &#123;</span><br><span class="line">    sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = l[i]; j &lt;= n; ++j) bkt[a[j]] = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = l[i]; j &lt;= n; ++j) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!(bkt[a[j]] &amp; <span class="number">1</span>) &amp;&amp; bkt[a[j]]) sum--;</span><br><span class="line">      bkt[a[j]]++;</span><br><span class="line">      <span class="keyword">if</span> (!(bkt[a[j]] &amp; <span class="number">1</span>)) sum++;</span><br><span class="line">      f[i][bel[j]] = sum;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) ar[i] = (node)&#123;i, a[i]&#125;;</span><br><span class="line">  sort(ar + <span class="number">1</span>, ar + <span class="number">1</span> + n);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!fir[ar[i].val]) fir[ar[i].val] = i;</span><br><span class="line">    lst[ar[i].val] = i;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">rbound</span><span class="params">(<span class="keyword">int</span> up, <span class="keyword">int</span> v)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> L = fir[v], R = lst[v], ans = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> (L &lt;= R) &#123;</span><br><span class="line">    <span class="keyword">int</span> mid = (L + R) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">if</span> (ar[mid].pos &lt;= up) ans = mid, L = mid + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">else</span> R = mid - <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lbound</span><span class="params">(<span class="keyword">int</span> dn, <span class="keyword">int</span> v)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> L = fir[v], R = lst[v], ans = <span class="number">0x3f3f3f3f</span>;</span><br><span class="line">  <span class="keyword">while</span> (L &lt;= R) &#123;</span><br><span class="line">    <span class="keyword">int</span> mid = (L + R) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">if</span> (dn &lt;= ar[mid].pos) ans = mid, R = mid - <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">else</span> L = mid + <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">find</span><span class="params">(<span class="keyword">int</span> L, <span class="keyword">int</span> R, <span class="keyword">int</span> v)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> max(rbound(R, v) - lbound(L, v) + <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">solve</span><span class="params">(<span class="keyword">int</span> L, <span class="keyword">int</span> R)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> ans = <span class="number">0</span>, bl = bel[L], br = bel[R];</span><br><span class="line">  <span class="keyword">if</span> (bl == br || bl + <span class="number">1</span> == br) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = L; i &lt;= R; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (vis[a[i]]) <span class="keyword">continue</span>;</span><br><span class="line">      <span class="keyword">int</span> t = find(L, R, a[i]);</span><br><span class="line">      <span class="keyword">if</span> (!(t &amp; <span class="number">1</span>)) ans++;</span><br><span class="line">      vis[a[i]] = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = L; i &lt;= R; ++i) vis[a[i]] = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> ans;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">int</span> lb = l[bl + <span class="number">1</span>], rb = r[br - <span class="number">1</span>];</span><br><span class="line">    ans = f[bl + <span class="number">1</span>][br - <span class="number">1</span>];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = L; i &lt; lb; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (vis[a[i]]) <span class="keyword">continue</span>;</span><br><span class="line">      <span class="keyword">int</span> extn = find(L, R, a[i]), intn = find(lb, rb, a[i]);</span><br><span class="line">      <span class="keyword">if</span> (!(extn &amp; <span class="number">1</span>)) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((intn &amp; <span class="number">1</span>) || !intn) ans++;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!(intn &amp; <span class="number">1</span>) &amp;&amp; intn) ans--;</span><br><span class="line">      vis[a[i]] = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = rb + <span class="number">1</span>; i &lt;= R; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (vis[a[i]]) <span class="keyword">continue</span>;</span><br><span class="line">      <span class="keyword">int</span> extn = find(L, R, a[i]), intn = find(lb, rb, a[i]);</span><br><span class="line">      <span class="keyword">if</span> (!(extn &amp; <span class="number">1</span>)) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((intn &amp; <span class="number">1</span>) || !intn) ans++;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!(intn &amp; <span class="number">1</span>) &amp;&amp; intn) ans--;</span><br><span class="line">      vis[a[i]] = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = L; i &lt; lb; ++i) vis[a[i]] = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = rb + <span class="number">1</span>; i &lt;= R; ++i) vis[a[i]] = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> ans;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  n = rd(); c = rd(); m = rd();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) a[i] = rd();</span><br><span class="line">  blo = <span class="built_in">sqrt</span>((<span class="keyword">double</span>)n / log2(n));</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) bel[i] = (i - <span class="number">1</span>) / blo + <span class="number">1</span>;</span><br><span class="line">  tot = (n % blo) ? (n / blo + <span class="number">1</span>) : (n / blo);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; tot; ++i) l[i] = (i - <span class="number">1</span>) * blo + <span class="number">1</span>, r[i] = i * blo;</span><br><span class="line">  l[tot] = r[tot - <span class="number">1</span>] + <span class="number">1</span>; r[tot] = n;</span><br><span class="line">  init();</span><br><span class="line">  <span class="keyword">int</span> ql, qr, lstans = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">while</span> (m--) &#123;</span><br><span class="line">    ql = (rd() + lstans) % n + <span class="number">1</span>; </span><br><span class="line">    qr = (rd() + lstans) % n + <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">if</span> (ql &gt; qr) swap(ql, qr);</span><br><span class="line">    lstans = solve(ql, qr);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, lstans);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ-5415-KruskalTree/" data-tooltip="BZOJ 5415 Kruskal重构树" aria-label="PREVIOUS: BZOJ 5415 Kruskal重构树">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ-5253-SAM-segTree/" data-tooltip="BZOJ 5253 SAM,segTree" aria-label="NEXT: BZOJ 5253 SAM,segTree">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ-5415-KruskalTree/" data-tooltip="BZOJ 5415 Kruskal重构树" aria-label="PREVIOUS: BZOJ 5415 Kruskal重构树">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ-5253-SAM-segTree/" data-tooltip="BZOJ 5253 SAM,segTree" aria-label="NEXT: BZOJ 5253 SAM,segTree">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/11/23/BZOJ-2821-SqrtBlock/';
+                 
+                    this.page.identifier = '2018/11/23/BZOJ-2821-SqrtBlock/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

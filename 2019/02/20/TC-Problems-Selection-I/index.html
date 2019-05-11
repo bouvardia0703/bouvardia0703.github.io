@@ -1,0 +1,596 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Topcoder Problems Selection I - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"曾经做的一些小水题, 总之我不会做就对了.\n这是第1篇.\n\nTCO 2014 Semifinal 2 Div.1口胡报告.\n300DP. 懒得写了.\n500$N$个点的无向图有条边$M$, 现在必须给边定向, 有一些从$S$到$T$的询问, 问最多能同时满足多少个询问.\n边双内部的询问肯定是可以满足的.\n因为图规模很小, 我们把所有桥压成一个状态. 对于每个询问, 考虑它经过的桥指向哪里, 在正向或反向的状态里压入这个桥.\n然后$2^q$枚举询问, 考虑是否矛盾, 更新答案即可.\n\nRoadsReform.cpp:\n\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104#include &lt;bits/stdc++.h&gt;using namespace std;const int maxn = 60;typedef long long ll;struct edge &#123;  int to, nxt; &#125;e[maxn * 200];int ptr = 1, lnk[maxn], dfn[maxn], low[maxn], bel[maxn];int cnt, num, cut[maxn * 200], allq, lim, ans;ll fow[maxn], bkw[maxn];int pre[maxn], tot, pth[maxn], vis[maxn];vector&lt;pair&lt;int, int&gt; &gt; brg;inline void add(int bgn, int end) &#123;  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;  lnk[bgn] = ptr;&#125;void tarjan(int x, int f) &#123;  low[x] = dfn[x] = ++cnt;  for (int p = lnk[x]; p; p = e[p].nxt) &#123;    int y = e[p].to;    if (!dfn[y]) &#123;      tarjan(y, x);      low[x] = min(low[x], low[y]);      if (low[y] &gt; dfn[x])        cut[p] = cut[p ^ 1] = 1,        brg.push_back(make_pair(e[p].to, e[p ^ 1].to));    &#125; else if (y != f) &#123;      low[x] = min(low[x], dfn[y]);    &#125;  &#125;&#125;void dfs(int x) &#123;  bel[x] = num;  for (int p = lnk[x]; p; p = e[p].nxt) &#123;    if (cut[p] || bel[e[p].to]) continue;    dfs(e[p].to);  &#125;&#125;class RoadsReform &#123;public:  int getMax(int n, vector&lt;int&gt; e1, vector&lt;int&gt; e2,             vector&lt;int&gt; s, vector&lt;int&gt; t);&#125;;int getMax(int n, vector&lt;int&gt; e1, vector&lt;int&gt; e2,           vector&lt;int&gt; s, vector&lt;int&gt; t) &#123;    for (vector&lt;int&gt;::size_type i = 0; i &lt; e1.size(); ++i) &#123;      add(e1[i], e2[i]);      add(e2[i], e1[i]);    &#125;    tarjan(1, 0);    for (int i = 1; i &lt;= n; ++i)      if (!bel[i]) &#123;        num++;        dfs(i);      &#125;    allq = s.size();    queue&lt;int&gt; q;    for (int i = 0; i &lt; allq; ++i) &#123;      int fr = s[i], to = t[i];      if (bel[fr] == bel[to]) continue;      tot = 0;      memset(vis, 0, sizeof vis);      q.push(fr); vis[fr] = 1;      while (!q.empty()) &#123;        int u = q.front(); q.pop();        for (int p = lnk[u]; p; p = e[p].nxt) &#123;          int y = e[p].to;          if (vis[y]) continue;          q.push(y);          pre[y] = u;          vis[y] = 1;        &#125;      &#125;      for (int p = to; p != fr; p = pre[p]) pth[++tot] = p;      pth[++tot] = fr;      for (vector&lt;int&gt;::size_type v = 0; v &lt; brg.size(); ++v) &#123;        for (int j = 1; j &lt; tot; ++j) &#123;          if (brg[v].first == pth[j] &amp;&amp; brg[v].second == pth[j + 1])            fow[i] |= (1ll &lt;&lt; v);          if (brg[v].second == pth[j] &amp;&amp; brg[v].first == pth[j + 1])            bkw[i] |= (1ll &lt;&lt; v);        &#125;      &#125;    &#125;    lim = (1 &lt;&lt; allq) - 1;    for (int i = 0; i &lt;= lim; ++i) &#123;      ll fs = 0, bs = 0; int ret = 0;      for (int j = 0; j &lt; allq; ++j) &#123;        if (i &amp; (1 &lt;&lt; j))           fs |= fow[j], bs |= bkw[j], ret++;      &#125;      if (fs &amp; bs) continue;      ans = max(ans, ret);    &#125;    return ans;&#125;\n850有一棵树, 一开始只有一个点, 每轮在每个点上挂一个点, 问$N$轮操作后, 长度为$D$的路径有多少, 对质数$P$取模.\n$N \\le 10^9, M \\le 500$.\norz jcvb.\n注意到每轮操作后树必然是关于一条边对称的. 于是我们可以把他分解成上一轮的两个问题. 设$g_{n,d}$ 为$n$轮以一对称边端点为起点的长为$d$的路径条数.\n那么我们有: $g_{n,d} = g_{n - 1, d - 1} + g_{n - 1, d}$, 也就是从自己这边的子问题$d$和用一条边接过来的子问题$d-1$来更新答案.\n那么总的答案为: $f_{n,d} = \\sum_{i+j=d-1}{g_{n - 1, i}g_{n - 1, j}} + 2f_{n - 1, d}$, 也就是考虑原来存在的答案和新增的答案.\n对这两个问题列生成函数. 我们发现$g$就是组合数的形式. 所以$g_n(x) = (1+x)^n$.\n那么原来$g$中两项卷起来的系数加到了$f$中$i+j+1$的系数中了, 也就是:\n$f_n(x) = x(1+x)^{2n-2} + 2f_{n-1}(x)$.\n解出: $\\frac{2^nx-x(1+x)^{2n}}{1 - 2x - x^2} + 2^n$.\n多项式卷积求逆都可以$O(D\\log{D})$做, 不过不用那么麻烦, $D^2$也可以.\njcvb有$O(D)$的神仙做法, 我不会.\n\nTwiceTwiceTree.cpp:\n\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long ll;const int maxn = 1000;ll f[maxn], finv[maxn], inv[maxn];ll mod;inline ll C(const int &amp;N, const int &amp;M) &#123;  ll ret = 1;  for (int i = 1; i &lt;= M; ++i)     ret = (ret * (N - i + 1)) % mod,    ret = (ret * inv[i]) % mod;  return ret;&#125;inline ll quick_power(ll base, ll index) &#123;  ll ret = 1;  while (index) &#123;    if (index &amp; 1) ret = ret * base % mod;    base = base * base % mod;    index &gt;&gt;= 1;  &#125;  return ret;&#125;class TwiceTwiceTree &#123;public:  int sumup(int, int, int);&#125;;int TwiceTwiceTree::sumup(int N, int D, int P) &#123;  int n = N; mod = P;  inv[1] = 1;  for (int i = 2; i &lt;= D; ++i)    inv[i] = (mod - mod / i) * inv[mod % i] % mod;  f[0] = 1; f[1] = mod - 2; f[2] = mod - 1; finv[0] = 1;  for (int i = 1; i &lt;= D; ++i) &#123;    ll ret = 0;    for (int j = 1; j &lt;= i; ++j) ret = (ret + f[j] * finv[i - j]) % mod;    finv[i] = mod - ret;  &#125;  int ans = 0, poww = quick_power(2, n);  for (int i = 1; i &lt;= D; ++i) &#123;    ll ret = mod - C(2 * n, i - 1);    if (i == 1) ret = (ret + poww) % mod;    ret = (ret * finv[D - i]) % mod;    ans = (ans + ret) % mod;  &#125;  return D ? ans : poww;&#125;`","dateCreated":"2019-02-20T19:37:28+08:00","dateModified":"2019-02-20T19:40:03+08:00","datePublished":"2019-02-20T19:37:28+08:00","description":"曾经做的一些小水题, 总之我不会做就对了.\n这是第1篇.","headline":"Topcoder Problems Selection I","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/","keywords":"OI"}</script>
+    <meta name="description" content="曾经做的一些小水题, 总之我不会做就对了. 这是第1篇.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Topcoder Problems Selection I">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="曾经做的一些小水题, 总之我不会做就对了. 这是第1篇.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-02-20T11:40:03.473Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Topcoder Problems Selection I">
+<meta name="twitter:description" content="曾经做的一些小水题, 总之我不会做就对了. 这是第1篇.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Topcoder Problems Selection I
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-02-20T19:37:28+08:00">
+	
+		    Feb 20, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>曾经做的一些<del>小水题</del>, 总之我不会做就对了.</p>
+<p>这是第1篇.</p>
+<a id="more"></a>
+<h1 id="TCO-2014-Semifinal-2-Div-1"><a href="#TCO-2014-Semifinal-2-Div-1" class="headerlink" title="TCO 2014 Semifinal 2 Div.1"></a>TCO 2014 Semifinal 2 Div.1</h1><p>口胡报告.</p>
+<h2 id="300"><a href="#300" class="headerlink" title="300"></a>300</h2><p>DP. 懒得写了.</p>
+<h2 id="500"><a href="#500" class="headerlink" title="500"></a>500</h2><p>$N$个点的无向图有条边$M$, 现在必须给边定向, 有一些从$S$到$T$的询问, 问最多能同时满足多少个询问.</p>
+<p>边双内部的询问肯定是可以满足的.</p>
+<p>因为图规模很小, 我们把所有桥压成一个状态. 对于每个询问, 考虑它经过的桥指向哪里, 在正向或反向的状态里压入这个桥.</p>
+<p>然后$2^q$枚举询问, 考虑是否矛盾, 更新答案即可.</p>
+<blockquote>
+<p>RoadsReform.cpp:</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">60</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span> &#123;</span></span><br><span class="line">  <span class="keyword">int</span> to, nxt; </span><br><span class="line">&#125;e[maxn * <span class="number">200</span>];</span><br><span class="line"><span class="keyword">int</span> ptr = <span class="number">1</span>, lnk[maxn], dfn[maxn], low[maxn], bel[maxn];</span><br><span class="line"><span class="keyword">int</span> cnt, num, cut[maxn * <span class="number">200</span>], allq, lim, ans;</span><br><span class="line">ll fow[maxn], bkw[maxn];</span><br><span class="line"><span class="keyword">int</span> pre[maxn], tot, pth[maxn], vis[maxn];</span><br><span class="line"><span class="built_in">vector</span>&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; &gt; brg;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> bgn, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">  e[++ptr] = (edge)&#123;end, lnk[bgn]&#125;;</span><br><span class="line">  lnk[bgn] = ptr;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">tarjan</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> f)</span> </span>&#123;</span><br><span class="line">  low[x] = dfn[x] = ++cnt;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt) &#123;</span><br><span class="line">    <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">    <span class="keyword">if</span> (!dfn[y]) &#123;</span><br><span class="line">      tarjan(y, x);</span><br><span class="line">      low[x] = min(low[x], low[y]);</span><br><span class="line">      <span class="keyword">if</span> (low[y] &gt; dfn[x])</span><br><span class="line">        cut[p] = cut[p ^ <span class="number">1</span>] = <span class="number">1</span>,</span><br><span class="line">        brg.push_back(make_pair(e[p].to, e[p ^ <span class="number">1</span>].to));</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (y != f) &#123;</span><br><span class="line">      low[x] = min(low[x], dfn[y]);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  bel[x] = num;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt) &#123;</span><br><span class="line">    <span class="keyword">if</span> (cut[p] || bel[e[p].to]) <span class="keyword">continue</span>;</span><br><span class="line">    dfs(e[p].to);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RoadsReform</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">int</span> <span class="title">getMax</span><span class="params">(<span class="keyword">int</span> n, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; e1, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; e2,</span></span></span><br><span class="line"><span class="function"><span class="params">             <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; s, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; t)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">getMax</span><span class="params">(<span class="keyword">int</span> n, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; e1, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; e2,</span></span></span><br><span class="line"><span class="function"><span class="params">           <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; s, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; t)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;::size_type i = <span class="number">0</span>; i &lt; e1.size(); ++i) &#123;</span><br><span class="line">      add(e1[i], e2[i]);</span><br><span class="line">      add(e2[i], e1[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    tarjan(<span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">      <span class="keyword">if</span> (!bel[i]) &#123;</span><br><span class="line">        num++;</span><br><span class="line">        dfs(i);</span><br><span class="line">      &#125;</span><br><span class="line">    allq = s.size();</span><br><span class="line">    <span class="built_in">queue</span>&lt;<span class="keyword">int</span>&gt; q;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; allq; ++i) &#123;</span><br><span class="line">      <span class="keyword">int</span> fr = s[i], to = t[i];</span><br><span class="line">      <span class="keyword">if</span> (bel[fr] == bel[to]) <span class="keyword">continue</span>;</span><br><span class="line">      tot = <span class="number">0</span>;</span><br><span class="line">      <span class="built_in">memset</span>(vis, <span class="number">0</span>, <span class="keyword">sizeof</span> vis);</span><br><span class="line">      q.push(fr); vis[fr] = <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">while</span> (!q.empty()) &#123;</span><br><span class="line">        <span class="keyword">int</span> u = q.front(); q.pop();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> p = lnk[u]; p; p = e[p].nxt) &#123;</span><br><span class="line">          <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">          <span class="keyword">if</span> (vis[y]) <span class="keyword">continue</span>;</span><br><span class="line">          q.push(y);</span><br><span class="line">          pre[y] = u;</span><br><span class="line">          vis[y] = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> p = to; p != fr; p = pre[p]) pth[++tot] = p;</span><br><span class="line">      pth[++tot] = fr;</span><br><span class="line">      <span class="keyword">for</span> (<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;::size_type v = <span class="number">0</span>; v &lt; brg.size(); ++v) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt; tot; ++j) &#123;</span><br><span class="line">          <span class="keyword">if</span> (brg[v].first == pth[j] &amp;&amp; brg[v].second == pth[j + <span class="number">1</span>])</span><br><span class="line">            fow[i] |= (<span class="number">1l</span>l &lt;&lt; v);</span><br><span class="line">          <span class="keyword">if</span> (brg[v].second == pth[j] &amp;&amp; brg[v].first == pth[j + <span class="number">1</span>])</span><br><span class="line">            bkw[i] |= (<span class="number">1l</span>l &lt;&lt; v);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    lim = (<span class="number">1</span> &lt;&lt; allq) - <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= lim; ++i) &#123;</span><br><span class="line">      ll fs = <span class="number">0</span>, bs = <span class="number">0</span>; <span class="keyword">int</span> ret = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; allq; ++j) &#123;</span><br><span class="line">        <span class="keyword">if</span> (i &amp; (<span class="number">1</span> &lt;&lt; j)) </span><br><span class="line">          fs |= fow[j], bs |= bkw[j], ret++;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (fs &amp; bs) <span class="keyword">continue</span>;</span><br><span class="line">      ans = max(ans, ret);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="850"><a href="#850" class="headerlink" title="850"></a>850</h2><p>有一棵树, 一开始只有一个点, 每轮在每个点上挂一个点, 问$N$轮操作后, 长度为$D$的路径有多少, 对质数$P$取模.</p>
+<p>$N \le 10^9, M \le 500$.</p>
+<p>orz jcvb.</p>
+<p>注意到每轮操作后树必然是关于一条边对称的. 于是我们可以把他分解成上一轮的两个问题. 设$g_{n,d}$ 为$n$轮以一对称边端点为起点的长为$d$的路径条数.</p>
+<p>那么我们有: $g_{n,d} = g_{n - 1, d - 1} + g_{n - 1, d}$, 也就是从自己这边的子问题$d$和用一条边接过来的子问题$d-1$来更新答案.</p>
+<p>那么总的答案为: $f_{n,d} = \sum_{i+j=d-1}{g_{n - 1, i}g_{n - 1, j}} + 2f_{n - 1, d}$, 也就是考虑原来存在的答案和新增的答案.</p>
+<p>对这两个问题列生成函数. 我们发现$g$就是组合数的形式. 所以$g_n(x) = (1+x)^n$.</p>
+<p>那么原来$g$中两项卷起来的系数加到了$f$中$i+j+1$的系数中了, 也就是:</p>
+<p>$f_n(x) = x(1+x)^{2n-2} + 2f_{n-1}(x)$.</p>
+<p>解出: $\frac{2^nx-x(1+x)^{2n}}{1 - 2x - x^2} + 2^n$.</p>
+<p>多项式卷积求逆都可以$O(D\log{D})$做, 不过不用那么麻烦, $D^2$也可以.</p>
+<p>jcvb有$O(D)$的神仙做法, 我不会.</p>
+<blockquote>
+<p>TwiceTwiceTree.cpp:</p>
+</blockquote>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">1000</span>;</span><br><span class="line"></span><br><span class="line">ll f[maxn], finv[maxn], inv[maxn];</span><br><span class="line">ll mod;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">C</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;N, <span class="keyword">const</span> <span class="keyword">int</span> &amp;M)</span> </span>&#123;</span><br><span class="line">  ll ret = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= M; ++i) </span><br><span class="line">    ret = (ret * (N - i + <span class="number">1</span>)) % mod,</span><br><span class="line">    ret = (ret * inv[i]) % mod;</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">quick_power</span><span class="params">(ll base, ll index)</span> </span>&#123;</span><br><span class="line">  ll ret = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">while</span> (index) &#123;</span><br><span class="line">    <span class="keyword">if</span> (index &amp; <span class="number">1</span>) ret = ret * base % mod;</span><br><span class="line">    base = base * base % mod;</span><br><span class="line">    index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TwiceTwiceTree</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">int</span> <span class="title">sumup</span><span class="params">(<span class="keyword">int</span>, <span class="keyword">int</span>, <span class="keyword">int</span>)</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> TwiceTwiceTree::sumup(<span class="keyword">int</span> N, <span class="keyword">int</span> D, <span class="keyword">int</span> P) &#123;</span><br><span class="line">  <span class="keyword">int</span> n = N; mod = P;</span><br><span class="line">  inv[<span class="number">1</span>] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= D; ++i)</span><br><span class="line">    inv[i] = (mod - mod / i) * inv[mod % i] % mod;</span><br><span class="line">  f[<span class="number">0</span>] = <span class="number">1</span>; f[<span class="number">1</span>] = mod - <span class="number">2</span>; f[<span class="number">2</span>] = mod - <span class="number">1</span>; finv[<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= D; ++i) &#123;</span><br><span class="line">    ll ret = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= i; ++j) ret = (ret + f[j] * finv[i - j]) % mod;</span><br><span class="line">    finv[i] = mod - ret;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">int</span> ans = <span class="number">0</span>, poww = quick_power(<span class="number">2</span>, n);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= D; ++i) &#123;</span><br><span class="line">    ll ret = mod - C(<span class="number">2</span> * n, i - <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">if</span> (i == <span class="number">1</span>) ret = (ret + poww) % mod;</span><br><span class="line">    ret = (ret * finv[D - i]) % mod;</span><br><span class="line">    ans = (ans + ret) % mod;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> D ? ans : poww;</span><br><span class="line">&#125;`</span><br></pre></td></tr></table></figure>
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../TC-Problems-Selection-II/" data-tooltip="Topcoder Problems Selection II" aria-label="PREVIOUS: Topcoder Problems Selection II">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../01/08/DynamicDynamicProgramming/" data-tooltip="动态DP" aria-label="NEXT: 动态DP">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../TC-Problems-Selection-II/" data-tooltip="Topcoder Problems Selection II" aria-label="PREVIOUS: Topcoder Problems Selection II">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../01/08/DynamicDynamicProgramming/" data-tooltip="动态DP" aria-label="NEXT: 动态DP">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/02/20/TC-Problems-Selection-I/';
+                 
+                    this.page.identifier = '2019/02/20/TC-Problems-Selection-I/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

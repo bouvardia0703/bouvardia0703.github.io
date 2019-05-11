@@ -1,0 +1,643 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Tiny notes of Lambda Expression in C++ - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的.\n最近比较喜欢光污染背景。\n\n\nBackground2.28这天一天只做了两道题, 状态不佳, 因为都很不想写.\n代码还炒鸡乱.\n所以第二题要排序, 就用了Lambda表达式(这什么逻辑?).\nBasic Infomation框架大概长这样:\n1[capture list] (params list) mutable exception -&gt; return type &#123;function body&#125;\n来自https://www.cnblogs.com/DswCnblog/p/5629165.html\n其中捕获列表和函数体是不可省的.\nFormatsCapture List捕获列表是用来捕获所在域内的局部变量的, 对于静态变量和域以外的变量可以自由使用.\n至于这和形参的区别也没什么人说我也没搞懂. 有一个特性是值捕获的变量复制发生在这个函数对象创建时, 而不是调用时.\n引用捕获要求调用时变量仍然存在, 所以要谨慎使用.\n捕获列表大概有这几种:\n\n\n\n\nType\nMeaning\n\n\n\n\n[]\n不捕获\n\n\n[a]\n以值捕获捕获变量a\n\n\n[&amp;a]\n以引用捕获捕获a\n\n\n[=]\n通过函数体推断捕获变量, 值捕获\n\n\n[&amp;]\n同上, 引用捕获\n\n\n[=,&amp;x]\n其余变量值捕获, x引用捕获\n\n\n[&amp;,=x]\n同上, 相反\n\n\n\n\nParameters List和函数一样的形参. 不支持默认参数, 可变参数和不指定名称的参数.\nException这里主要说一下mutable.\n值捕获的变量是不能在函数体内被修改的. 但加上mutable就可以了.\nReturn Type可以指定, 也可以自动推断, (大概是不需要decltype?\nFunction Body函数体.\nSamplesSort123vector&lt;int&gt; vec;for (int i = 1; i &lt;= 10; ++i) vec.push_back(rand());sort(vec.begin(), vec.end(), [](int a, int b) -&gt; bool &#123;return a &lt; b&#125;);\nModify12345auto modify(vector&lt;int&gt;&amp;vec, int limit) -&gt; decltype(vec) &#123;    auto func = [limit](int i) -&gt; int &#123;return i &gt;= limit ? -1 : i;&#125;;    transform(vec.begin(), vec.end(), vec.begin(), func);    return vec;&#125;\n一个Lambda表达式的类型大概是\n1function&lt;return typename(typename, typename, ...)&gt;\n","dateCreated":"2019-02-28T21:25:26+08:00","dateModified":"2019-02-28T22:24:47+08:00","datePublished":"2019-02-28T21:25:26+08:00","description":"这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的.\n最近比较喜欢光污染背景。","headline":"Tiny notes of Lambda Expression in C++","image":[null,"https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/","keywords":"Develop","thumbnailUrl":"https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg"}</script>
+    <meta name="description" content="这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的. 最近比较喜欢光污染背景。">
+<meta name="keywords" content="Develop">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Tiny notes of Lambda Expression in C++">
+<meta property="og:url" content="https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的. 最近比较喜欢光污染背景。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-02-28T14:24:47.204Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tiny notes of Lambda Expression in C++">
+<meta name="twitter:description" content="这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的. 最近比较喜欢光污染背景。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+        <meta property="og:image" content="https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://bouvardia73.github.io/Past201902/WallpaperStudio10-80798.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Tiny notes of Lambda Expression in C++
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2019-02-28T21:25:26+08:00">
+	
+		    Feb 28, 2019
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>这是一篇和OI没什么关系的文章, 在可以预见的有限的OI生涯中是不会用到这玩意的.</p>
+<p><del>最近比较喜欢光污染背景</del>。</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Background"><span class="toc-text">Background</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Basic-Infomation"><span class="toc-text">Basic Infomation</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Formats"><span class="toc-text">Formats</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Capture-List"><span class="toc-text">Capture List</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Parameters-List"><span class="toc-text">Parameters List</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Exception"><span class="toc-text">Exception</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Return-Type"><span class="toc-text">Return Type</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Function-Body"><span class="toc-text">Function Body</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Samples"><span class="toc-text">Samples</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Sort"><span class="toc-text">Sort</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Modify"><span class="toc-text">Modify</span></a></li></ol></li></ol>
+<h1 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h1><p>2.28这天一天只做了两道题, 状态不佳, 因为都很不想写.</p>
+<p>代码还炒鸡乱.</p>
+<p>所以第二题要排序, 就用了Lambda表达式(这什么逻辑?).</p>
+<h1 id="Basic-Infomation"><a href="#Basic-Infomation" class="headerlink" title="Basic Infomation"></a>Basic Infomation</h1><p>框架大概长这样:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[capture <span class="built_in">list</span>] (params <span class="built_in">list</span>) <span class="keyword">mutable</span> exception -&gt; <span class="keyword">return</span> type &#123;function body&#125;</span><br></pre></td></tr></table></figure>
+<p><em>来自<a href="https://www.cnblogs.com/DswCnblog/p/5629165.html" target="_blank" rel="noopener">https://www.cnblogs.com/DswCnblog/p/5629165.html</a></em></p>
+<p>其中捕获列表和函数体是不可省的.</p>
+<h1 id="Formats"><a href="#Formats" class="headerlink" title="Formats"></a>Formats</h1><h2 id="Capture-List"><a href="#Capture-List" class="headerlink" title="Capture List"></a>Capture List</h2><p>捕获列表是用来捕获所在域内的局部变量的, 对于静态变量和域以外的变量可以自由使用.</p>
+<p><del>至于这和形参的区别也没什么人说我也没搞懂.</del> 有一个特性是值捕获的变量复制发生在这个函数对象创建时, 而不是调用时.</p>
+<p>引用捕获要求调用时变量仍然存在, 所以要谨慎使用.</p>
+<p>捕获列表大概有这几种:</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Type</th>
+<th style="text-align:center">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">[]</td>
+<td style="text-align:center">不捕获</td>
+</tr>
+<tr>
+<td style="text-align:center">[a]</td>
+<td style="text-align:center">以<strong>值捕获</strong>捕获变量a</td>
+</tr>
+<tr>
+<td style="text-align:center">[&amp;a]</td>
+<td style="text-align:center">以<strong>引用捕获</strong>捕获a</td>
+</tr>
+<tr>
+<td style="text-align:center">[=]</td>
+<td style="text-align:center">通过函数体推断捕获变量, 值捕获</td>
+</tr>
+<tr>
+<td style="text-align:center">[&amp;]</td>
+<td style="text-align:center">同上, 引用捕获</td>
+</tr>
+<tr>
+<td style="text-align:center">[=,&amp;x]</td>
+<td style="text-align:center">其余变量值捕获, x引用捕获</td>
+</tr>
+<tr>
+<td style="text-align:center">[&amp;,=x]</td>
+<td style="text-align:center">同上, 相反</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="Parameters-List"><a href="#Parameters-List" class="headerlink" title="Parameters List"></a>Parameters List</h2><p>和函数一样的形参. <strong>不支持默认参数, 可变参数和不指定名称的参数</strong>.</p>
+<h2 id="Exception"><a href="#Exception" class="headerlink" title="Exception"></a>Exception</h2><p>这里主要说一下mutable.</p>
+<p>值捕获的变量是不能在函数体内被修改的. 但加上mutable就可以了.</p>
+<h2 id="Return-Type"><a href="#Return-Type" class="headerlink" title="Return Type"></a>Return Type</h2><p>可以指定, 也可以自动推断, (大概是不需要decltype?</p>
+<h2 id="Function-Body"><a href="#Function-Body" class="headerlink" title="Function Body"></a>Function Body</h2><p>函数体.</p>
+<h1 id="Samples"><a href="#Samples" class="headerlink" title="Samples"></a>Samples</h1><h2 id="Sort"><a href="#Sort" class="headerlink" title="Sort"></a>Sort</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; vec;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">10</span>; ++i) vec.push_back(rand());</span><br><span class="line">sort(vec.begin(), vec.end(), [](<span class="keyword">int</span> a, <span class="keyword">int</span> b) -&gt; <span class="keyword">bool</span> &#123;<span class="keyword">return</span> a &lt; b&#125;);</span><br></pre></td></tr></table></figure>
+<h2 id="Modify"><a href="#Modify" class="headerlink" title="Modify"></a>Modify</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">auto modify(vector&lt;int&gt;&amp;vec, int limit) -&gt; decltype(vec) &#123;</span><br><span class="line">    <span class="keyword">auto</span> func = [limit](<span class="keyword">int</span> i) -&gt; <span class="keyword">int</span> &#123;<span class="keyword">return</span> i &gt;= limit ? <span class="number">-1</span> : i;&#125;;</span><br><span class="line">    transform(vec.begin(), vec.end(), vec.begin(), func);</span><br><span class="line">    <span class="keyword">return</span> vec;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>一个Lambda表达式的类型大概是</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">function&lt;<span class="keyword">return</span> <span class="keyword">typename</span>(<span class="keyword">typename</span>, <span class="keyword">typename</span>, ...)&gt;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/Develop/">Develop</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../03/01/bzoj4035-gametheory-sg/" data-tooltip="BZOJ 4035 SG函数" aria-label="PREVIOUS: BZOJ 4035 SG函数">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ4560-KMP-Greedy-DP/" data-tooltip="BZOJ4560 KMP,贪心,DP" aria-label="NEXT: BZOJ4560 KMP,贪心,DP">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../../03/01/bzoj4035-gametheory-sg/" data-tooltip="BZOJ 4035 SG函数" aria-label="PREVIOUS: BZOJ 4035 SG函数">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../BZOJ4560-KMP-Greedy-DP/" data-tooltip="BZOJ4560 KMP,贪心,DP" aria-label="NEXT: BZOJ4560 KMP,贪心,DP">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2019/02/28/notes-lambda-expression-in-cpp/';
+                 
+                    this.page.identifier = '2019/02/28/notes-lambda-expression-in-cpp/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

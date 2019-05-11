@@ -1,0 +1,608 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>JZOJ3363 AC Automation! - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"AC自动机上的DP。\n\n\nDescriptionJYY 来到了一个新的城市，为了和大家保持联系，第一件事就是办理新的手机号。JYY 对号码的要求很高，希望大家都能够顺畅地阅读手机号，因此 JYY 特别研究了地球人的电话号码阅读习惯，有如下重大发现 (请自行代入你们的手机号码)：地球人总是按照以下四种方式来朗读电话号码：\n\nxxx-xxx-xxxxx 例如 151-958-83019\n\nxxx-xxxx-xxxx 例如 151-9588-3019\n\nxxxx-xxxx-xxx 例如 1519-5883-019\n\nxxxx-xxx-xxxx 例如 1519-588-3019\n\n\n即便是同一个电话号码，不同的人也会按照自己的习惯去解读，例如有些人会觉得电话号码是151-9588-3019，而有些却坚持 1519-588-3019。\n为了让号码显得更上口，JYY 认为有些不吉利的数字串，在报电话号码时永远不应该被完整地读出来，例如，JYY 认为 7456 是不吉利的数字串 (气死我了)，那么 13000007456 就是一个不好的号码，因为有人会把这个号码读作 130-000-07456，而在最后一次完整地读出了 7456。然而，13000745600 却不是一个不好的号码，因为无论怎么读，7456 都会被拆分开来。\n现在给出 JYY 认为不吉利的数字串，请你计算满足 JYY 要求的电话号码，总共有多少个。具体来说说，一个好的电话号码满足以下要求：\n\n电话号码是以 1 开头的 11 位数字串。\n\n这个号码无论按照之前描述的 4 种读法中的哪个，都不能在任意时刻连续读出不吉利的数字串。\n\n\nSolution一道Bouvardia在考场上总算想出完整思路的题。\nAC自动机上DP，把每种长度和特殊情况压缩进节点的tag中。\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123124125126127128129130131132133134135136137138139140#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;queue&gt;using namespace std;const int maxn = 105;const int maxl = 505;typedef long long ll;int n;ll ans, base;char mode[105][20];bool check(int sta, int l)&#123;\tbool a, b, c, d, e;\ta = ((sta &amp; (1 &lt;&lt; 3)) &amp;&amp; (l != 4));\tb = ((sta &amp; (1 &lt;&lt; 4)) &amp;&amp; (l != 4 &amp;&amp; l != 5 &amp;&amp; l != 8));\tc = ((sta &amp; (1 &lt;&lt; 5)) &amp;&amp; (l == 10));\td = ((sta &amp; (1 &lt;&lt; 2)) || (sta &amp; (1 &lt;&lt; 1)));\te = ((sta &amp; (1 &lt;&lt; 6)) &amp;&amp; (l == 2)) || ((sta &amp; (1 &lt;&lt; 7)) &amp;&amp; (l == 3)) || ((sta &amp; 1) &amp;&amp; (l == 1));\treturn (a || b || c || d || e);&#125;struct Aho&#123;\tstruct trie\t&#123;\t\tint nxt[10];\t\tint mtc;\t\ttrie()&#123;memset(nxt, 0, sizeof nxt); mtc = 0;&#125;\t&#125;node[maxl];\tint tot, bfs[maxl], ptr;\tint fail[maxl];\tll f[20][maxl][2];\tvoid Insert(char *s)\t&#123;\t\tint len = strlen(s), now = 0;\t\tfor(int i = 0; i &lt; len; ++i)\t\t&#123;\t\t\t\tint num = s[i] - '0';\t\t\tif(!node[now].nxt[num]) node[now].nxt[num] = ++ptr;\t\t\tnow = node[now].nxt[num];\t\t&#125;\t\t//if(len == 5 || s[0] == '1') node[now].mtc |= 1;\t\t//if((len == 3 || len == 4) &amp;&amp; s[0] == '1') node[now].mtc |= (1 &lt;&lt; len + 3);\t\tnode[now].mtc |= (1 &lt;&lt; len);\t\t//spInsert: has a prefix 1.\t\tif(len &lt; 5 &amp;&amp; len &gt; 1 &amp;&amp; s[0] == '1')\t\t&#123;\t\t\tnow = 0;\t\t\tfor(int i = 1; i &lt; len; ++i)\t\t\t&#123;\t\t\t\tint num = s[i] - '0';\t\t\t\tif(!node[now].nxt[num]) node[now].nxt[num] = ++ptr;\t\t\t\tnow = node[now].nxt[num];\t\t\t&#125;\t\t\tif(len == 3) node[now].mtc |= (1 &lt;&lt; 6);\t\t\telse if(len == 4) node[now].mtc |= (1 &lt;&lt; 7);\t\t\telse if(len == 2) node[now].mtc |= 1;\t\t&#125;\t\treturn;\t&#125;\tvoid build()    &#123;        queue&lt;int&gt; q;        fail[0] = 0;        bfs[++tot] = 0;        for(int i = 0; i &lt; 10; ++i)            if(node[0].nxt[i]) q.push(node[0].nxt[i]), fail[node[0].nxt[i]] = 0;        while(!q.empty())        &#123;            int u = q.front(); q.pop(); bfs[++tot] = u;            for(int i = 0; i &lt; 10; ++i)            &#123;                int &amp;to = node[u].nxt[i];                if(!to)                &#123;                    to = node[fail[u]].nxt[i];                    continue;                &#125;                q.push(to);                int v = fail[u];                fail[to] = node[v].nxt[i];                node[to].mtc |= node[fail[to]].mtc;            &#125;        &#125;        return;    &#125;    void solve()    &#123;    \tmemset(f, 0, sizeof f);    \tf[0][0][0] = 1;    \tfor(int i = 1; i &lt;= 10; ++i)    \t\tfor(int j = 1; j &lt;= tot; ++j)    \t\t&#123;    \t\t\tint u = bfs[j];    \t\t\tfor(int x = 0; x &lt; 10; ++x)    \t\t\t&#123;    \t\t\t\tint y = node[u].nxt[x];    \t\t\t\tif(check(node[y].mtc, i))    \t\t\t\t&#123;    \t\t\t\t\tf[i][y][1] += (f[i - 1][u][1] + f[i - 1][u][0]);    \t\t\t\t&#125;    \t\t\t\telse    \t\t\t\t&#123;    \t\t\t\t\tf[i][y][1] += f[i - 1][u][1];    \t\t\t\t\tf[i][y][0] += f[i - 1][u][0];    \t\t\t\t&#125;    \t\t\t&#125;    \t\t&#125;    \tfor(int i = 1; i &lt;= tot; ++i)    \t\tans += f[10][bfs[i]][1];    \tprintf(\"%lld\\n\", base - ans);    &#125;&#125;aho;int main()&#123;\tscanf(\"%d\", &amp;n);\tbase = 1ll;\tfor(int i = 1; i &lt;= 10; ++i) base *= 10ll;\tbool sol = true;\tfor(int i = 1; i &lt;= n; ++i)\t&#123;\t\tscanf(\"%s\", mode[i]);\t\tint ss = strlen(mode[i]);\t\tif(ss == 1 &amp;&amp; mode[i][0] == '1') sol = false;\t&#125;\tif(!sol)&#123;puts(\"0\"); return 0;&#125;\tfor(int i = 1; i &lt;= n; ++i)\t\taho.Insert(mode[i]);\taho.build();\taho.solve();\treturn 0;&#125;\n","dateCreated":"2018-08-19T12:49:45+08:00","dateModified":"2018-08-19T14:34:52+08:00","datePublished":"2018-08-19T12:49:45+08:00","description":"AC自动机上的DP。","headline":"JZOJ3363 AC Automation!","image":["https://i.loli.net/2018/08/19/5b790e8b631a5.jpg","https://i.loli.net/2018/08/19/5b790f128c59d.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/08/19/5b790e8b631a5.jpg"}</script>
+    <meta name="description" content="AC自动机上的DP。">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="JZOJ3363 AC Automation!">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="AC自动机上的DP。">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-08-19T06:34:52.358Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JZOJ3363 AC Automation!">
+<meta name="twitter:description" content="AC自动机上的DP。">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/19/5b790e8b631a5.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/19/5b790e8b631a5.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/19/5b790f128c59d.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/19/5b790f128c59d.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/08/19/5b790f128c59d.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            JZOJ3363 AC Automation!
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-08-19T12:49:45+08:00">
+	
+		    Aug 19, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>AC自动机上的DP。</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol>
+<h2 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h2><p>JYY 来到了一个新的城市，为了和大家保持联系，第一件事就是办理新的手机号。JYY 对号码的要求很高，希望大家都能够顺畅地阅读手机号，因此 JYY 特别研究了地球人的电话号码阅读习惯，有如下重大发现 (请自行代入你们的手机号码)：地球人总是按照以下四种方式来朗读电话号码：</p>
+<ol>
+<li><p>xxx-xxx-xxxxx 例如 151-958-83019</p>
+</li>
+<li><p>xxx-xxxx-xxxx 例如 151-9588-3019</p>
+</li>
+<li><p>xxxx-xxxx-xxx 例如 1519-5883-019</p>
+</li>
+<li><p>xxxx-xxx-xxxx 例如 1519-588-3019</p>
+</li>
+</ol>
+<p>即便是同一个电话号码，不同的人也会按照自己的习惯去解读，例如有些人会觉得电话号码是151-9588-3019，而有些却坚持 1519-588-3019。</p>
+<p>为了让号码显得更上口，JYY 认为有些不吉利的数字串，在报电话号码时永远不应该被完整地读出来，例如，JYY 认为 7456 是不吉利的数字串 (气死我了)，那么 13000007456 就是一个不好的号码，因为有人会把这个号码读作 130-000-07456，而在最后一次完整地读出了 7456。然而，13000745600 却不是一个不好的号码，因为无论怎么读，7456 都会被拆分开来。</p>
+<p>现在给出 JYY 认为不吉利的数字串，请你计算满足 JYY 要求的电话号码，总共有多少个。具体来说说，一个好的电话号码满足以下要求：</p>
+<ol>
+<li><p>电话号码是以 1 开头的 11 位数字串。</p>
+</li>
+<li><p>这个号码无论按照之前描述的 4 种读法中的哪个，都不能在任意时刻连续读出不吉利的数字串。</p>
+</li>
+</ol>
+<h2 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h2><p>一道Bouvardia在考场上总算想出完整思路的题。</p>
+<p>AC自动机上DP，把每种长度和特殊情况压缩进节点的tag中。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;queue&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">105</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxl = <span class="number">505</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n;</span><br><span class="line">ll ans, base;</span><br><span class="line"><span class="keyword">char</span> mode[<span class="number">105</span>][<span class="number">20</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">check</span><span class="params">(<span class="keyword">int</span> sta, <span class="keyword">int</span> l)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">bool</span> a, b, c, d, e;</span><br><span class="line">	a = ((sta &amp; (<span class="number">1</span> &lt;&lt; <span class="number">3</span>)) &amp;&amp; (l != <span class="number">4</span>));</span><br><span class="line">	b = ((sta &amp; (<span class="number">1</span> &lt;&lt; <span class="number">4</span>)) &amp;&amp; (l != <span class="number">4</span> &amp;&amp; l != <span class="number">5</span> &amp;&amp; l != <span class="number">8</span>));</span><br><span class="line">	c = ((sta &amp; (<span class="number">1</span> &lt;&lt; <span class="number">5</span>)) &amp;&amp; (l == <span class="number">10</span>));</span><br><span class="line">	d = ((sta &amp; (<span class="number">1</span> &lt;&lt; <span class="number">2</span>)) || (sta &amp; (<span class="number">1</span> &lt;&lt; <span class="number">1</span>)));</span><br><span class="line">	e = ((sta &amp; (<span class="number">1</span> &lt;&lt; <span class="number">6</span>)) &amp;&amp; (l == <span class="number">2</span>)) || ((sta &amp; (<span class="number">1</span> &lt;&lt; <span class="number">7</span>)) &amp;&amp; (l == <span class="number">3</span>)) || ((sta &amp; <span class="number">1</span>) &amp;&amp; (l == <span class="number">1</span>));</span><br><span class="line">	<span class="keyword">return</span> (a || b || c || d || e);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Aho</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">trie</span></span></span><br><span class="line"><span class="class">	&#123;</span></span><br><span class="line">		<span class="keyword">int</span> nxt[<span class="number">10</span>];</span><br><span class="line">		<span class="keyword">int</span> mtc;</span><br><span class="line">		trie()&#123;<span class="built_in">memset</span>(nxt, <span class="number">0</span>, <span class="keyword">sizeof</span> nxt); mtc = <span class="number">0</span>;&#125;</span><br><span class="line">	&#125;node[maxl];</span><br><span class="line">	<span class="keyword">int</span> tot, bfs[maxl], ptr;</span><br><span class="line">	<span class="keyword">int</span> fail[maxl];</span><br><span class="line">	ll f[<span class="number">20</span>][maxl][<span class="number">2</span>];</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">Insert</span><span class="params">(<span class="keyword">char</span> *s)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">int</span> len = <span class="built_in">strlen</span>(s), now = <span class="number">0</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; ++i)</span><br><span class="line">		&#123;	</span><br><span class="line">			<span class="keyword">int</span> num = s[i] - <span class="string">'0'</span>;</span><br><span class="line">			<span class="keyword">if</span>(!node[now].nxt[num]) node[now].nxt[num] = ++ptr;</span><br><span class="line">			now = node[now].nxt[num];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">//if(len == 5 || s[0] == '1') node[now].mtc |= 1;</span></span><br><span class="line">		<span class="comment">//if((len == 3 || len == 4) &amp;&amp; s[0] == '1') node[now].mtc |= (1 &lt;&lt; len + 3);</span></span><br><span class="line">		node[now].mtc |= (<span class="number">1</span> &lt;&lt; len);</span><br><span class="line">		<span class="comment">//spInsert: has a prefix 1.</span></span><br><span class="line">		<span class="keyword">if</span>(len &lt; <span class="number">5</span> &amp;&amp; len &gt; <span class="number">1</span> &amp;&amp; s[<span class="number">0</span>] == <span class="string">'1'</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			now = <span class="number">0</span>;</span><br><span class="line">			<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; len; ++i)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">int</span> num = s[i] - <span class="string">'0'</span>;</span><br><span class="line">				<span class="keyword">if</span>(!node[now].nxt[num]) node[now].nxt[num] = ++ptr;</span><br><span class="line">				now = node[now].nxt[num];</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span>(len == <span class="number">3</span>) node[now].mtc |= (<span class="number">1</span> &lt;&lt; <span class="number">6</span>);</span><br><span class="line">			<span class="keyword">else</span> <span class="keyword">if</span>(len == <span class="number">4</span>) node[now].mtc |= (<span class="number">1</span> &lt;&lt; <span class="number">7</span>);</span><br><span class="line">			<span class="keyword">else</span> <span class="keyword">if</span>(len == <span class="number">2</span>) node[now].mtc |= <span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">build</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">queue</span>&lt;<span class="keyword">int</span>&gt; q;</span><br><span class="line">        fail[<span class="number">0</span>] = <span class="number">0</span>;</span><br><span class="line">        bfs[++tot] = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; ++i)</span><br><span class="line">            <span class="keyword">if</span>(node[<span class="number">0</span>].nxt[i]) q.push(node[<span class="number">0</span>].nxt[i]), fail[node[<span class="number">0</span>].nxt[i]] = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span>(!q.empty())</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">int</span> u = q.front(); q.pop(); bfs[++tot] = u;</span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; ++i)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">int</span> &amp;to = node[u].nxt[i];</span><br><span class="line">                <span class="keyword">if</span>(!to)</span><br><span class="line">                &#123;</span><br><span class="line">                    to = node[fail[u]].nxt[i];</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                q.push(to);</span><br><span class="line">                <span class="keyword">int</span> v = fail[u];</span><br><span class="line">                fail[to] = node[v].nxt[i];</span><br><span class="line">                node[to].mtc |= node[fail[to]].mtc;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">solve</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">    	<span class="built_in">memset</span>(f, <span class="number">0</span>, <span class="keyword">sizeof</span> f);</span><br><span class="line">    	f[<span class="number">0</span>][<span class="number">0</span>][<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">    	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">10</span>; ++i)</span><br><span class="line">    		<span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= tot; ++j)</span><br><span class="line">    		&#123;</span><br><span class="line">    			<span class="keyword">int</span> u = bfs[j];</span><br><span class="line">    			<span class="keyword">for</span>(<span class="keyword">int</span> x = <span class="number">0</span>; x &lt; <span class="number">10</span>; ++x)</span><br><span class="line">    			&#123;</span><br><span class="line">    				<span class="keyword">int</span> y = node[u].nxt[x];</span><br><span class="line">    				<span class="keyword">if</span>(check(node[y].mtc, i))</span><br><span class="line">    				&#123;</span><br><span class="line">    					f[i][y][<span class="number">1</span>] += (f[i - <span class="number">1</span>][u][<span class="number">1</span>] + f[i - <span class="number">1</span>][u][<span class="number">0</span>]);</span><br><span class="line">    				&#125;</span><br><span class="line">    				<span class="keyword">else</span></span><br><span class="line">    				&#123;</span><br><span class="line">    					f[i][y][<span class="number">1</span>] += f[i - <span class="number">1</span>][u][<span class="number">1</span>];</span><br><span class="line">    					f[i][y][<span class="number">0</span>] += f[i - <span class="number">1</span>][u][<span class="number">0</span>];</span><br><span class="line">    				&#125;</span><br><span class="line">    			&#125;</span><br><span class="line">    		&#125;</span><br><span class="line">    	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= tot; ++i)</span><br><span class="line">    		ans += f[<span class="number">10</span>][bfs[i]][<span class="number">1</span>];</span><br><span class="line">    	<span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, base - ans);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;aho;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">	base = <span class="number">1l</span>l;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">10</span>; ++i) base *= <span class="number">10l</span>l;</span><br><span class="line">	<span class="keyword">bool</span> sol = <span class="literal">true</span>;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%s"</span>, mode[i]);</span><br><span class="line">		<span class="keyword">int</span> ss = <span class="built_in">strlen</span>(mode[i]);</span><br><span class="line">		<span class="keyword">if</span>(ss == <span class="number">1</span> &amp;&amp; mode[i][<span class="number">0</span>] == <span class="string">'1'</span>) sol = <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(!sol)&#123;<span class="built_in">puts</span>(<span class="string">"0"</span>); <span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">		aho.Insert(mode[i]);</span><br><span class="line">	aho.build();</span><br><span class="line">	aho.solve();</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../PolynomialCalculation/" data-tooltip="Polynomial Calculation" aria-label="PREVIOUS: Polynomial Calculation">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../16/SuffixAutoMation/" data-tooltip="Suffix Automation!" aria-label="NEXT: Suffix Automation!">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../PolynomialCalculation/" data-tooltip="Polynomial Calculation" aria-label="PREVIOUS: Polynomial Calculation">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../16/SuffixAutoMation/" data-tooltip="Suffix Automation!" aria-label="NEXT: Suffix Automation!">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/08/19/JZOJ3363-ACAM/';
+                 
+                    this.page.identifier = '2018/08/19/JZOJ3363-ACAM/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

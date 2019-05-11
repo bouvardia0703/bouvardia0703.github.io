@@ -1,0 +1,599 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Polynomial Calculation - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Polynomial Related Operations &amp; Calculations.\n\n\nPolynomial TransformFast Fourier Transformation折半引理，消去引理，求和引理\n复数单位根\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081#include&lt;iostream&gt;#include&lt;cstdio&gt;#include&lt;algorithm&gt;#include&lt;cmath&gt;using std::acos;using std::cos;using std::sin;using std::swap;const double PI = acos(-1.0);const int maxn = 2500005;struct comp&#123;    double r,i;    comp(double rr = 0.0, double ii = 0.0)    &#123;        r = rr;        i = ii;    &#125;&#125;a[maxn], b[maxn], omega[maxn], omega_[maxn];comp operator + (comp a, comp b)&#123;    return comp(a.r + b.r, a.i + b.i);&#125;comp operator - (comp a, comp b)&#123;    return comp(a.r - b.r, a.i - b.i);&#125;comp operator * (comp a, comp b)&#123;    return comp(a.r * b.r - a.i * b.i, a.r * b.i + a.i * b.r);&#125;void pre_omega(int x)&#123;    double round = 2.0*PI/x;    for(int i = 0; i &lt; x; ++i)        omega[i] = comp(cos(i * round),sin(i * round)),        omega_[i] = comp(cos(i * round),-1 * sin(i * round));//conj&#125;void FFT(int n, comp *a, comp *w)&#123;    for(int i = 0, j = 0; i &lt; n; ++i)    &#123;        if(i &gt; j) swap(a[i] , a[j]);        for(int l = (n &gt;&gt; 1); (j ^= l) &lt; l; l &gt;&gt;= 1); //remember it    &#125;    for(int i = 2; i &lt;= n; i &lt;&lt;= 1)    &#123;        int m = (i &gt;&gt; 1);        for(int j = 0; j &lt; n; j += i)            for(int k = 0; k &lt; m; ++k)            &#123;                comp t = a[j + m + k] * w[n / i * k];                a[j + m + k] = a[j + k] - t;                a[j + k] = a[j + k] + t;            &#125;                    &#125;&#125;int main()&#123;    int n, m, l = 1;    scanf(\"%d%d\",&amp;n, &amp;m);    for(int i = 0; i &lt;= n; ++i)        scanf(\"%lf\",&amp;a[i].r);    for(int i = 0; i &lt;= m; ++i)        scanf(\"%lf\",&amp;b[i].r);    while(l &lt;= n + m) l &lt;&lt;= 1;    pre_omega(l);    FFT(l, a, omega);    FFT(l, b, omega);    for(int i = 0; i &lt;= l; ++i)        a[i] = a[i] * b[i];    FFT(l, a, omega_);    for(int i = 0; i &lt;= n + m; ++i) printf(\"%d \",(int)(a[i].r/l + 0.5));    putchar('\\n');    return 0;&#125;\nNumber-Theorem Transformation在模意义下，质数原根具有和复数单位根同样的性质。\n与FFT流程大致相同，只是更换了原根，最后除以$ N $时使用逆元即可。\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cmath&gt;#include &lt;cctype&gt;using namespace std;typedef long long ll;const ll mod = 998244353;const int MAX = 1e+5 + 5e+4 + 5;int n, m;char str[MAX];ll A[1 &lt;&lt; 18], B[1 &lt;&lt; 18], h[1 &lt;&lt; 18];ll e[MAX], ine[MAX], inv3;inline ll quick_power(ll base, int index)&#123;\tll ret = 1;\twhile(index)\t&#123;\t\tif(index &amp; 1) ret = (ret * base) % mod;\t\tindex &gt;&gt;= 1;\t\tbase = (base * base) % mod;\t&#125;\treturn ret;&#125;inline void pre()&#123;\tll inv3 = quick_power(3, mod - 2);\tfor(int i = 1; i &lt;= n; i &lt;&lt;= 1) e[i] = quick_power(3, (mod - 1) / i);\tfor(int i = 1; i &lt;= n; i &lt;&lt;= 1) ine[i] = quick_power(inv3, (mod - 1) / i);&#125;inline void DFT(ll *a, int n, int t)&#123;\tfor(int i = 0, j = 0; i &lt; n; ++i)\t&#123;\t\tif(i &gt; j) swap(a[i], a[j]);\t\tfor(int l = (n &gt;&gt; 1); (j ^= l) &lt; l; l &gt;&gt;= 1);\t&#125;\tfor(int i = 2; i &lt;= n; i &lt;&lt;= 1)\t&#123;\t\tint m = (i &gt;&gt; 1);\t\tfor(int j = 0; j &lt; n; j += i)\t\t&#123;\t\t\tll w = 1, wn = e[i];\t\t\tif(t == -1) wn = ine[i];\t\t\tfor(int k = 0; k &lt; m; ++k)\t\t\t&#123;\t\t\t\tll z = a[j + m + k] * w % mod;\t\t\t\ta[j + m + k] = (a[j + k] - z + mod) % mod;\t\t\t\ta[j + k] = (a[j + k] + z) % mod;\t\t\t\tw = (w * wn) % mod;\t\t\t&#125;\t\t&#125;\t&#125;&#125;int main()&#123;\tscanf(\"%d\", &amp;n);\tscanf(\"%s\", str);\tfor(int i = 0; i &lt; n; ++i) A[i] = str[n - i - 1] - '0';\tscanf(\"%s\", str);\tfor(int i = 0; i &lt; n; ++i) B[i] = str[n - i - 1] - '0';\tm = (n * 2), n = 1;\twhile(n &lt;= m) n &lt;&lt;= 1;\tpre();\tDFT(A, n, 1); \tDFT(B, n, 1);\tfor(int i = 0; i &lt; n; ++i) A[i] = A[i] * B[i] % mod;\tDFT(A, n, -1);\tll inv = quick_power((ll)n, mod - 2);\tfor(int i = 0; i &lt; n; ++i) A[i] = A[i] * inv % mod;\tfor(int i = 0; i &lt; n; ++i) A[i + 1] += A[i]/10, A[i] %= 10;\tint top = n - 1; while(top &amp;&amp; !A[top]) top--;\tfor(int i = top; i &gt;= 0; --i) putchar(A[i] + '0');\tputs(\"\"); \treturn 0;&#125;\nArbitrary MOD Number-Theorem Transformation在任意模数下，很可能没有原根，但是如果要求精度很高，FFT又无法胜任。\n一个经典的做法是选取三个模数再用中国剩余定理合并。\n更高效的做法是利用上多项式的实部和虚部性质，把多项式系数拆分成前15位和后15位。做的运算更少。\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cmath&gt;#include &lt;cstdio&gt;using std::acos;using std::cos;using std::sin;using std::reverse;using std::swap;typedef long long ll;const int maxn = 262150;const int mask15 = 32767;const double pi = acos(-1);struct comp&#123;\tdouble r, i;\tcomp(double r_ = 0.0, double i_ = 0.0):r(r_),i(i_)&#123;&#125;\tcomp operator + (const comp &amp;rhs)\t&#123;\t\treturn comp(r + rhs.r, i + rhs.i);\t&#125;\tcomp operator - (const comp &amp;rhs)\t&#123;\t\treturn comp(r - rhs.r, i - rhs.i);\t&#125;\tcomp operator * (const comp &amp;rhs)\t&#123;\t\treturn comp(r * rhs.r - i * rhs.i, r * rhs.i + i * rhs.r);\t&#125;\t&#125;;comp conj(const comp &amp;c)&#123;\treturn comp(c.r, -c.i);&#125;int nn, mm, N, L;int mod;int rev[maxn];comp omega[maxn];inline void init()&#123;\tfor(int i = 0; i &lt; N; ++i)\t\tomega[i] = comp(cos(2 * pi * i / N), sin(2 * pi * i / N)),\t\trev[i] = rev[i &gt;&gt; 1] &gt;&gt; 1 | ((i &amp; 1) &lt;&lt; (L - 1));&#125;inline void FFT(int n, comp *a)&#123;\tfor(int i = 0; i &lt; n; ++i) if(i &lt; rev[i]) swap(a[i], a[rev[i]]);\tfor(int i = 2, j = (n &gt;&gt; 1); i &lt;= n; i &lt;&lt;= 1, j &gt;&gt;= 1)\t\tfor(int k = 0; k &lt; n; k += i)\t\t&#123;\t\t\tcomp *l = a + k, *r = a + k + (i &gt;&gt; 1), *w = omega;\t\t\tfor(int p = 0; p &lt; (i &gt;&gt; 1); ++p)\t\t\t&#123;\t\t\t\tcomp t = (*r) * (*w);\t\t\t\t*r = (*l) - t, *l = (*l) + t;\t\t\t\t++l; ++r; w += j;\t\t\t&#125; \t\t&#125;&#125;inline void solve(int *x, int *y, int *z)&#123;\tfor(int i = 0; i &lt; N; ++i) \t\tx[i] = (int)((ll)(x[i] + mod) % mod), y[i] = (int)((ll)(y[i] + mod) % mod);\tstatic comp a[maxn], b[maxn];\tstatic comp dft1[maxn], dft2[maxn], dft3[maxn], dft4[maxn];\tfor(int i = 0; i &lt; N; ++i) \t\ta[i] = comp(x[i] &amp; mask15, x[i] &gt;&gt; 15),\t\tb[i] = comp(y[i] &amp; mask15, y[i] &gt;&gt; 15);\tFFT(N, a); FFT(N, b);\tfor(int i = 0; i &lt; N; ++i)\t&#123;\t\tint j = (N - i) &amp; (N - 1);\t\tstatic comp da, db, dc, dd;\t\tda = (a[i] + conj(a[j])) * comp(0.5, 0.0);\t\tdb = (a[i] - conj(a[j])) * comp(0.0, -0.5);\t\tdc = (b[i] + conj(b[j])) * comp(0.5, 0.0);\t\tdd = (b[i] - conj(b[j])) * comp(0.0, -0.5);\t\tdft1[j] = da * dc;\t\tdft2[j] = da * dd;\t\tdft3[j] = db * dc;\t\tdft4[j] = db * dd;\t&#125;\tfor(int i = 0; i &lt; N; ++i) a[i] = dft1[i] + dft2[i] * comp(0, 1);\tfor(int i = 0; i &lt; N; ++i) b[i] = dft3[i] + dft4[i] * comp(0, 1);\tFFT(N, a); FFT(N, b);\tfor(int i = 0; i &lt; N; ++i)\t&#123;\t\tint da = (ll)(a[i].r / N + 0.5) % mod;\t\tint db = (ll)(a[i].i / N + 0.5) % mod;\t\tint dc = (ll)(b[i].r / N + 0.5) % mod;\t\tint dd = (ll)(b[i].i / N + 0.5) % mod;\t\tz[i] = (da + ((ll)(db + dc) &lt;&lt; 15) + ((ll)dd &lt;&lt; 30)) % mod;\t&#125;&#125;int main()&#123;\tscanf(\"%d%d%d\", &amp;nn, &amp;mm, &amp;mod); nn++; mm++;\tstatic int A[maxn], B[maxn], C[maxn];\tfor(int i = 0; i &lt; nn; ++i) \t\tscanf(\"%d\", &amp;A[i]);\tfor(int i = 0; i &lt; mm; ++i)\t\tscanf(\"%d\", &amp;B[i]);\tL = 0;\tfor(; (1 &lt;&lt; L) &lt; nn + mm - 1; ++L);\tN = (1 &lt;&lt; L);\tinit();\tsolve(A, B, C);\tfor(int i = 0; i &lt; nn + mm - 1; ++i) \t\tC[i] = (C[i] + mod) % mod, printf(\"%d \", C[i]);\treturn 0;&#125;\nPolynomial OperationInversion12345678910111213141516void Inversion(int *arr, int *res, int len) &#123;  if (len == 1) &#123;    res[0] = quick_power(arr[0], mod - 2);    return;  &#125;  Inversion(arr, res, len &gt;&gt; 1);  int now = len &lt;&lt; 1;  for (int i = 0; i &lt; len; ++i) tmp[i] = arr[i];  for (int i = len; i &lt; now; ++i) tmp[i] = 0;  DFT(tmp, 1, now); DFT(res, 1, now);  for (int i = 0; i &lt; now; ++i)    tmp[i] = 1ll * res[i] * (2ll - 1ll * tmp[i] * res[i] % mod + mod) % mod;  DFT(tmp, -1, now);  for (int i = 0; i &lt; len; ++i) res[i] = tmp[i];  for (int i = len; i &lt; now; ++i) res[i] = 0;&#125;\nMod先咕着.\nLog1234567891011void Logarithmic(int *arr, int *res, int len) &#123;  Derivative(arr, tmp, len);  Inversion(arr, tmp2, len);  memset(tmp, 0, sizeof tmp);  memset(tmp2, 0, sizeof tmp);  DFT(tmp, 1, len &lt;&lt; 1); DFT(tmp2, 1, len &lt;&lt; 1);  for (int i = 0; i &lt; (len &lt;&lt; 1); ++i)    tmp[i] = 1ll * tmp[i] * tmp2[i] % mod;  DFT(tmp, -1, len &lt;&lt; 1);  Intergral(tmp, res, len);&#125;\nExponent123456789101112131415161718void Exponent(int *arr, int *res, int len) &#123;  if (len == 1) &#123;    res[0] = 1;    return;  &#125;  Exponent(arr, res, len &gt;&gt; 1);  for (int i = 0; i &lt; len; ++i) tmp3[i] = res[i];  Logarithmic(tmp3, tmp4, len);  for (int i = 0; i &lt; len; ++i)    tmp4[i] = (arr[i] - tmp4[i] + mod) % mod;  tmp4[0] = (tmp4[0] + 1) % mod;  DFT(tmp3, 1, len &lt;&lt; 1); DFT(tmp4, 1, len &lt;&lt; 1);  for (int i = 0; i &lt; (len &lt;&lt; 1); ++i) tmp3[i] = 1ll * tmp3[i] * tmp4[i] % mod;  DFT(tmp3, -1, (len &lt;&lt; 1));  for (int i = 0; i &lt; len; ++i) res[i] = tmp3[i];  memset(tmp3, 0, sizeof tmp);  memset(tmp4, 0, sizeof tmp2);&#125;\n","dateCreated":"2018-08-19T20:09:54+08:00","dateModified":"2019-03-10T16:45:17+08:00","datePublished":"2018-08-19T20:09:54+08:00","description":"Polynomial Related Operations &amp; Calculations.","headline":"Polynomial Calculation","image":["https://i.loli.net/2018/08/19/5b7965e23a332.jpg","https://i.loli.net/2018/08/19/5b796620371f2.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/08/19/5b7965e23a332.jpg"}</script>
+    <meta name="description" content="Polynomial Related Operations &amp;amp; Calculations.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Polynomial Calculation">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Polynomial Related Operations &amp;amp; Calculations.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-03-10T08:45:17.149Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Polynomial Calculation">
+<meta name="twitter:description" content="Polynomial Related Operations &amp;amp; Calculations.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/19/5b7965e23a332.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/19/5b7965e23a332.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/19/5b796620371f2.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/08/19/5b796620371f2.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/08/19/5b796620371f2.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Polynomial Calculation
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-08-19T20:09:54+08:00">
+	
+		    Aug 19, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Polynomial Related Operations &amp; Calculations.</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Polynomial-Transform"><span class="toc-text">Polynomial Transform</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Fast-Fourier-Transformation"><span class="toc-text">Fast Fourier Transformation</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Number-Theorem-Transformation"><span class="toc-text">Number-Theorem Transformation</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Arbitrary-MOD-Number-Theorem-Transformation"><span class="toc-text">Arbitrary MOD Number-Theorem Transformation</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Polynomial-Operation"><span class="toc-text">Polynomial Operation</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Inversion"><span class="toc-text">Inversion</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Mod"><span class="toc-text">Mod</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Log"><span class="toc-text">Log</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Exponent"><span class="toc-text">Exponent</span></a></li></ol></li></ol></li></ol>
+<h2 id="Polynomial-Transform"><a href="#Polynomial-Transform" class="headerlink" title="Polynomial Transform"></a>Polynomial Transform</h2><h4 id="Fast-Fourier-Transformation"><a href="#Fast-Fourier-Transformation" class="headerlink" title="Fast Fourier Transformation"></a>Fast Fourier Transformation</h4><p>折半引理，消去引理，求和引理</p>
+<p>复数单位根</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">acos</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">cos</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">sin</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::swap;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">double</span> PI = <span class="built_in">acos</span>(<span class="number">-1.0</span>);</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">2500005</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">comp</span>&#123;</span></span><br><span class="line">    <span class="keyword">double</span> r,i;</span><br><span class="line">    comp(<span class="keyword">double</span> rr = <span class="number">0.0</span>, <span class="keyword">double</span> ii = <span class="number">0.0</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        r = rr;</span><br><span class="line">        i = ii;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;a[maxn], b[maxn], omega[maxn], omega_[maxn];</span><br><span class="line">comp <span class="keyword">operator</span> + (comp a, comp b)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> comp(a.r + b.r, a.i + b.i);</span><br><span class="line">&#125;</span><br><span class="line">comp <span class="keyword">operator</span> - (comp a, comp b)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> comp(a.r - b.r, a.i - b.i);</span><br><span class="line">&#125;</span><br><span class="line">comp <span class="keyword">operator</span> * (comp a, comp b)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> comp(a.r * b.r - a.i * b.i, a.r * b.i + a.i * b.r);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">pre_omega</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">double</span> round = <span class="number">2.0</span>*PI/x;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; x; ++i)</span><br><span class="line">        omega[i] = comp(<span class="built_in">cos</span>(i * round),<span class="built_in">sin</span>(i * round)),</span><br><span class="line">        omega_[i] = comp(<span class="built_in">cos</span>(i * round),<span class="number">-1</span> * <span class="built_in">sin</span>(i * round));<span class="comment">//conj</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">FFT</span><span class="params">(<span class="keyword">int</span> n, comp *a, comp *w)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>; i &lt; n; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span>(i &gt; j) swap(a[i] , a[j]);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> l = (n &gt;&gt; <span class="number">1</span>); (j ^= l) &lt; l; l &gt;&gt;= <span class="number">1</span>); <span class="comment">//remember it</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; i &lt;&lt;= <span class="number">1</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> m = (i &gt;&gt; <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j += i)</span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; m; ++k)</span><br><span class="line">            &#123;</span><br><span class="line">                comp t = a[j + m + k] * w[n / i * k];</span><br><span class="line">                a[j + m + k] = a[j + k] - t;</span><br><span class="line">                a[j + k] = a[j + k] + t;</span><br><span class="line">            &#125;</span><br><span class="line">                </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> n, m, l = <span class="number">1</span>;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>,&amp;n, &amp;m);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= n; ++i)</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">"%lf"</span>,&amp;a[i].r);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= m; ++i)</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">"%lf"</span>,&amp;b[i].r);</span><br><span class="line">    <span class="keyword">while</span>(l &lt;= n + m) l &lt;&lt;= <span class="number">1</span>;</span><br><span class="line">    pre_omega(l);</span><br><span class="line">    FFT(l, a, omega);</span><br><span class="line">    FFT(l, b, omega);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= l; ++i)</span><br><span class="line">        a[i] = a[i] * b[i];</span><br><span class="line">    FFT(l, a, omega_);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= n + m; ++i) <span class="built_in">printf</span>(<span class="string">"%d "</span>,(<span class="keyword">int</span>)(a[i].r/l + <span class="number">0.5</span>));</span><br><span class="line">    <span class="built_in">putchar</span>(<span class="string">'\n'</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Number-Theorem-Transformation"><a href="#Number-Theorem-Transformation" class="headerlink" title="Number-Theorem Transformation"></a>Number-Theorem Transformation</h4><p>在模意义下，质数原根具有和复数单位根同样的性质。</p>
+<p>与FFT流程大致相同，只是更换了原根，最后除以$ N $时使用逆元即可。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> ll mod = <span class="number">998244353</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> MAX = <span class="number">1e+5</span> + <span class="number">5e+4</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line"><span class="keyword">char</span> str[MAX];</span><br><span class="line">ll A[<span class="number">1</span> &lt;&lt; <span class="number">18</span>], B[<span class="number">1</span> &lt;&lt; <span class="number">18</span>], h[<span class="number">1</span> &lt;&lt; <span class="number">18</span>];</span><br><span class="line">ll e[MAX], ine[MAX], inv3;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">quick_power</span><span class="params">(ll base, <span class="keyword">int</span> index)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ll ret = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(index)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>(index &amp; <span class="number">1</span>) ret = (ret * base) % mod;</span><br><span class="line">		index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">		base = (base * base) % mod;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">pre</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ll inv3 = quick_power(<span class="number">3</span>, mod - <span class="number">2</span>);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i &lt;&lt;= <span class="number">1</span>) e[i] = quick_power(<span class="number">3</span>, (mod - <span class="number">1</span>) / i);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; i &lt;&lt;= <span class="number">1</span>) ine[i] = quick_power(inv3, (mod - <span class="number">1</span>) / i);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">DFT</span><span class="params">(ll *a, <span class="keyword">int</span> n, <span class="keyword">int</span> t)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>; i &lt; n; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>(i &gt; j) swap(a[i], a[j]);</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> l = (n &gt;&gt; <span class="number">1</span>); (j ^= l) &lt; l; l &gt;&gt;= <span class="number">1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; i &lt;&lt;= <span class="number">1</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">int</span> m = (i &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j += i)</span><br><span class="line">		&#123;</span><br><span class="line">			ll w = <span class="number">1</span>, wn = e[i];</span><br><span class="line">			<span class="keyword">if</span>(t == <span class="number">-1</span>) wn = ine[i];</span><br><span class="line">			<span class="keyword">for</span>(<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; m; ++k)</span><br><span class="line">			&#123;</span><br><span class="line">				ll z = a[j + m + k] * w % mod;</span><br><span class="line">				a[j + m + k] = (a[j + k] - z + mod) % mod;</span><br><span class="line">				a[j + k] = (a[j + k] + z) % mod;</span><br><span class="line">				w = (w * wn) % mod;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%s"</span>, str);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) A[i] = str[n - i - <span class="number">1</span>] - <span class="string">'0'</span>;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%s"</span>, str);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) B[i] = str[n - i - <span class="number">1</span>] - <span class="string">'0'</span>;</span><br><span class="line">	m = (n * <span class="number">2</span>), n = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(n &lt;= m) n &lt;&lt;= <span class="number">1</span>;</span><br><span class="line">	pre();</span><br><span class="line">	DFT(A, n, <span class="number">1</span>); </span><br><span class="line">	DFT(B, n, <span class="number">1</span>);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) A[i] = A[i] * B[i] % mod;</span><br><span class="line">	DFT(A, n, <span class="number">-1</span>);</span><br><span class="line">	ll inv = quick_power((ll)n, mod - <span class="number">2</span>);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) A[i] = A[i] * inv % mod;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) A[i + <span class="number">1</span>] += A[i]/<span class="number">10</span>, A[i] %= <span class="number">10</span>;</span><br><span class="line">	<span class="keyword">int</span> top = n - <span class="number">1</span>; <span class="keyword">while</span>(top &amp;&amp; !A[top]) top--;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = top; i &gt;= <span class="number">0</span>; --i) <span class="built_in">putchar</span>(A[i] + <span class="string">'0'</span>);</span><br><span class="line">	<span class="built_in">puts</span>(<span class="string">""</span>); </span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Arbitrary-MOD-Number-Theorem-Transformation"><a href="#Arbitrary-MOD-Number-Theorem-Transformation" class="headerlink" title="Arbitrary MOD Number-Theorem Transformation"></a>Arbitrary MOD Number-Theorem Transformation</h4><p>在任意模数下，很可能没有原根，但是如果要求精度很高，FFT又无法胜任。</p>
+<p>一个经典的做法是选取三个模数再用中国剩余定理合并。</p>
+<p>更高效的做法是利用上多项式的实部和虚部性质，把多项式系数拆分成前15位和后15位。做的运算更少。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">acos</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">cos</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">sin</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::reverse;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::swap;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">262150</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> mask15 = <span class="number">32767</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">double</span> pi = <span class="built_in">acos</span>(<span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">comp</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">double</span> r, i;</span><br><span class="line">	comp(<span class="keyword">double</span> r_ = <span class="number">0.0</span>, <span class="keyword">double</span> i_ = <span class="number">0.0</span>):r(r_),i(i_)&#123;&#125;</span><br><span class="line">	comp <span class="keyword">operator</span> + (<span class="keyword">const</span> comp &amp;rhs)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> comp(r + rhs.r, i + rhs.i);</span><br><span class="line">	&#125;</span><br><span class="line">	comp <span class="keyword">operator</span> - (<span class="keyword">const</span> comp &amp;rhs)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> comp(r - rhs.r, i - rhs.i);</span><br><span class="line">	&#125;</span><br><span class="line">	comp <span class="keyword">operator</span> * (<span class="keyword">const</span> comp &amp;rhs)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> comp(r * rhs.r - i * rhs.i, r * rhs.i + i * rhs.r);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">comp <span class="title">conj</span><span class="params">(<span class="keyword">const</span> comp &amp;c)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">return</span> comp(c.r, -c.i);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> nn, mm, N, L;</span><br><span class="line"><span class="keyword">int</span> mod;</span><br><span class="line"><span class="keyword">int</span> rev[maxn];</span><br><span class="line">comp omega[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i)</span><br><span class="line">		omega[i] = comp(<span class="built_in">cos</span>(<span class="number">2</span> * pi * i / N), <span class="built_in">sin</span>(<span class="number">2</span> * pi * i / N)),</span><br><span class="line">		rev[i] = rev[i &gt;&gt; <span class="number">1</span>] &gt;&gt; <span class="number">1</span> | ((i &amp; <span class="number">1</span>) &lt;&lt; (L - <span class="number">1</span>));</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">FFT</span><span class="params">(<span class="keyword">int</span> n, comp *a)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span>(i &lt; rev[i]) swap(a[i], a[rev[i]]);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>, j = (n &gt;&gt; <span class="number">1</span>); i &lt;= n; i &lt;&lt;= <span class="number">1</span>, j &gt;&gt;= <span class="number">1</span>)</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; n; k += i)</span><br><span class="line">		&#123;</span><br><span class="line">			comp *l = a + k, *r = a + k + (i &gt;&gt; <span class="number">1</span>), *w = omega;</span><br><span class="line">			<span class="keyword">for</span>(<span class="keyword">int</span> p = <span class="number">0</span>; p &lt; (i &gt;&gt; <span class="number">1</span>); ++p)</span><br><span class="line">			&#123;</span><br><span class="line">				comp t = (*r) * (*w);</span><br><span class="line">				*r = (*l) - t, *l = (*l) + t;</span><br><span class="line">				++l; ++r; w += j;</span><br><span class="line">			&#125; </span><br><span class="line">		&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">solve</span><span class="params">(<span class="keyword">int</span> *x, <span class="keyword">int</span> *y, <span class="keyword">int</span> *z)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) </span><br><span class="line">		x[i] = (<span class="keyword">int</span>)((ll)(x[i] + mod) % mod), y[i] = (<span class="keyword">int</span>)((ll)(y[i] + mod) % mod);</span><br><span class="line">	<span class="keyword">static</span> comp a[maxn], b[maxn];</span><br><span class="line">	<span class="keyword">static</span> comp dft1[maxn], dft2[maxn], dft3[maxn], dft4[maxn];</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) </span><br><span class="line">		a[i] = comp(x[i] &amp; mask15, x[i] &gt;&gt; <span class="number">15</span>),</span><br><span class="line">		b[i] = comp(y[i] &amp; mask15, y[i] &gt;&gt; <span class="number">15</span>);</span><br><span class="line">	FFT(N, a); FFT(N, b);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">int</span> j = (N - i) &amp; (N - <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">static</span> comp da, db, dc, dd;</span><br><span class="line">		da = (a[i] + conj(a[j])) * comp(<span class="number">0.5</span>, <span class="number">0.0</span>);</span><br><span class="line">		db = (a[i] - conj(a[j])) * comp(<span class="number">0.0</span>, <span class="number">-0.5</span>);</span><br><span class="line">		dc = (b[i] + conj(b[j])) * comp(<span class="number">0.5</span>, <span class="number">0.0</span>);</span><br><span class="line">		dd = (b[i] - conj(b[j])) * comp(<span class="number">0.0</span>, <span class="number">-0.5</span>);</span><br><span class="line">		dft1[j] = da * dc;</span><br><span class="line">		dft2[j] = da * dd;</span><br><span class="line">		dft3[j] = db * dc;</span><br><span class="line">		dft4[j] = db * dd;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) a[i] = dft1[i] + dft2[i] * comp(<span class="number">0</span>, <span class="number">1</span>);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i) b[i] = dft3[i] + dft4[i] * comp(<span class="number">0</span>, <span class="number">1</span>);</span><br><span class="line">	FFT(N, a); FFT(N, b);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; N; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">int</span> da = (ll)(a[i].r / N + <span class="number">0.5</span>) % mod;</span><br><span class="line">		<span class="keyword">int</span> db = (ll)(a[i].i / N + <span class="number">0.5</span>) % mod;</span><br><span class="line">		<span class="keyword">int</span> dc = (ll)(b[i].r / N + <span class="number">0.5</span>) % mod;</span><br><span class="line">		<span class="keyword">int</span> dd = (ll)(b[i].i / N + <span class="number">0.5</span>) % mod;</span><br><span class="line">		z[i] = (da + ((ll)(db + dc) &lt;&lt; <span class="number">15</span>) + ((ll)dd &lt;&lt; <span class="number">30</span>)) % mod;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%d%d%d"</span>, &amp;nn, &amp;mm, &amp;mod); nn++; mm++;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">int</span> A[maxn], B[maxn], C[maxn];</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nn; ++i) </span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;A[i]);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; mm; ++i)</span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;B[i]);</span><br><span class="line">	L = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span>(; (<span class="number">1</span> &lt;&lt; L) &lt; nn + mm - <span class="number">1</span>; ++L);</span><br><span class="line">	N = (<span class="number">1</span> &lt;&lt; L);</span><br><span class="line">	init();</span><br><span class="line">	solve(A, B, C);</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nn + mm - <span class="number">1</span>; ++i) </span><br><span class="line">		C[i] = (C[i] + mod) % mod, <span class="built_in">printf</span>(<span class="string">"%d "</span>, C[i]);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Polynomial-Operation"><a href="#Polynomial-Operation" class="headerlink" title="Polynomial Operation"></a>Polynomial Operation</h2><h4 id="Inversion"><a href="#Inversion" class="headerlink" title="Inversion"></a>Inversion</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Inversion</span><span class="params">(<span class="keyword">int</span> *arr, <span class="keyword">int</span> *res, <span class="keyword">int</span> len)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (len == <span class="number">1</span>) &#123;</span><br><span class="line">    res[<span class="number">0</span>] = quick_power(arr[<span class="number">0</span>], mod - <span class="number">2</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  Inversion(arr, res, len &gt;&gt; <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">int</span> now = len &lt;&lt; <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; ++i) tmp[i] = arr[i];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = len; i &lt; now; ++i) tmp[i] = <span class="number">0</span>;</span><br><span class="line">  DFT(tmp, <span class="number">1</span>, now); DFT(res, <span class="number">1</span>, now);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; now; ++i)</span><br><span class="line">    tmp[i] = <span class="number">1l</span>l * res[i] * (<span class="number">2l</span>l - <span class="number">1l</span>l * tmp[i] * res[i] % mod + mod) % mod;</span><br><span class="line">  DFT(tmp, <span class="number">-1</span>, now);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; ++i) res[i] = tmp[i];</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = len; i &lt; now; ++i) res[i] = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Mod"><a href="#Mod" class="headerlink" title="Mod"></a>Mod</h4><p>先咕着.</p>
+<h4 id="Log"><a href="#Log" class="headerlink" title="Log"></a>Log</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Logarithmic</span><span class="params">(<span class="keyword">int</span> *arr, <span class="keyword">int</span> *res, <span class="keyword">int</span> len)</span> </span>&#123;</span><br><span class="line">  Derivative(arr, tmp, len);</span><br><span class="line">  Inversion(arr, tmp2, len);</span><br><span class="line">  <span class="built_in">memset</span>(tmp, <span class="number">0</span>, <span class="keyword">sizeof</span> tmp);</span><br><span class="line">  <span class="built_in">memset</span>(tmp2, <span class="number">0</span>, <span class="keyword">sizeof</span> tmp);</span><br><span class="line">  DFT(tmp, <span class="number">1</span>, len &lt;&lt; <span class="number">1</span>); DFT(tmp2, <span class="number">1</span>, len &lt;&lt; <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (len &lt;&lt; <span class="number">1</span>); ++i)</span><br><span class="line">    tmp[i] = <span class="number">1l</span>l * tmp[i] * tmp2[i] % mod;</span><br><span class="line">  DFT(tmp, <span class="number">-1</span>, len &lt;&lt; <span class="number">1</span>);</span><br><span class="line">  Intergral(tmp, res, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Exponent"><a href="#Exponent" class="headerlink" title="Exponent"></a>Exponent</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Exponent</span><span class="params">(<span class="keyword">int</span> *arr, <span class="keyword">int</span> *res, <span class="keyword">int</span> len)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (len == <span class="number">1</span>) &#123;</span><br><span class="line">    res[<span class="number">0</span>] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  Exponent(arr, res, len &gt;&gt; <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; ++i) tmp3[i] = res[i];</span><br><span class="line">  Logarithmic(tmp3, tmp4, len);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; ++i)</span><br><span class="line">    tmp4[i] = (arr[i] - tmp4[i] + mod) % mod;</span><br><span class="line">  tmp4[<span class="number">0</span>] = (tmp4[<span class="number">0</span>] + <span class="number">1</span>) % mod;</span><br><span class="line">  DFT(tmp3, <span class="number">1</span>, len &lt;&lt; <span class="number">1</span>); DFT(tmp4, <span class="number">1</span>, len &lt;&lt; <span class="number">1</span>);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (len &lt;&lt; <span class="number">1</span>); ++i) tmp3[i] = <span class="number">1l</span>l * tmp3[i] * tmp4[i] % mod;</span><br><span class="line">  DFT(tmp3, <span class="number">-1</span>, (len &lt;&lt; <span class="number">1</span>));</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; ++i) res[i] = tmp3[i];</span><br><span class="line">  <span class="built_in">memset</span>(tmp3, <span class="number">0</span>, <span class="keyword">sizeof</span> tmp);</span><br><span class="line">  <span class="built_in">memset</span>(tmp4, <span class="number">0</span>, <span class="keyword">sizeof</span> tmp2);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../ZSJZTravel-Journal/" data-tooltip="Sun Yat-Sun Memorial Middle School，Guangdong - Travel Journal &amp; Summary" aria-label="PREVIOUS: Sun Yat-Sun Memorial Middle School，Guangdong - Travel Journal &amp; Summary">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../JZOJ3363-ACAM/" data-tooltip="JZOJ3363 AC Automation!" aria-label="NEXT: JZOJ3363 AC Automation!">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../ZSJZTravel-Journal/" data-tooltip="Sun Yat-Sun Memorial Middle School，Guangdong - Travel Journal &amp; Summary" aria-label="PREVIOUS: Sun Yat-Sun Memorial Middle School，Guangdong - Travel Journal &amp; Summary">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../JZOJ3363-ACAM/" data-tooltip="JZOJ3363 AC Automation!" aria-label="NEXT: JZOJ3363 AC Automation!">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/08/19/PolynomialCalculation/';
+                 
+                    this.page.identifier = '2018/08/19/PolynomialCalculation/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

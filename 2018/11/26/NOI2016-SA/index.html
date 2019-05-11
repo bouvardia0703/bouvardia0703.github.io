@@ -1,0 +1,581 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>NOI2016 SA - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Suffix Array.\n\nDescriptionDefine a division of a string is good, if it forms like $AABB$, where the four substrings a linked one after another, and both of them are non-empty.\nGiven a string $S$ with length $N$, calculate how many good divisions there are of all divisions of all substrings of $S$. Notice that two substrings with the same contents but appear at different positions are regarded as different.\nSolutionOn site of NOI2016, just use hash and binary_search two calculate LCP can get 95 of 100 points:)\nThe last test case with $N \\le 30000$ needs an $O(n \\ln n)$ algorithm.\nTry to reconstruct the model of this problem. We can get ans by $\\sum_{i} forward \\times backward$. And how to quickly calculate them?\nEnumerate all possible length $L$ of $A$ and $B$ (in description), and choose $\\frac{N}{L}$ key points on $S$.\nWe have such a conclusion: a substring like $AA$ with each having a length of $L$ will exactly cover two key points.\nSo by calculating the common prefix / suffix before / after a pair of key points, we can get the contribution of every substring to the ans.\nBuild a difference array of ans, and every time we get an interval of possible $AA$, put $+1$ at first and $-1$ after last. Don’t forget put tag in a reversing way to calculate backward answers.\nThen get prefix sum / suffix sum of the array to get $forward$ and $backward$. Multiply each pair of adjacent points’ numbers together.\n123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115116117118119120121122123#pragma GCC diagnostic ignored \"-Wchar-subscripts\"#include &lt;bits/stdc++.h&gt;using namespace std;typedef long long ll;const int maxn = 30005;int n, lo2[maxn];ll bg[maxn], ed[maxn], S[maxn], T[maxn];char str[maxn];struct SuffixArray&#123;  char s[maxn];  int sa[maxn], bkt1[maxn], bkt2[maxn], rk[maxn], ht[maxn];  int fir[maxn], sec[maxn], tmp[maxn];  int rmq[maxn][16];  void init() &#123;    memset(sa, 0, sizeof sa);    memset(rk, 0, sizeof rk);    memset(ht, 0, sizeof ht);    memset(bkt1, 0, sizeof bkt1);     memset(bkt2, 0, sizeof bkt2);    memset(rmq, 0, sizeof rmq);    memset(fir, 0, sizeof fir);    memset(sec, 0, sizeof sec);    memset(s, 0, sizeof s);    memset(tmp, 0, sizeof tmp);  &#125;  void build() &#123;    for (int i = 1; i &lt;= n; ++i) bkt1[s[i]]++;    for (int i = 1; i &lt; 128; ++i) bkt1[i] += bkt1[i - 1];//, printf(\"%d\\n\", bkt1[i]);    //puts(\"---\");    for (int i = n; i; --i)      sa[bkt1[s[i]]--] = i;    rk[sa[1]] = 1;    for (int i = 2; i &lt;= n; ++i) rk[sa[i]] = rk[sa[i - 1]] + (s[sa[i]] != s[sa[i - 1]]);    for (int len = 1; rk[sa[n]] &lt; n; len &lt;&lt;= 1) &#123;      memset(bkt1, 0, sizeof bkt1);      memset(bkt2, 0, sizeof bkt2);      for (int i = 1; i &lt;= n; ++i) &#123;        fir[i] = rk[i];        bkt1[fir[i]]++;        sec[i] = (i + len &lt;= n ? rk[i + len] : 0);        bkt2[sec[i]]++;      &#125;      for (int i = 1; i &lt;= n; ++i)        bkt1[i] += bkt1[i - 1], bkt2[i] += bkt2[i - 1];      for (int i = n; i; --i)        tmp[bkt2[sec[i]]--] = i;      for (int i = n; i; --i)        sa[bkt1[fir[tmp[i]]]--] = tmp[i];      rk[sa[1]] = 1;      for (int i = 2; i &lt;= n; ++i)        rk[sa[i]] = rk[sa[i - 1]] + (fir[sa[i]] != fir[sa[i - 1]] || sec[sa[i]] != sec[sa[i - 1]]);    &#125;    for (int i = 1, j = 0; i &lt;= n; ++i) &#123;      j = j ? j - 1 : 0;      while (s[i + j] == s[sa[rk[i] - 1] + j]) ++j;      ht[rk[i]] = j;      //printf(\"%d\\n\", ht[rk[i]] );    &#125;    for (int i = 1; i &lt;= n; ++i)       rmq[i][0] = ht[i];//, printf(\"%d\\n\", ht[i]);    for (int i = 1; (1 &lt;&lt; i) &lt;= n; ++i)      for (int j = 1; j + (1 &lt;&lt; i) - 1 &lt;= n; ++j) &#123;        rmq[j][i] = min(rmq[j][i - 1], rmq[j + (1 &lt;&lt; (i - 1))][i - 1]);      &#125;  &#125;  inline int query(int l, int r) &#123;    int len = r - l + 1;     return min(rmq[l][lo2[len]], rmq[r - (1 &lt;&lt; lo2[len]) + 1][lo2[len]]);  &#125;&#125;SA, SA2;int main() &#123;  int Ts; scanf(\"%d\", &amp;Ts);  lo2[1] = 0;  for (int i = 2; i &lt;= 30000; ++i)    lo2[i] = lo2[i &gt;&gt; 1] + 1;  while (Ts--) &#123;    scanf(\"%s\", str + 1);    n = strlen(str + 1);    SA.init();    SA2.init();    for (int i = 1; i &lt;= n; ++i)       SA.s[i] = str[i], SA2.s[i] = str[n - i + 1];        SA.build();    SA2.build();    memset(bg, 0, sizeof bg);    memset(ed, 0, sizeof ed);    memset(S, 0, sizeof S);    memset(T, 0, sizeof T);    for (int i = 1; i &lt;= n; ++i) &#123;      for (int p = i + 1; p &lt;= n; p += i) &#123;        int lst = SA.rk[p - i + 1], ths = SA.rk[p + 1]; //forward two position        if (lst &gt; ths) swap(lst, ths);        int rlst = SA2.rk[n - (p - i) + 1], rths = SA2.rk[n - p + 1]; //backward two posisiton        if (rlst &gt; rths) swap(rlst, rths);        int lcp = SA.query(lst + 1, ths);        int rlcp = SA2.query(rlst + 1, rths);         //RMQ -&gt; LCP, +1 because height means LCP(rk[i], rk[i - 1])        if (lcp + rlcp &lt; i || !rlcp) continue;        int l = max(p - 2 * i + 1, p - i - rlcp + 1);        int r = min(p + i - 1, p + lcp);        S[l]++; S[r - 2 * i + 2]--; //forward possible interval        T[l + 2 * i - 1]++; T[r + 1]--; //backward possible interval      &#125;    &#125;    for (int i = 1; i &lt;= n; ++i)      bg[i] = bg[i - 1] + S[i], ed[i] = ed[i - 1] + T[i];    ll ans = 0;    for (int i = 2; i &lt;= n; ++i)      ans += bg[i] * ed[i - 1];    printf(\"%lld\\n\", ans);  &#125;  return 0;&#125;\n","dateCreated":"2018-11-26T11:16:47+08:00","dateModified":"2019-02-20T19:34:08+08:00","datePublished":"2018-11-26T11:16:47+08:00","description":"Suffix Array.","headline":"NOI2016 SA","image":[],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/11/26/NOI2016-SA/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/11/26/NOI2016-SA/","keywords":"OI"}</script>
+    <meta name="description" content="Suffix Array.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="NOI2016 SA">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/11/26/NOI2016-SA/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Suffix Array.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-02-20T11:34:08.948Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NOI2016 SA">
+<meta name="twitter:description" content="Suffix Array.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+            <div id="main" data-behavior="5"
+                 class="
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+        <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            NOI2016 SA
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-11-26T11:16:47+08:00">
+	
+		    Nov 26, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Suffix Array.</p>
+<a id="more"></a>
+<h1 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h1><p>Define a division of a string is good, if it forms like $AABB$, where the four substrings a linked one after another, and both of them are non-empty.</p>
+<p>Given a string $S$ with length $N$, calculate how many good divisions there are of all divisions of all substrings of $S$. Notice that two substrings with the same contents but appear at different positions are regarded as different.</p>
+<h1 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h1><p>On site of NOI2016, just use hash and binary_search two calculate LCP can get 95 of 100 points:)</p>
+<p>The last test case with $N \le 30000$ needs an $O(n \ln n)$ algorithm.</p>
+<p>Try to reconstruct the model of this problem. We can get ans by $\sum_{i} forward \times backward$. And how to quickly calculate them?</p>
+<p>Enumerate all possible length $L$ of $A$ and $B$ (in description), and choose $\frac{N}{L}$ key points on $S$.</p>
+<p>We have such a conclusion: a substring like $AA$ with each having a length of $L$ will exactly cover two key points.</p>
+<p>So by calculating the common prefix / suffix before / after a pair of key points, we can get the contribution of every substring to the ans.</p>
+<p>Build a difference array of ans, and every time we get an interval of possible $AA$, put $+1$ at first and $-1$ after last. Don’t forget put tag in a reversing way to calculate backward answers.</p>
+<p>Then get prefix sum / suffix sum of the array to get $forward$ and $backward$. Multiply each pair of adjacent points’ numbers together.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC diagnostic ignored <span class="meta-string">"-Wchar-subscripts"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">30005</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, lo2[maxn];</span><br><span class="line">ll bg[maxn], ed[maxn], S[maxn], T[maxn];</span><br><span class="line"><span class="keyword">char</span> str[maxn];</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SuffixArray</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">  <span class="keyword">char</span> s[maxn];</span><br><span class="line">  <span class="keyword">int</span> sa[maxn], bkt1[maxn], bkt2[maxn], rk[maxn], ht[maxn];</span><br><span class="line">  <span class="keyword">int</span> fir[maxn], sec[maxn], tmp[maxn];</span><br><span class="line">  <span class="keyword">int</span> rmq[maxn][<span class="number">16</span>];</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">memset</span>(sa, <span class="number">0</span>, <span class="keyword">sizeof</span> sa);</span><br><span class="line">    <span class="built_in">memset</span>(rk, <span class="number">0</span>, <span class="keyword">sizeof</span> rk);</span><br><span class="line">    <span class="built_in">memset</span>(ht, <span class="number">0</span>, <span class="keyword">sizeof</span> ht);</span><br><span class="line">    <span class="built_in">memset</span>(bkt1, <span class="number">0</span>, <span class="keyword">sizeof</span> bkt1); </span><br><span class="line">    <span class="built_in">memset</span>(bkt2, <span class="number">0</span>, <span class="keyword">sizeof</span> bkt2);</span><br><span class="line">    <span class="built_in">memset</span>(rmq, <span class="number">0</span>, <span class="keyword">sizeof</span> rmq);</span><br><span class="line">    <span class="built_in">memset</span>(fir, <span class="number">0</span>, <span class="keyword">sizeof</span> fir);</span><br><span class="line">    <span class="built_in">memset</span>(sec, <span class="number">0</span>, <span class="keyword">sizeof</span> sec);</span><br><span class="line">    <span class="built_in">memset</span>(s, <span class="number">0</span>, <span class="keyword">sizeof</span> s);</span><br><span class="line">    <span class="built_in">memset</span>(tmp, <span class="number">0</span>, <span class="keyword">sizeof</span> tmp);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">build</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) bkt1[s[i]]++;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; <span class="number">128</span>; ++i) bkt1[i] += bkt1[i - <span class="number">1</span>];<span class="comment">//, printf("%d\n", bkt1[i]);</span></span><br><span class="line">    <span class="comment">//puts("---");</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = n; i; --i)</span><br><span class="line">      sa[bkt1[s[i]]--] = i;</span><br><span class="line">    rk[sa[<span class="number">1</span>]] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i) rk[sa[i]] = rk[sa[i - <span class="number">1</span>]] + (s[sa[i]] != s[sa[i - <span class="number">1</span>]]);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> len = <span class="number">1</span>; rk[sa[n]] &lt; n; len &lt;&lt;= <span class="number">1</span>) &#123;</span><br><span class="line">      <span class="built_in">memset</span>(bkt1, <span class="number">0</span>, <span class="keyword">sizeof</span> bkt1);</span><br><span class="line">      <span class="built_in">memset</span>(bkt2, <span class="number">0</span>, <span class="keyword">sizeof</span> bkt2);</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">        fir[i] = rk[i];</span><br><span class="line">        bkt1[fir[i]]++;</span><br><span class="line">        sec[i] = (i + len &lt;= n ? rk[i + len] : <span class="number">0</span>);</span><br><span class="line">        bkt2[sec[i]]++;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">        bkt1[i] += bkt1[i - <span class="number">1</span>], bkt2[i] += bkt2[i - <span class="number">1</span>];</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = n; i; --i)</span><br><span class="line">        tmp[bkt2[sec[i]]--] = i;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = n; i; --i)</span><br><span class="line">        sa[bkt1[fir[tmp[i]]]--] = tmp[i];</span><br><span class="line">      rk[sa[<span class="number">1</span>]] = <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i)</span><br><span class="line">        rk[sa[i]] = rk[sa[i - <span class="number">1</span>]] + (fir[sa[i]] != fir[sa[i - <span class="number">1</span>]] || sec[sa[i]] != sec[sa[i - <span class="number">1</span>]]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>, j = <span class="number">0</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">      j = j ? j - <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">while</span> (s[i + j] == s[sa[rk[i] - <span class="number">1</span>] + j]) ++j;</span><br><span class="line">      ht[rk[i]] = j;</span><br><span class="line">      <span class="comment">//printf("%d\n", ht[rk[i]] );</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) </span><br><span class="line">      rmq[i][<span class="number">0</span>] = ht[i];<span class="comment">//, printf("%d\n", ht[i]);</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; (<span class="number">1</span> &lt;&lt; i) &lt;= n; ++i)</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j + (<span class="number">1</span> &lt;&lt; i) - <span class="number">1</span> &lt;= n; ++j) &#123;</span><br><span class="line">        rmq[j][i] = min(rmq[j][i - <span class="number">1</span>], rmq[j + (<span class="number">1</span> &lt;&lt; (i - <span class="number">1</span>))][i - <span class="number">1</span>]);</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">query</span><span class="params">(<span class="keyword">int</span> l, <span class="keyword">int</span> r)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> len = r - l + <span class="number">1</span>; </span><br><span class="line">    <span class="keyword">return</span> min(rmq[l][lo2[len]], rmq[r - (<span class="number">1</span> &lt;&lt; lo2[len]) + <span class="number">1</span>][lo2[len]]);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;SA, SA2;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> Ts; <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;Ts);</span><br><span class="line">  lo2[<span class="number">1</span>] = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= <span class="number">30000</span>; ++i)</span><br><span class="line">    lo2[i] = lo2[i &gt;&gt; <span class="number">1</span>] + <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">while</span> (Ts--) &#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%s"</span>, str + <span class="number">1</span>);</span><br><span class="line">    n = <span class="built_in">strlen</span>(str + <span class="number">1</span>);</span><br><span class="line">    SA.init();</span><br><span class="line">    SA2.init();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) </span><br><span class="line">      SA.s[i] = str[i], SA2.s[i] = str[n - i + <span class="number">1</span>];</span><br><span class="line">    </span><br><span class="line">    SA.build();</span><br><span class="line">    SA2.build();</span><br><span class="line">    <span class="built_in">memset</span>(bg, <span class="number">0</span>, <span class="keyword">sizeof</span> bg);</span><br><span class="line">    <span class="built_in">memset</span>(ed, <span class="number">0</span>, <span class="keyword">sizeof</span> ed);</span><br><span class="line">    <span class="built_in">memset</span>(S, <span class="number">0</span>, <span class="keyword">sizeof</span> S);</span><br><span class="line">    <span class="built_in">memset</span>(T, <span class="number">0</span>, <span class="keyword">sizeof</span> T);</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> p = i + <span class="number">1</span>; p &lt;= n; p += i) &#123;</span><br><span class="line">        <span class="keyword">int</span> lst = SA.rk[p - i + <span class="number">1</span>], ths = SA.rk[p + <span class="number">1</span>]; <span class="comment">//forward two position</span></span><br><span class="line">        <span class="keyword">if</span> (lst &gt; ths) swap(lst, ths);</span><br><span class="line">        <span class="keyword">int</span> rlst = SA2.rk[n - (p - i) + <span class="number">1</span>], rths = SA2.rk[n - p + <span class="number">1</span>]; <span class="comment">//backward two posisiton</span></span><br><span class="line">        <span class="keyword">if</span> (rlst &gt; rths) swap(rlst, rths);</span><br><span class="line">        <span class="keyword">int</span> lcp = SA.query(lst + <span class="number">1</span>, ths);</span><br><span class="line">        <span class="keyword">int</span> rlcp = SA2.query(rlst + <span class="number">1</span>, rths); </span><br><span class="line">        <span class="comment">//RMQ -&gt; LCP, +1 because height means LCP(rk[i], rk[i - 1])</span></span><br><span class="line">        <span class="keyword">if</span> (lcp + rlcp &lt; i || !rlcp) <span class="keyword">continue</span>;</span><br><span class="line">        <span class="keyword">int</span> l = max(p - <span class="number">2</span> * i + <span class="number">1</span>, p - i - rlcp + <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">int</span> r = min(p + i - <span class="number">1</span>, p + lcp);</span><br><span class="line">        S[l]++; S[r - <span class="number">2</span> * i + <span class="number">2</span>]--; <span class="comment">//forward possible interval</span></span><br><span class="line">        T[l + <span class="number">2</span> * i - <span class="number">1</span>]++; T[r + <span class="number">1</span>]--; <span class="comment">//backward possible interval</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">      bg[i] = bg[i - <span class="number">1</span>] + S[i], ed[i] = ed[i - <span class="number">1</span>] + T[i];</span><br><span class="line">    ll ans = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i)</span><br><span class="line">      ans += bg[i] * ed[i - <span class="number">1</span>];</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, ans);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../NOI2015-SA/" data-tooltip="NOI2015 SA" aria-label="PREVIOUS: NOI2015 SA">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../25/BZOJ-5250-Lagrange-GF-DP-SegTree/" data-tooltip="BZOJ5250 秘密袭击 拉格朗日插值,线段树合并,生成函数" aria-label="NEXT: BZOJ5250 秘密袭击 拉格朗日插值,线段树合并,生成函数">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../NOI2015-SA/" data-tooltip="NOI2015 SA" aria-label="PREVIOUS: NOI2015 SA">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../25/BZOJ-5250-Lagrange-GF-DP-SegTree/" data-tooltip="BZOJ5250 秘密袭击 拉格朗日插值,线段树合并,生成函数" aria-label="NEXT: BZOJ5250 秘密袭击 拉格朗日插值,线段树合并,生成函数">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#" aria-label="Back to top">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/11/26/NOI2016-SA/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/11/26/NOI2016-SA/';
+                 
+                    this.page.identifier = '2018/11/26/NOI2016-SA/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

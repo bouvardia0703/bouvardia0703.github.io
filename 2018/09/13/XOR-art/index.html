@@ -1,0 +1,616 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>Art of XOR - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"Art of XOR\nWe won’t mention linear base in this article.\n\n\nOverviewSome properties\nCommutativity: $a\\,\\oplus\\,b = b\\,\\oplus\\,a$\nAssociativity: $a\\,\\oplus(b\\,\\oplus\\,c) = (a\\,\\oplus\\,b)\\,\\oplus\\,c$\nDistributivity(only for logical conjunction):  $ c \\wedge\\, (a\\,\\oplus\\,b) = (c \\wedge a) \\oplus (c\\wedge b)$\nSelf-Reflexivity: $a\\,\\oplus\\,b\\,\\oplus\\,b = a\\,\\oplus\\,0 = a$\nA Corollary: $a\\,\\oplus\\,b = c \\rightarrow a\\,\\oplus\\,c = b$\n\nBZOJ 3329 Xorequ. Subtask 1DescriptionEvaluate how many numbers $x$ satisfies that $x\\,\\oplus\\,3x=2x$, for $x \\le n$\nSolutionBecause of the Corollary above, we can get: $x\\,\\oplus\\,2x = 3x$.\nSplit $3x$ into $x + 2x$, \\’cause $2x = x &lt;&lt; 1$,  if there\\’re $1$s on the same positions of both $x$ and $2x$\\’s binary representation, the add operation ans xor operation would lead to different results! (e.g. $(1)_2 + (1)_2 = (10)_2$, while $(1)_2\\,\\oplus\\,(1)_2 = (0)_2$). \ni.e. for each legal $x$, there’s no consecutive 1s in its binary representation.\nUse DP for Digit to deal with it.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;using namespace std;typedef long long ll;const int p = 1e+9 + 7;int bin[70], tot;ll f[70][2];ll n;ll dfs(int p, int a, bool z, bool u)&#123;\tif(!p) return 1;\tif(~f[p][a] &amp;&amp; !u &amp;&amp; !z) return f[p][a];\tint lim = u ? bin[p] : 1; ll tot = 0;\tfor(int i = 0; i &lt;= lim; ++i)\t&#123;\t\tif(a &amp;&amp; i) continue;\t\ttot += dfs(p - 1, i, (z &amp;&amp; (!i)), (u &amp;&amp; (i == bin[p])));\t&#125;\tif(!z &amp;&amp; !u) f[p][a] = tot;\treturn tot;&#125;ll solve1(ll u)&#123;\tmemset(f, -1, sizeof f);\ttot = 0;\twhile(u)\t&#123;\t\tbin[++tot] = (u&amp;1);\t\tu &gt;&gt;= 1;\t&#125;\treturn dfs(tot, 0, 1, 1);&#125;int main()&#123;\tint T;\tscanf(\"%d\", &amp;T);\twhile(T--)\t&#123;\t\tscanf(\"%lld\", &amp;n);\t\tprintf(\"%lld\\n\", solve1(n) - solve1(0));\t\t//solu2::main(n + 2);\t&#125;\t\treturn 0;&#125;\nCodeforces 1039 C Network SafetyDescriptionGiven some points with value $c_i$ range from $0$ to $2^k - 1$, and some edges link them.\nWe say an edge is Safe if and only if the two points it connects have distinct values.\nA kind of Virus with value $x$ is now invading the network and if a point is infected, its value changes from $c_i$ to $c_i\\,\\oplus\\,x$. Then some of edges would be unsafe.\nEvaluate the number of pairs $(A,x)$, where $A$ is a subset of points($|A| \\ge 0$), and $x$ is the value of virus ranging from $0$ to $2^k-1$, if all points in $A$ were infected while no others were done so, the rest of the network remains safe.\nSolutionFirst consider a pair of points with values $a, b$.\nIf $x = a\\,\\oplus\\,b$, then this edges would turn unsafe, but lead to no effects on other points.\nThus we can put $v_i\\,\\oplus\\,v_j$ on edge connecting $i, j$. And for each kind of edges\\’ value $w_i$, we can calculate number of connected components, take any subset of these components and $w_i$ as a pair, the rest of the network wouldn’t suffer any invasion.\nUse a Union-Find Set to maintain it.\nFinally, for $x$ doesn’t exist in set $W$, we can take any subset of the whole graph.\nNote that, refresh the parent array in $O(n)$ time will get TLE. However, use trick in code below will AC, Though it is ugly.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;map&gt;#include &lt;cctype&gt;#include &lt;vector&gt;#include &lt;unordered_map&gt;#include &lt;unordered_set&gt;using std::unordered_map;using std::vector;using std::cerr;using std::cout;using std::endl;using std::fill;using std::min;using std::unordered_set;typedef long long ll;const ll mod = 1e+9 + 7;const int maxn = 5e+5 + 5;struct edge&#123;\tll frm, to;\tedge(ll f_ = 0, ll t_ = 0):frm(f_),to(t_)&#123;&#125;&#125;;ll n, m, k;ll ans, c[maxn];unordered_map&lt;ll, vector&lt;edge&gt; &gt; e_mp;unordered_map&lt;ll, ll&gt; f;ll find(ll x) &#123;return (!f.count(x) || f[x] == x) ? x : f[x] = find(f[x]);&#125;inline ll quick_power(ll base, ll index)&#123;\tll ret = 1;\twhile(index)\t&#123;\t\tif(index &amp; 1) ret = (ret * base) % mod;\t\tindex &gt;&gt;= 1;\t\tbase = base * base % mod;\t&#125;\treturn ret % mod;&#125;int main()&#123;\tscanf(\"%I64d%I64d%I64d\", &amp;n, &amp;m, &amp;k);\tfor(ll i = 1; i &lt;= n; ++i) scanf(\"%I64d\", &amp;c[i]);\tfor(ll i = 1; i &lt;= m; ++i)\t&#123;\t\tll u, v;\t\tscanf(\"%I64d%I64d\", &amp;u, &amp;v);\t\tll x = (c[u] ^ c[v]);\t\te_mp[x].push_back(edge(u,v));\t&#125;\tfor(auto vec : e_mp)\t&#123;\t\tf.clear(); unordered_set&lt;ll&gt; dsu;\t\tfor(auto pr : vec.second)\t\t&#123; \t\t\tll fx = find(pr.frm), fy = find(pr.to);\t\t\tif(fx &lt; fy) f[fy] = fx;\t\t\telse f[fx] = fy;\t\t\tdsu.insert(pr.frm); dsu.insert(pr.to);\t\t&#125;\t\tll single_p = dsu.size(); dsu.clear();\t\tfor(auto pr : vec.second)\t\t\tdsu.insert(find(min(pr.frm, pr.to)));\t\tans = (ans + quick_power(2ll, dsu.size()+n-single_p)) % mod;\t&#125;\tans = ans + quick_power(2ll, n) * (quick_power(2ll, k) - e_mp.size());\tans = (ans % mod + mod) % mod;\tcout &lt;&lt; ans &lt;&lt; endl;\treturn 0;&#125;\nCodeforces 1016 D Vasya And The MatrixDescriptionConsider a $n \\times m$ matrix, given every line and every column\\’s xor sum.\nConstruct a matrix satisfying the restriction if could, otherwise output No.\nSolutionIf we xor all given numbers together, every element in the matrix will be calculated twice, thus the result is legal if and only if it equals to $0$.\nThen how to construct it?\nSince the matrix is correct, we can construct it in any way we want. To make each column $j$ from $2$ to $m$ results in $b_j$, we can simply make $c_{1,j} = b_j$. Lines from $2$ to $n$ is the same. Then $c_{1,1}$ must be $a_1 \\oplus b_2 \\oplus \\ldots \\oplus b_m$. The rest of the matrix is $0$.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344#include &lt;iostream&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;algorithm&gt;using namespace std;typedef long long ll;const int maxn = 105;int n, m;ll ans, line[maxn], col[maxn];int main()&#123;\tios::sync_with_stdio(false);\tcin.tie(nullptr); cout.tie(nullptr);\tcin &gt;&gt; n &gt;&gt; m;\tfor(int i = 1; i &lt;= n; ++i) cin &gt;&gt; line[i], ans ^= line[i];\tfor(int i = 1; i &lt;= m; ++i) cin &gt;&gt; col[i], ans ^= col[i];\tif(ans)\t&#123;\t\tcout &lt;&lt; \"NO\" &lt;&lt; endl;\t\treturn 0;\t&#125;\telse\t&#123;\t\t\t\tcout &lt;&lt; \"YES\" &lt;&lt; endl;\t\tll fir = line[1]; for(int i = 2; i &lt;= m; ++i) fir ^= col[i];\t\tcout &lt;&lt; fir &lt;&lt; \" \";\t\tfor(int i = 2; i &lt;= m; ++i) cout &lt;&lt; col[i] &lt;&lt; \" \";\t\tcout &lt;&lt; endl;\t\tfor(int i = 2; i &lt;= n; ++i)\t\t&#123;\t\t\tcout &lt;&lt; line[i] &lt;&lt; \" \";\t\t\tfor(int j = 2; j &lt;= m; ++j) cout &lt;&lt; \"0 \";\t\t\tcout &lt;&lt; endl;\t\t&#125;\t&#125;\treturn 0;&#125;\n","dateCreated":"2018-09-13T09:38:03+08:00","dateModified":"2018-09-13T11:04:10+08:00","datePublished":"2018-09-13T09:38:03+08:00","description":"Art of XOR\nWe won’t mention linear base in this article.","headline":"Art of XOR","image":["https://i.loli.net/2018/09/13/5b99d20754ac2.jpg","https://i.loli.net/2018/09/13/5b99d39ea2983.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/09/13/XOR-art/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/09/13/XOR-art/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/09/13/5b99d20754ac2.jpg"}</script>
+    <meta name="description" content="Art of XOR We won’t mention linear base in this article.">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="Art of XOR">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/09/13/XOR-art/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="Art of XOR We won’t mention linear base in this article.">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-09-13T03:04:10.250Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Art of XOR">
+<meta name="twitter:description" content="Art of XOR We won’t mention linear base in this article.">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/09/13/5b99d20754ac2.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/09/13/5b99d20754ac2.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/09/13/5b99d39ea2983.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/09/13/5b99d39ea2983.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/09/13/5b99d39ea2983.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            Art of XOR
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-09-13T09:38:03+08:00">
+	
+		    Sep 13, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>Art of XOR</p>
+<p>We <em>won’t mention linear base</em> in this article.</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Overview"><span class="toc-text">Overview</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Some-properties"><span class="toc-text">Some properties</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BZOJ-3329-Xorequ-Subtask-1"><span class="toc-text">BZOJ 3329 Xorequ. Subtask 1</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Codeforces-1039-C-Network-Safety"><span class="toc-text">Codeforces 1039 C Network Safety</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Description-1"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution-1"><span class="toc-text">Solution</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Codeforces-1016-D-Vasya-And-The-Matrix"><span class="toc-text">Codeforces 1016 D Vasya And The Matrix</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Description-2"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution-2"><span class="toc-text">Solution</span></a></li></ol></li></ol></li></ol>
+<h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><h4 id="Some-properties"><a href="#Some-properties" class="headerlink" title="Some properties"></a>Some properties</h4><ul>
+<li>Commutativity: $a\,\oplus\,b = b\,\oplus\,a$</li>
+<li>Associativity: $a\,\oplus(b\,\oplus\,c) = (a\,\oplus\,b)\,\oplus\,c$</li>
+<li>Distributivity(<em>only for logical conjunction</em>):  $ c \wedge\, (a\,\oplus\,b) = (c \wedge a) \oplus (c\wedge b)$</li>
+<li>Self-Reflexivity: $a\,\oplus\,b\,\oplus\,b = a\,\oplus\,0 = a$</li>
+<li>A Corollary: $a\,\oplus\,b = c \rightarrow a\,\oplus\,c = b$</li>
+</ul>
+<h2 id="BZOJ-3329-Xorequ-Subtask-1"><a href="#BZOJ-3329-Xorequ-Subtask-1" class="headerlink" title="BZOJ 3329 Xorequ. Subtask 1"></a>BZOJ 3329 Xorequ. Subtask 1</h2><h4 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h4><p>Evaluate how many numbers $x$ satisfies that $x\,\oplus\,3x=2x$, for $x \le n$</p>
+<h4 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h4><p>Because of the Corollary above, we can get: $x\,\oplus\,2x = 3x$.</p>
+<p>Split $3x$ into $x + 2x$, \’cause $2x = x &lt;&lt; 1$,  if there\’re $1$s on the same positions of both $x$ and $2x$\’s binary representation, the add operation ans xor operation would lead to different results! (e.g. $(1)_2 + (1)_2 = (10)_2$, while $(1)_2\,\oplus\,(1)_2 = (0)_2$). </p>
+<p>i.e. for each legal $x$, there’s no consecutive 1s in its binary representation.</p>
+<p>Use DP for Digit to deal with it.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> p = <span class="number">1e+9</span> + <span class="number">7</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> bin[<span class="number">70</span>], tot;</span><br><span class="line">ll f[<span class="number">70</span>][<span class="number">2</span>];</span><br><span class="line">ll n;</span><br><span class="line"></span><br><span class="line"><span class="function">ll <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> p, <span class="keyword">int</span> a, <span class="keyword">bool</span> z, <span class="keyword">bool</span> u)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span>(!p) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">if</span>(~f[p][a] &amp;&amp; !u &amp;&amp; !z) <span class="keyword">return</span> f[p][a];</span><br><span class="line">	<span class="keyword">int</span> lim = u ? bin[p] : <span class="number">1</span>; ll tot = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= lim; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>(a &amp;&amp; i) <span class="keyword">continue</span>;</span><br><span class="line">		tot += dfs(p - <span class="number">1</span>, i, (z &amp;&amp; (!i)), (u &amp;&amp; (i == bin[p])));</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(!z &amp;&amp; !u) f[p][a] = tot;</span><br><span class="line">	<span class="keyword">return</span> tot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function">ll <span class="title">solve1</span><span class="params">(ll u)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">memset</span>(f, <span class="number">-1</span>, <span class="keyword">sizeof</span> f);</span><br><span class="line">	tot = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">while</span>(u)</span><br><span class="line">	&#123;</span><br><span class="line">		bin[++tot] = (u&amp;<span class="number">1</span>);</span><br><span class="line">		u &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> dfs(tot, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> T;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;T);</span><br><span class="line">	<span class="keyword">while</span>(T--)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%lld"</span>, &amp;n);</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"%lld\n"</span>, solve1(n) - solve1(<span class="number">0</span>));</span><br><span class="line">		<span class="comment">//solu2::main(n + 2);</span></span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Codeforces-1039-C-Network-Safety"><a href="#Codeforces-1039-C-Network-Safety" class="headerlink" title="Codeforces 1039 C Network Safety"></a>Codeforces 1039 C Network Safety</h2><h4 id="Description-1"><a href="#Description-1" class="headerlink" title="Description"></a>Description</h4><p>Given some points with value $c_i$ range from $0$ to $2^k - 1$, and some edges link them.</p>
+<p>We say an edge is Safe if and only if the two points it connects have <strong>distinct</strong> values.</p>
+<p>A kind of Virus with value $x$ is now invading the network and if a point is infected, its value changes from $c_i$ to $c_i\,\oplus\,x$. Then some of edges would be unsafe.</p>
+<p>Evaluate the number of pairs $(A,x)$, where $A$ is a subset of points($|A| \ge 0$), and $x$ is the value of virus ranging from $0$ to $2^k-1$, if all points in $A$ were infected while no others were done so, the rest of the network remains safe.</p>
+<h4 id="Solution-1"><a href="#Solution-1" class="headerlink" title="Solution"></a>Solution</h4><p>First consider a pair of points with values $a, b$.</p>
+<p>If $x = a\,\oplus\,b$, then this edges would turn unsafe, but lead to no effects on other points.</p>
+<p>Thus we can put $v_i\,\oplus\,v_j$ on edge connecting $i, j$. And for each kind of edges\’ value $w_i$, we can calculate number of connected components, take any subset of these components and $w_i$ as a pair, the rest of the network wouldn’t suffer any invasion.</p>
+<p>Use a Union-Find Set to maintain it.</p>
+<p>Finally, for $x$ doesn’t exist in set $W$, we can take any subset of the whole graph.</p>
+<p>Note that, refresh the parent array in $O(n)$ time will get TLE. However, use trick in code below will AC, <del>Though it is ugly.</del></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;map&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unordered_map&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unordered_set&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">unordered_map</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">vector</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">cerr</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">cout</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::fill;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::min;</span><br><span class="line"><span class="keyword">using</span> <span class="built_in">std</span>::<span class="built_in">unordered_set</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> ll mod = <span class="number">1e+9</span> + <span class="number">7</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">5e+5</span> + <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	ll frm, to;</span><br><span class="line">	edge(ll f_ = <span class="number">0</span>, ll t_ = <span class="number">0</span>):frm(f_),to(t_)&#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line">ll n, m, k;</span><br><span class="line">ll ans, c[maxn];</span><br><span class="line"><span class="built_in">unordered_map</span>&lt;ll, <span class="built_in">vector</span>&lt;edge&gt; &gt; e_mp;</span><br><span class="line"><span class="built_in">unordered_map</span>&lt;ll, ll&gt; f;</span><br><span class="line"></span><br><span class="line"><span class="function">ll <span class="title">find</span><span class="params">(ll x)</span> </span>&#123;<span class="keyword">return</span> (!f.count(x) || f[x] == x) ? x : f[x] = find(f[x]);&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> ll <span class="title">quick_power</span><span class="params">(ll base, ll index)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ll ret = <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">while</span>(index)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span>(index &amp; <span class="number">1</span>) ret = (ret * base) % mod;</span><br><span class="line">		index &gt;&gt;= <span class="number">1</span>;</span><br><span class="line">		base = base * base % mod;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> ret % mod;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">scanf</span>(<span class="string">"%I64d%I64d%I64d"</span>, &amp;n, &amp;m, &amp;k);</span><br><span class="line">	<span class="keyword">for</span>(ll i = <span class="number">1</span>; i &lt;= n; ++i) <span class="built_in">scanf</span>(<span class="string">"%I64d"</span>, &amp;c[i]);</span><br><span class="line">	<span class="keyword">for</span>(ll i = <span class="number">1</span>; i &lt;= m; ++i)</span><br><span class="line">	&#123;</span><br><span class="line">		ll u, v;</span><br><span class="line">		<span class="built_in">scanf</span>(<span class="string">"%I64d%I64d"</span>, &amp;u, &amp;v);</span><br><span class="line">		ll x = (c[u] ^ c[v]);</span><br><span class="line">		e_mp[x].push_back(edge(u,v));</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">auto</span> vec : e_mp)</span><br><span class="line">	&#123;</span><br><span class="line">		f.clear(); <span class="built_in">unordered_set</span>&lt;ll&gt; dsu;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">auto</span> pr : vec.second)</span><br><span class="line">		&#123; </span><br><span class="line">			ll fx = find(pr.frm), fy = find(pr.to);</span><br><span class="line">			<span class="keyword">if</span>(fx &lt; fy) f[fy] = fx;</span><br><span class="line">			<span class="keyword">else</span> f[fx] = fy;</span><br><span class="line">			dsu.insert(pr.frm); dsu.insert(pr.to);</span><br><span class="line">		&#125;</span><br><span class="line">		ll single_p = dsu.size(); dsu.clear();</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">auto</span> pr : vec.second)</span><br><span class="line">			dsu.insert(find(min(pr.frm, pr.to)));</span><br><span class="line">		ans = (ans + quick_power(<span class="number">2l</span>l, dsu.size()+n-single_p)) % mod;</span><br><span class="line">	&#125;</span><br><span class="line">	ans = ans + quick_power(<span class="number">2l</span>l, n) * (quick_power(<span class="number">2l</span>l, k) - e_mp.size());</span><br><span class="line">	ans = (ans % mod + mod) % mod;</span><br><span class="line">	<span class="built_in">cout</span> &lt;&lt; ans &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Codeforces-1016-D-Vasya-And-The-Matrix"><a href="#Codeforces-1016-D-Vasya-And-The-Matrix" class="headerlink" title="Codeforces 1016 D Vasya And The Matrix"></a>Codeforces 1016 D Vasya And The Matrix</h2><h4 id="Description-2"><a href="#Description-2" class="headerlink" title="Description"></a>Description</h4><p>Consider a $n \times m$ matrix, given every line and every column\’s xor sum.</p>
+<p>Construct a matrix satisfying the restriction if could, otherwise output No.</p>
+<h4 id="Solution-2"><a href="#Solution-2" class="headerlink" title="Solution"></a>Solution</h4><p>If we xor all given numbers together, every element in the matrix will be calculated twice, thus the result is legal if and only if it equals to $0$.</p>
+<p>Then how to construct it?</p>
+<p>Since the matrix is correct, we can construct it in any way we want. To make each column $j$ from $2$ to $m$ results in $b_j$, we can simply make $c_{1,j} = b_j$. Lines from $2$ to $n$ is the same. Then $c_{1,1}$ must be $a_1 \oplus b_2 \oplus \ldots \oplus b_m$. The rest of the matrix is $0$.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">long</span> <span class="keyword">long</span> ll;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">105</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m;</span><br><span class="line">ll ans, line[maxn], col[maxn];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	ios::sync_with_stdio(<span class="literal">false</span>);</span><br><span class="line">	<span class="built_in">cin</span>.tie(<span class="literal">nullptr</span>); <span class="built_in">cout</span>.tie(<span class="literal">nullptr</span>);</span><br><span class="line"></span><br><span class="line">	<span class="built_in">cin</span> &gt;&gt; n &gt;&gt; m;</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) <span class="built_in">cin</span> &gt;&gt; line[i], ans ^= line[i];</span><br><span class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= m; ++i) <span class="built_in">cin</span> &gt;&gt; col[i], ans ^= col[i];</span><br><span class="line">	<span class="keyword">if</span>(ans)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">cout</span> &lt;&lt; <span class="string">"NO"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">		</span><br><span class="line">		<span class="built_in">cout</span> &lt;&lt; <span class="string">"YES"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">		ll fir = line[<span class="number">1</span>]; <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= m; ++i) fir ^= col[i];</span><br><span class="line">		<span class="built_in">cout</span> &lt;&lt; fir &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= m; ++i) <span class="built_in">cout</span> &lt;&lt; col[i] &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">		<span class="built_in">cout</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">cout</span> &lt;&lt; line[i] &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">			<span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">2</span>; j &lt;= m; ++j) <span class="built_in">cout</span> &lt;&lt; <span class="string">"0 "</span>;</span><br><span class="line">			<span class="built_in">cout</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../14/TOEFL-95-1st/" data-tooltip="关于Curtis托福首考考了95" aria-label="PREVIOUS: 关于Curtis托福首考考了95">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../CF-1036-E/" data-tooltip="Codeforces Edu Round 50 Div.2 E" aria-label="NEXT: Codeforces Edu Round 50 Div.2 E">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../../14/TOEFL-95-1st/" data-tooltip="关于Curtis托福首考考了95" aria-label="PREVIOUS: 关于Curtis托福首考考了95">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../CF-1036-E/" data-tooltip="Codeforces Edu Round 50 Div.2 E" aria-label="NEXT: Codeforces Edu Round 50 Div.2 E">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/13/XOR-art/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/13/XOR-art/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/13/XOR-art/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/13/XOR-art/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/13/XOR-art/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/13/XOR-art/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/09/13/XOR-art/';
+                 
+                    this.page.identifier = '2018/09/13/XOR-art/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>

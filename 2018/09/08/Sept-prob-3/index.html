@@ -1,0 +1,615 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="Bouvardia&#39;s Blog">
+    <title>September Problems Summarization Part3 - Bouvardia&#39;s Blog</title>
+    <meta name="author" content="Bouvardia.L">
+    
+    
+        <link rel="icon" href="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg">
+    
+    
+    <script type="application/ld+json">{"@context":"http://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"},"articleBody":"九月题目泛做总结。\nKeywordsProblem On Tree, DFS &amp; Optimization, Heap, Greedy, List,  Interval&amp;Backpack Dynamic Programming\n\n\nBZOJ 2525 DynamiteDescription一颗 $n$ 个点的树, 有一些关键点, 需要选择关键点, 最小化选点到所有关键点距离的最大值.\nSolution直接做肯定是不好做, 我们转验证.\n那么怎么验证距离是否小于等于 $mid$ 呢? 一开始以为要再套个DP, 其实是贪心, 需要记录两种信息, 来确定是子树内部可以解决掉所有关键点, 还是需要外面的帮助.也就是树内已选点到根的最小距离 $d_1$ 和树内未被覆盖的关键点的最大深度 $d_2$.\n如果两者相加小于 $mid$, 说明可以自己deal. 直接把 $d_1$置0, $d_2$置 $-\\infty$.\n如果 $d_2 = mid$, 树根强制选, 记录下答案.\n需要注意的是 $d_1 &gt; mid$ 的情况, 这时候要先修正一下 $d_2$. 就算子树中的炸弹都搞定了, 自己也有可能是炸弹, $d_2 = max(d_2, 0)$.\n12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;cctype&gt;using namespace std;const int maxn = 300005;const int inf = 0x3f3f3f3f;struct edge&#123;    int to, nxt;&#125;e[maxn &lt;&lt; 1];int n, m, ptr, lnk[maxn], d[maxn], cnt;int f[maxn], g[maxn], tot;inline void add(int bgn, int end)&#123;    e[++ptr].to = end; e[ptr].nxt = lnk[bgn];    lnk[bgn] = ptr;&#125;void dfs(int x, int fa, int mid)&#123;    f[x] = -inf; g[x] = inf;    for(int p = lnk[x]; p; p = e[p].nxt)    &#123;        int y = e[p].to;        if(y == fa) continue;        dfs(y, x, mid);        f[x] = max(f[x], f[y] + 1);        g[x] = min(g[x], g[y] + 1);    &#125;    if(d[x] &amp;&amp; g[x] &gt; mid) f[x] = max(f[x], 0); //either self or subtree    if(f[x] + g[x] &lt;= mid) f[x] = -inf; //do it self no warry    if(f[x] == mid) ++tot, f[x] = -inf, g[x] = 0; //there's no bomb anymore, and this point is chosen.&#125;inline bool chk(int mid)&#123;    tot = 0;    dfs(1, 0, mid);    if(f[1] &gt;= 0) tot++;    return tot &lt;= m;&#125;inline int rd()&#123;    register int x = 0; char c = getchar();    while(!isdigit(c)) c = getchar();    while(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();    return x;&#125;int main()&#123;    scanf(\"%d%d\", &amp;n, &amp;m);    for(register int i = 1; i &lt;= n; ++i) d[i] = (rd() == 1);    int x, y;    for(register int i = 1; i &lt; n; ++i)    &#123;        x = rd(); y = rd();        add(x, y); add(y, x);    &#125;    int l = 0, r = n, ans = 0;    while(l &lt;= r)    &#123;        int mid = (l + r) &gt;&gt; 1;        if(chk(mid)) ans = mid, r = mid - 1;        else l = mid + 1;    &#125;    printf(\"%d\\n\", ans);    return 0;&#125;\nBZOJ 1306 循环赛Description若干支队伍互相比赛, 胜+3, 负0, 平各+1.\n给出比分情况, 求可能局面方案数.\n$n \\le 8$.\nSolution一看这个数据范围就比较适合乱搞.\n剪枝三连: 全胜无解, 全负无解, 当前队伍最后一场比赛如果分差为2无解.\n加强版就没这么简单了, 有机会做一下.\n123456789101112131415161718192021222324252627282930313233343536#pragma GCC optimize(3)#include &lt;cstdio&gt;int n, scr[10], ans, tot;int f[4] = &#123;3, 1, -1, 0&#125;;int tmp[10];inline void dfs(int x, int y)&#123;    if(tmp[x] + (n - y + 1) * 3 &lt; scr[x]) return;    if(tmp[x] &gt; scr[x]) return;     if(x == n) &#123;ans++; return;&#125;    if(y == n)    &#123;        int delt = scr[x] - tmp[x];        if(delt == 2) return;        tmp[y] += f[delt];        dfs(x + 1, x + 2);        tmp[y] -= f[delt];    &#125;    else    &#123;        tmp[x] += 3; dfs(x, y + 1); tmp[x] -= 3;        tmp[y] += 3; dfs(x, y + 1); tmp[y] -= 3;        tmp[x]++; tmp[y]++; dfs(x, y + 1); tmp[x]--; tmp[y]--;    &#125;&#125;int main()&#123;    scanf(\"%d\", &amp;n);    for(int i = 1; i &lt;= n; ++i) scanf(\"%d\", &amp;scr[i]);    dfs(1, 2);    printf(\"%d\\n\", ans);    return 0;&#125;\nBZOJ 2151 种树, BZOJ 1150 数据备份Description给定每个位置的权, 不能选择相邻位置, 最大化权值和.\nSolution考虑选择一个的代价, 来修改相邻元素, 以便在更优答案时修正.\n这是堆的题的一个典型性质. \n这道题中, 将相邻的都删除, 变成一个大点, 点权是 $l + r - v$.\n洛谷上还有个上环的, 也同理.\n1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;#include &lt;queue&gt;#include &lt;vector&gt;#include &lt;cctype&gt;using namespace std;const int maxn = 200005;struct node&#123;    int val, id;    node(int v_ = 0, int i_ = 0):    val(v_), id(i_)&#123;&#125;    bool operator &lt; (const node &amp;rhs) const    &#123;        return val &lt; rhs.val;    &#125;&#125;;int ptr, cnt, ans, lst[maxn], nxt[maxn];int n, k, d[maxn], tag[maxn];priority_queue&lt;node&gt; q;inline int rd()&#123;    register int x = 0, f = 0; char c = getchar();    while(!isdigit(c))&#123;if(c == '-') f = 1; c = getchar();&#125;    while(isdigit(c)) x = x * 10 + (c ^ 48), c = getchar();    return f ? -x : x;&#125;inline void remove(int x)&#123;    tag[x] = 1;    lst[nxt[x]] = lst[x];    nxt[lst[x]] = nxt[x];&#125;int main()&#123;    n = rd(); k = rd();    if(k &gt; n / 2)    &#123;        puts(\"Error!\");        return 0;    &#125;    for(int i = 1; i &lt;= n; ++i) d[i] = rd();    lst[1] = n; nxt[n] = 1;    for(int i = 2; i &lt;= n; ++i) nxt[i-1] = i, lst[i] = i - 1;    for(int i = 1; i &lt;= n; ++i) q.push(node(d[i], i));    cnt = k;    while(cnt--)    &#123;        //node u = q.top(); q.pop();        while(tag[q.top().id]) q.pop();        node u = q.top(); q.pop();        ans += u.val;        //printf(\"%d %d\\n\", u.id, ans);        int va = d[lst[u.id]], vb = d[nxt[u.id]];        remove(lst[u.id]); remove(nxt[u.id]);        d[u.id] = va + vb - u.val;        q.push(node(d[u.id], u.id));    &#125;    printf(\"%d\\n\", ans);    return 0;&#125;\nBZOJ 1296 粉刷匠Description有若干条木板, 每一格只能刷一种给定的颜色, 不刷或刷错都是错. 颜色只有两种.\n刷一次只能在一条木板上刷连续区间, 给定刷 $T$ 次, 问最多刷正确多少块.\nSolution一眼区间DP套背包, 遂上状态 $f[i][j][k]$, 肯定都能明白.\n发现跪了. 那$f[i][j][k][0/1]$. 还是很明白.\n怎么又跪了的说!!! $f[i][j][k][0/1][0/1]$!\n算了算了转移太长了.\n其实是在一条上做 $n^2$, 每次枚举断点, 前缀和优化一下.\n然后再背包.\n12345678910111213141516171819202122232425262728293031323334353637383940#include &lt;iostream&gt;#include &lt;algorithm&gt;#include &lt;cstring&gt;#include &lt;cstdio&gt;using namespace std;int n, m, t;int c[55][55], sum[55];char board[55][55];int dp[55][2505];int main()&#123;    scanf(\"%d%d%d\", &amp;n, &amp;m, &amp;t);    for(int i = 1; i &lt;= n; ++i)    &#123;        scanf(\"%s\", board[i] + 1);        for(int j = 1; j &lt;= m; ++j)            sum[j] = sum[j - 1] + (board[i][j] ^ 48);        for(int T = 1; T &lt;= m; ++T)            for(int j = 1; j &lt;= m; ++j)            &#123;                c[j][T] = 0;                for(int k = 0; k &lt; j; ++k)                &#123;                    int cnt = sum[j] - sum[k];                    c[j][T] = max(c[j][T], c[k][T - 1] + max(cnt, j - k - cnt));                &#125;\t            &#125;        for(int j = 1; j &lt;= t; ++j)            for(int k = 1; k &lt;= min(m, j); ++k)                dp[i][j] = max(dp[i][j], dp[i - 1][j - k] + c[m][k]);    &#125;    int ans = 0;    for(int i = 1; i &lt;= t; ++i)        ans = max(ans, dp[n][i]);    printf(\"%d\\n\", ans);    return 0;&#125;\n","dateCreated":"2018-09-08T13:03:07+08:00","dateModified":"2018-09-08T23:08:09+08:00","datePublished":"2018-09-08T13:03:07+08:00","description":"九月题目泛做总结。\nKeywordsProblem On Tree, DFS &amp; Optimization, Heap, Greedy, List,  Interval&amp;Backpack Dynamic Programming","headline":"September Problems Summarization Part3","image":["https://i.loli.net/2018/09/08/5b93e5ab53fd9.jpg","https://i.loli.net/2018/09/08/5b93e5cf5764f.jpg"],"mainEntityOfPage":{"@type":"WebPage","@id":"https://bouvardia73.github.io/2018/09/08/Sept-prob-3/"},"publisher":{"@type":"Organization","name":"Bouvardia.L","sameAs":[],"image":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg","logo":{"@type":"ImageObject","url":"https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"}},"url":"https://bouvardia73.github.io/2018/09/08/Sept-prob-3/","keywords":"OI","thumbnailUrl":"https://i.loli.net/2018/09/08/5b93e5ab53fd9.jpg"}</script>
+    <meta name="description" content="九月题目泛做总结。 KeywordsProblem On Tree, DFS &amp;amp; Optimization, Heap, Greedy, List,  Interval&amp;amp;Backpack Dynamic Programming">
+<meta name="keywords" content="OI">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="September Problems Summarization Part3">
+<meta property="og:url" content="https://bouvardia73.github.io/2018/09/08/Sept-prob-3/index.html">
+<meta property="og:site_name" content="Bouvardia&#39;s Blog">
+<meta property="og:description" content="九月题目泛做总结。 KeywordsProblem On Tree, DFS &amp;amp; Optimization, Heap, Greedy, List,  Interval&amp;amp;Backpack Dynamic Programming">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2018-09-08T15:08:09.898Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="September Problems Summarization Part3">
+<meta name="twitter:description" content="九月题目泛做总结。 KeywordsProblem On Tree, DFS &amp;amp; Optimization, Heap, Greedy, List,  Interval&amp;amp;Backpack Dynamic Programming">
+    
+    
+        
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg"/>
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/09/08/5b93e5ab53fd9.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/09/08/5b93e5ab53fd9.jpg" />
+    
+    
+        <meta property="og:image" content="https://i.loli.net/2018/09/08/5b93e5cf5764f.jpg"/>
+        <meta class="swiftype" name="image" data-type="enum" content="https://i.loli.net/2018/09/08/5b93e5cf5764f.jpg" />
+    
+    
+    <!--STYLES-->
+    <link rel="stylesheet" href="../../../../assets/css/style-du2xmrqdqrl2ollgeiw050kpl6l4nbyz7bumjuurjgsxyopifvukebxc9lqe.min.css">
+    <!--STYLES END-->
+    
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-135427320-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+
+    
+</head>
+
+    <body>
+        <div id="blog">
+            <!-- Define author's picture -->
+
+
+    
+        
+            
+        
+    
+
+<header id="header" data-behavior="5">
+    <i id="btn-open-sidebar" class="fa fa-lg fa-bars"></i>
+    <div class="header-title">
+        <a class="header-title-link" href="../../../../ ">Bouvardia&#39;s Blog</a>
+    </div>
+    
+        
+            <a  class="header-right-picture "
+                href="#about">
+        
+        
+            <img class="header-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+        </a>
+    
+</header>
+
+            <!-- Define author's picture -->
+
+
+
+        
+    
+
+<nav id="sidebar" data-behavior="5">
+    <div class="sidebar-container">
+        
+            <div class="sidebar-profile">
+                <a href="../../../../#about">
+                    <img class="sidebar-profile-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+                </a>
+                <h4 class="sidebar-profile-name">Bouvardia.L</h4>
+                
+                    <h5 class="sidebar-profile-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</h5>
+                
+            </div>
+        
+        
+            <ul class="sidebar-buttons">
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../ "
+                            
+                            title="Home"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-home" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Home</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-tags"
+                            
+                            title="Tags"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Tags</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../all-archives"
+                            
+                            title="Archives"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-archive" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Archives</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="../../../../board"
+                            
+                            title="Board"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-edit" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Board</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link "
+                             href="#about"
+                            
+                            title="About"
+                        >
+                    
+                        <i class="sidebar-button-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">About</span>
+                    </a>
+            </li>
+            
+                <li class="sidebar-button">
+                    
+                        <a  class="sidebar-button-link " href="mailto:bouvardia73@protonmail.com" target="_blank" rel="noopener" title="Mail">
+                    
+                        <i class="sidebar-button-icon fa fa-envelope" aria-hidden="true"></i>
+                        <span class="sidebar-button-desc">Mail</span>
+                    </a>
+            </li>
+            
+        </ul>
+        
+    </div>
+</nav>
+
+            
+        <div class="post-header-cover
+                    text-left
+                    post-header-cover--full"
+             style="background-image:url('https://i.loli.net/2018/09/08/5b93e5cf5764f.jpg');"
+             data-behavior="5">
+            
+                <div class="post-header main-content-wrap text-left">
+    
+        <h1 class="post-title">
+            September Problems Summarization Part3
+        </h1>
+    
+    
+        <div class="post-meta">
+    <time datetime="2018-09-08T13:03:07+08:00">
+	
+		    Sep 08, 2018
+    	
+    </time>
+    
+</div>
+
+    
+</div>
+
+            
+        </div>
+
+            <div id="main" data-behavior="5"
+                 class="hasCover
+                        hasCoverMetaIn
+                        ">
+                
+<article class="post">
+    
+    
+    <div class="post-content markdown">
+        <div class="main-content-wrap">
+            <p>九月题目泛做总结。</p>
+<h2 id="Keywords"><a href="#Keywords" class="headerlink" title="Keywords"></a>Keywords</h2><p>Problem On Tree, DFS &amp; Optimization, Heap, Greedy, List,  Interval&amp;Backpack Dynamic Programming</p>
+<a id="more"></a>
+<h1 id="table-of-contents">Table of Contents</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Keywords"><span class="toc-text">Keywords</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BZOJ-2525-Dynamite"><span class="toc-text">BZOJ 2525 Dynamite</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Description"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution"><span class="toc-text">Solution</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BZOJ-1306-循环赛"><span class="toc-text">BZOJ 1306 循环赛</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Description-1"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution-1"><span class="toc-text">Solution</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BZOJ-2151-种树-BZOJ-1150-数据备份"><span class="toc-text">BZOJ 2151 种树, BZOJ 1150 数据备份</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Description-2"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution-2"><span class="toc-text">Solution</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BZOJ-1296-粉刷匠"><span class="toc-text">BZOJ 1296 粉刷匠</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Description-3"><span class="toc-text">Description</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Solution-3"><span class="toc-text">Solution</span></a></li></ol></li></ol></li></ol>
+<h2 id="BZOJ-2525-Dynamite"><a href="#BZOJ-2525-Dynamite" class="headerlink" title="BZOJ 2525 Dynamite"></a>BZOJ 2525 Dynamite</h2><h4 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h4><p>一颗 $n$ 个点的树, 有一些关键点, 需要选择关键点, 最小化选点到所有关键点距离的最大值.</p>
+<h4 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h4><p>直接做肯定是不好做, 我们转验证.</p>
+<p>那么怎么验证距离是否小于等于 $mid$ 呢? 一开始以为要再套个DP, 其实是贪心, 需要记录两种信息, 来确定是子树内部可以解决掉所有关键点, 还是需要外面的帮助.也就是树内已选点到根的最小距离 $d_1$ 和树内未被覆盖的关键点的最大深度 $d_2$.</p>
+<p>如果两者相加小于 $mid$, 说明可以自己deal. 直接把 $d_1$置0, $d_2$置 $-\infty$.</p>
+<p>如果 $d_2 = mid$, 树根强制选, 记录下答案.</p>
+<p>需要注意的是 $d_1 &gt; mid$ 的情况, 这时候要先修正一下 $d_2$. 就算子树中的炸弹都搞定了, 自己也有可能是炸弹, $d_2 = max(d_2, 0)$.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">300005</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> inf = <span class="number">0x3f3f3f3f</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">edge</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="keyword">int</span> to, nxt;</span><br><span class="line">&#125;e[maxn &lt;&lt; <span class="number">1</span>];</span><br><span class="line"><span class="keyword">int</span> n, m, ptr, lnk[maxn], d[maxn], cnt;</span><br><span class="line"><span class="keyword">int</span> f[maxn], g[maxn], tot;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> bgn, <span class="keyword">int</span> end)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    e[++ptr].to = end; e[ptr].nxt = lnk[bgn];</span><br><span class="line">    lnk[bgn] = ptr;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> fa, <span class="keyword">int</span> mid)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    f[x] = -inf; g[x] = inf;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> p = lnk[x]; p; p = e[p].nxt)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> y = e[p].to;</span><br><span class="line">        <span class="keyword">if</span>(y == fa) <span class="keyword">continue</span>;</span><br><span class="line">        dfs(y, x, mid);</span><br><span class="line">        f[x] = max(f[x], f[y] + <span class="number">1</span>);</span><br><span class="line">        g[x] = min(g[x], g[y] + <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(d[x] &amp;&amp; g[x] &gt; mid) f[x] = max(f[x], <span class="number">0</span>); <span class="comment">//either self or subtree</span></span><br><span class="line">    <span class="keyword">if</span>(f[x] + g[x] &lt;= mid) f[x] = -inf; <span class="comment">//do it self no warry</span></span><br><span class="line">    <span class="keyword">if</span>(f[x] == mid) ++tot, f[x] = -inf, g[x] = <span class="number">0</span>; <span class="comment">//there's no bomb anymore, and this point is chosen.</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">chk</span><span class="params">(<span class="keyword">int</span> mid)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    tot = <span class="number">0</span>;</span><br><span class="line">    dfs(<span class="number">1</span>, <span class="number">0</span>, mid);</span><br><span class="line">    <span class="keyword">if</span>(f[<span class="number">1</span>] &gt;= <span class="number">0</span>) tot++;</span><br><span class="line">    <span class="keyword">return</span> tot &lt;= m;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>; <span class="keyword">char</span> c = getchar();</span><br><span class="line">    <span class="keyword">while</span>(!<span class="built_in">isdigit</span>(c)) c = getchar();</span><br><span class="line">    <span class="keyword">while</span>(<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;n, &amp;m);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) d[i] = (rd() == <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">int</span> x, y;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">register</span> <span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        x = rd(); y = rd();</span><br><span class="line">        add(x, y); add(y, x);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> l = <span class="number">0</span>, r = n, ans = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span>(l &lt;= r)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> mid = (l + r) &gt;&gt; <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">if</span>(chk(mid)) ans = mid, r = mid - <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">else</span> l = mid + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="BZOJ-1306-循环赛"><a href="#BZOJ-1306-循环赛" class="headerlink" title="BZOJ 1306 循环赛"></a>BZOJ 1306 循环赛</h2><h4 id="Description-1"><a href="#Description-1" class="headerlink" title="Description"></a>Description</h4><p>若干支队伍互相比赛, 胜+3, 负0, 平各+1.</p>
+<p>给出比分情况, 求可能局面方案数.</p>
+<p>$n \le 8$.</p>
+<h4 id="Solution-1"><a href="#Solution-1" class="headerlink" title="Solution"></a>Solution</h4><p>一看这个数据范围就比较适合乱搞.</p>
+<p>剪枝三连: 全胜无解, 全负无解, 当前队伍最后一场比赛如果分差为2无解.</p>
+<p><a href="https://www.lydsy.com/JudgeOnline/problem.php?id=3139" target="_blank" rel="noopener">加强版</a>就没这么简单了, 有机会做一下.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">pragma</span> GCC optimize(3)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, scr[<span class="number">10</span>], ans, tot;</span><br><span class="line"><span class="keyword">int</span> f[<span class="number">4</span>] = &#123;<span class="number">3</span>, <span class="number">1</span>, <span class="number">-1</span>, <span class="number">0</span>&#125;;</span><br><span class="line"><span class="keyword">int</span> tmp[<span class="number">10</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">dfs</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(tmp[x] + (n - y + <span class="number">1</span>) * <span class="number">3</span> &lt; scr[x]) <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">if</span>(tmp[x] &gt; scr[x]) <span class="keyword">return</span>; </span><br><span class="line">    <span class="keyword">if</span>(x == n) &#123;ans++; <span class="keyword">return</span>;&#125;</span><br><span class="line">    <span class="keyword">if</span>(y == n)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> delt = scr[x] - tmp[x];</span><br><span class="line">        <span class="keyword">if</span>(delt == <span class="number">2</span>) <span class="keyword">return</span>;</span><br><span class="line">        tmp[y] += f[delt];</span><br><span class="line">        dfs(x + <span class="number">1</span>, x + <span class="number">2</span>);</span><br><span class="line">        tmp[y] -= f[delt];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        tmp[x] += <span class="number">3</span>; dfs(x, y + <span class="number">1</span>); tmp[x] -= <span class="number">3</span>;</span><br><span class="line">        tmp[y] += <span class="number">3</span>; dfs(x, y + <span class="number">1</span>); tmp[y] -= <span class="number">3</span>;</span><br><span class="line">        tmp[x]++; tmp[y]++; dfs(x, y + <span class="number">1</span>); tmp[x]--; tmp[y]--;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;n);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) <span class="built_in">scanf</span>(<span class="string">"%d"</span>, &amp;scr[i]);</span><br><span class="line">    dfs(<span class="number">1</span>, <span class="number">2</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="BZOJ-2151-种树-BZOJ-1150-数据备份"><a href="#BZOJ-2151-种树-BZOJ-1150-数据备份" class="headerlink" title="BZOJ 2151 种树, BZOJ 1150 数据备份"></a>BZOJ 2151 种树, BZOJ 1150 数据备份</h2><h4 id="Description-2"><a href="#Description-2" class="headerlink" title="Description"></a>Description</h4><p>给定每个位置的权, 不能选择相邻位置, 最大化权值和.</p>
+<h4 id="Solution-2"><a href="#Solution-2" class="headerlink" title="Solution"></a>Solution</h4><p>考虑选择一个的代价, 来修改相邻元素, 以便在更优答案时修正.</p>
+<p>这是堆的题的一个典型性质. </p>
+<p>这道题中, 将相邻的都删除, 变成一个大点, 点权是 $l + r - v$.</p>
+<p>洛谷上还有个上环的, 也同理.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;queue&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cctype&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn = <span class="number">200005</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">node</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="keyword">int</span> val, id;</span><br><span class="line">    node(<span class="keyword">int</span> v_ = <span class="number">0</span>, <span class="keyword">int</span> i_ = <span class="number">0</span>):</span><br><span class="line">    val(v_), id(i_)&#123;&#125;</span><br><span class="line">    <span class="keyword">bool</span> <span class="keyword">operator</span> &lt; (<span class="keyword">const</span> node &amp;rhs) <span class="keyword">const</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> val &lt; rhs.val;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">int</span> ptr, cnt, ans, lst[maxn], nxt[maxn];</span><br><span class="line"><span class="keyword">int</span> n, k, d[maxn], tag[maxn];</span><br><span class="line">priority_queue&lt;node&gt; q;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">int</span> <span class="title">rd</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> x = <span class="number">0</span>, f = <span class="number">0</span>; <span class="keyword">char</span> c = getchar();</span><br><span class="line">    <span class="keyword">while</span>(!<span class="built_in">isdigit</span>(c))&#123;<span class="keyword">if</span>(c == <span class="string">'-'</span>) f = <span class="number">1</span>; c = getchar();&#125;</span><br><span class="line">    <span class="keyword">while</span>(<span class="built_in">isdigit</span>(c)) x = x * <span class="number">10</span> + (c ^ <span class="number">48</span>), c = getchar();</span><br><span class="line">    <span class="keyword">return</span> f ? -x : x;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    tag[x] = <span class="number">1</span>;</span><br><span class="line">    lst[nxt[x]] = lst[x];</span><br><span class="line">    nxt[lst[x]] = nxt[x];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    n = rd(); k = rd();</span><br><span class="line">    <span class="keyword">if</span>(k &gt; n / <span class="number">2</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">puts</span>(<span class="string">"Error!"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) d[i] = rd();</span><br><span class="line">    lst[<span class="number">1</span>] = n; nxt[n] = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i) nxt[i<span class="number">-1</span>] = i, lst[i] = i - <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) q.push(node(d[i], i));</span><br><span class="line">    cnt = k;</span><br><span class="line">    <span class="keyword">while</span>(cnt--)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//node u = q.top(); q.pop();</span></span><br><span class="line">        <span class="keyword">while</span>(tag[q.top().id]) q.pop();</span><br><span class="line">        node u = q.top(); q.pop();</span><br><span class="line">        ans += u.val;</span><br><span class="line">        <span class="comment">//printf("%d %d\n", u.id, ans);</span></span><br><span class="line">        <span class="keyword">int</span> va = d[lst[u.id]], vb = d[nxt[u.id]];</span><br><span class="line">        remove(lst[u.id]); remove(nxt[u.id]);</span><br><span class="line">        d[u.id] = va + vb - u.val;</span><br><span class="line">        q.push(node(d[u.id], u.id));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="BZOJ-1296-粉刷匠"><a href="#BZOJ-1296-粉刷匠" class="headerlink" title="BZOJ 1296 粉刷匠"></a>BZOJ 1296 粉刷匠</h2><h4 id="Description-3"><a href="#Description-3" class="headerlink" title="Description"></a>Description</h4><p>有若干条木板, 每一格只能刷一种给定的颜色, 不刷或刷错都是错. 颜色只有两种.</p>
+<p>刷一次只能在一条木板上刷连续区间, 给定刷 $T$ 次, 问最多刷正确多少块.</p>
+<h4 id="Solution-3"><a href="#Solution-3" class="headerlink" title="Solution"></a>Solution</h4><p>一眼区间DP套背包, 遂上状态 $f[i][j][k]$, 肯定都能明白.</p>
+<p>发现跪了. 那$f[i][j][k][0/1]$. 还是很明白.</p>
+<p>怎么又跪了的说!!! $f[i][j][k][0/1][0/1]$!</p>
+<p>算了算了转移太长了.</p>
+<p>其实是在一条上做 $n^2$, 每次枚举断点, 前缀和优化一下.</p>
+<p>然后再背包.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> n, m, t;</span><br><span class="line"><span class="keyword">int</span> c[<span class="number">55</span>][<span class="number">55</span>], sum[<span class="number">55</span>];</span><br><span class="line"><span class="keyword">char</span> board[<span class="number">55</span>][<span class="number">55</span>];</span><br><span class="line"><span class="keyword">int</span> dp[<span class="number">55</span>][<span class="number">2505</span>];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d%d"</span>, &amp;n, &amp;m, &amp;t);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">"%s"</span>, board[i] + <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j)</span><br><span class="line">            sum[j] = sum[j - <span class="number">1</span>] + (board[i][j] ^ <span class="number">48</span>);</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> T = <span class="number">1</span>; T &lt;= m; ++T)</span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j)</span><br><span class="line">            &#123;</span><br><span class="line">                c[j][T] = <span class="number">0</span>;</span><br><span class="line">                <span class="keyword">for</span>(<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; j; ++k)</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="keyword">int</span> cnt = sum[j] - sum[k];</span><br><span class="line">                    c[j][T] = max(c[j][T], c[k][T - <span class="number">1</span>] + max(cnt, j - k - cnt));</span><br><span class="line">                &#125;	</span><br><span class="line">            &#125;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= t; ++j)</span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= min(m, j); ++k)</span><br><span class="line">                dp[i][j] = max(dp[i][j], dp[i - <span class="number">1</span>][j - k] + c[m][k]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> ans = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= t; ++i)</span><br><span class="line">        ans = max(ans, dp[n][i]);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, ans);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+            
+
+        </div>
+    </div>
+    <div id="post-footer" class="post-footer main-content-wrap">
+        
+            <div class="post-footer-tags">
+                <span class="text-color-light text-small">TAGGED IN</span><br/>
+                
+    <a class="tag tag--primary tag--small t-link" href="../../../../tags/OI/">OI</a>
+
+            </div>
+        
+        
+            <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../Sept-prob-4/" data-tooltip="September Problems Summarization Part4" aria-label="PREVIOUS: September Problems Summarization Part4">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../Sept-prob-2/" data-tooltip="September Problems Summarization Part2" aria-label="NEXT: September Problems Summarization Part2">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+        
+        
+            
+                <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+            
+        
+    </div>
+</article>
+
+
+
+                <footer id="footer" class="main-content-wrap">
+    <span class="copyrights">
+        Copyrights &copy; 2019 Bouvardia.L. All Rights Reserved.
+    </span>
+</footer>
+
+            </div>
+            
+                <div id="bottom-bar" class="post-bottom-bar" data-behavior="5">
+                    <div class="post-actions-wrap">
+    <nav>
+        <ul class="post-actions post-action-nav">
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../Sept-prob-4/" data-tooltip="September Problems Summarization Part4" aria-label="PREVIOUS: September Problems Summarization Part4">
+                
+                    <i class="fa fa-angle-left" aria-hidden="true"></i>
+                    <span class="hide-xs hide-sm text-small icon-ml">PREVIOUS</span>
+                </a>
+            </li>
+            <li class="post-action">
+                
+                    
+                    <a class="post-action-btn btn btn--default tooltip--top" href="../Sept-prob-2/" data-tooltip="September Problems Summarization Part2" aria-label="NEXT: September Problems Summarization Part2">
+                
+                    <span class="hide-xs hide-sm text-small icon-mr">NEXT</span>
+                    <i class="fa fa-angle-right" aria-hidden="true"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <ul class="post-actions post-action-share">
+        <li class="post-action hide-lg hide-md hide-sm">
+            <a class="post-action-btn btn btn--default btn-open-shareoptions" href="#btn-open-shareoptions" aria-label="Share this post">
+                <i class="fa fa-share-alt" aria-hidden="true"></i>
+            </a>
+        </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Facebook">
+                    <i class="fab fa-facebook" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Twitter">
+                    <i class="fab fa-twitter" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Google+">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Qzone">
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+            
+            
+            <li class="post-action hide-xs">
+                <a class="post-action-btn btn btn--default" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/" title="Share on Weibo">
+                    <i class="fab fa-weibo" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+        
+            
+                <li class="post-action">
+                    <a class="post-action-btn btn btn--default" href="#disqus_thread">
+                        <i class="fa fa-comment"></i>
+                    </a>
+                </li>
+            
+        
+        <li class="post-action">
+            
+                <a class="post-action-btn btn btn--default" href="#table-of-contents" aria-label="Table of Contents">
+            
+                <i class="fa fa-list" aria-hidden="true"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+                </div>
+                <div id="share-options-bar" class="share-options-bar" data-behavior="5">
+    <i id="btn-close-shareoptions" class="fa fa-times"></i>
+    <ul class="share-options">
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://www.facebook.com/sharer/sharer.php?u=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/">
+                    <i class="fab fa-facebook" aria-hidden="true"></i><span>Share on Facebook</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://twitter.com/intent/tweet?text=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/">
+                    <i class="fab fa-twitter" aria-hidden="true"></i><span>Share on Twitter</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="https://plus.google.com/share?url=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/">
+                    <i class="fab fa-google-plus" aria-hidden="true"></i><span>Share on Google+</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/">
+                    <i class="fa fa-star" aria-hidden="true"></i><span>Share on Qzone</span>
+                </a>
+            </li>
+        
+            
+            
+            <li class="share-option">
+                <a class="share-option-btn" target="new" href="http://service.weibo.com/share/share.php?&amp;title=https://bouvardia73.github.io/2018/09/08/Sept-prob-3/">
+                    <i class="fab fa-weibo" aria-hidden="true"></i><span>Share on Weibo</span>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+            
+        </div>
+        
+
+
+    
+        
+    
+
+<div id="about">
+    <div id="about-card">
+        <div id="about-btn-close">
+            <i class="fa fa-times"></i>
+        </div>
+        
+            <img id="about-card-picture" src="https://i.loli.net/2018/08/10/5b6da4132025f.jpeg" alt="Author&#39;s picture"/>
+        
+            <h4 id="about-card-name">Bouvardia.L</h4>
+        
+            <div id="about-card-bio"><p>I’m Bouvardia. To Board for more information.</p>
+</div>
+        
+        
+            <div id="about-card-job">
+                <i class="fa fa-briefcase"></i>
+                <br/>
+                <p>Liver</p>
+
+            </div>
+        
+        
+            <div id="about-card-location">
+                <i class="fa fa-map-marker-alt"></i>
+                <br/>
+                California,USA
+            </div>
+        
+    </div>
+</div>
+
+        
+        
+<div id="cover" style="background-image:url('https://i.loli.net/2018/08/10/5b6d6f4507fdf.jpg');"></div>
+        <!--SCRIPTS-->
+<script src="../../../../assets/js/script-vufjrm3fmbuttogo1hxuu0w9w0sesk5iyysjuguc2hdhufot9szxg8twijry.min.js"></script>
+<!--SCRIPTS END-->
+
+    
+        <script>
+             var disqus_config = function () {
+                 this.page.url = 'https://bouvardia73.github.io/2018/09/08/Sept-prob-3/';
+                 
+                    this.page.identifier = '2018/09/08/Sept-prob-3/';
+                 
+             };
+            (function() {
+                var d = document, s = d.createElement('script');
+                var disqus_shortname = 'bouvardiablog';
+                s.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+    
+
+
+
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</body>
+</html>
